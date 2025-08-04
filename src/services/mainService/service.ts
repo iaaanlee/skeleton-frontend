@@ -17,6 +17,7 @@ class MainService implements IMainService {
       method: 'GET',
       url: '/main',
     })
+    console.log(data, "MAIN")
     return data
   }
 
@@ -24,7 +25,7 @@ class MainService implements IMainService {
   async createNewUser({userBasicInfo, bodyStatus}: UserInfo) {
     const { data } = await this.httpClient.request<ICreateNewUserResponse>({
       method: 'POST',
-      url: '/create-new-user',
+      url: '/exercise/create-new-user',
       data: {
         userBasicInfo,
         bodyStatus,
