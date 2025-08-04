@@ -1,12 +1,12 @@
 // POST PUT
 import { useMutation } from "@tanstack/react-query";
 import { mainService } from "./service";
-import { UserInfo } from "../../types/mainType";
+import { UserInfo } from "../../types/user";
 
 export const useCreateNewUser = () => {
   return useMutation({
-    mutationFn: ({userBasicInfo, bodyStatus}: UserInfo) => {
-      return mainService.createNewUser({userBasicInfo, bodyStatus});
+    mutationFn: ({contactInfo, bodyStatus, exerciseInfoList, cautions, preferences}: UserInfo) => {
+      return mainService.createNewUser({contactInfo, bodyStatus, exerciseInfoList, cautions, preferences});
     }
   });
 };

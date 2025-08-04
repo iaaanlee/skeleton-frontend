@@ -4,7 +4,15 @@ import { MainServiceRoute } from './pages';
 export const getRouter = () => {
   return createBrowserRouter([
     {
-      path: '/*',
+      path: '/',
+      element: <MainServiceRoute />,
+    },
+    {
+      path: '/main',
+      element: <MainServiceRoute />,
+    },
+    {
+      path: '*',
       element: <MainServiceRoute />,
     },
   ]);

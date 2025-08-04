@@ -1,8 +1,8 @@
 // backend 요청 시 사용할 service 정의
 import { AxiosHttpClient } from "../common/axiosHttpClient";
 import { backendHttpClient } from "../common/httpClient";
-import { IMainResponse, ICreateNewUserResponse } from "./response";
-import { UserInfo } from "../../types/mainType";
+import { IMainResponse, ICreateNewUserResponse, IGetUserInfoResponse } from "./response";
+import { UserInfo } from "../../types/user";
 
 type IMainService = {
   createNewUser: (userInfo: UserInfo) => Promise<IMainResponse>;
@@ -12,23 +12,25 @@ class MainService implements IMainService {
   constructor(private httpClient: AxiosHttpClient) {}
 
   // GET 요청
-  async getMain() {
-    const { data } = await this.httpClient.request<IMainResponse>({
+  async getUserInfo() {
+    const { data } = await this.httpClient.request<IGetUserInfoResponse>({
       method: 'GET',
-      url: '/main',
+      url: `/user/get-user-info`,
     })
-    console.log(data, "MAIN")
     return data
   }
 
   // POST 요청
-  async createNewUser({userBasicInfo, bodyStatus}: UserInfo) {
+  async createNewUser({contactInfo, bodyStatus, exerciseInfoList, cautions, preferences}: UserInfo) {
     const { data } = await this.httpClient.request<ICreateNewUserResponse>({
       method: 'POST',
-      url: '/exercise/create-new-user',
+      url: '/user/create-new-user',
       data: {
-        userBasicInfo,
+        contactInfo,
         bodyStatus,
+        exerciseInfoList,
+        cautions,
+        preferences,
       },
     })
     return data
