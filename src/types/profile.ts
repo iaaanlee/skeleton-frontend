@@ -1,4 +1,4 @@
-export type UserProfileInfo = {
+export type ProfileInfo = {
   _id: string
   accountId: string
   profileName: string

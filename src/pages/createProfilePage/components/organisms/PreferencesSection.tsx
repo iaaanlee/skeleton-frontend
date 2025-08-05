@@ -1,9 +1,9 @@
 import { UseFormRegister } from "react-hook-form";
 import { FormSelect } from "../atoms/FormSelect";
-import { CreateUserProfileRequest } from "../../../../types/request";
+import { CreateProfileRequest } from "../../../../types/request";
 
 interface PreferencesSectionProps {
-    register: UseFormRegister<CreateUserProfileRequest>;
+    register: UseFormRegister<CreateProfileRequest>;
 }
 
 export const PreferencesSection = ({ register }: PreferencesSectionProps) => {

@@ -1,3 +1,3 @@
-import { UserProfileInfo } from './userProfile';
+import { ProfileInfo } from './profile';
 
-export type CreateUserProfileRequest = Omit<UserProfileInfo, '_id' | 'accountId' | 'createdAt' | 'updatedAt' | 'deletedAt'> // 백에서 결정됨
+export type CreateProfileRequest = Omit<ProfileInfo, '_id' | 'accountId' | 'createdAt' | 'updatedAt' | 'deletedAt'> // 백에서 결정됨

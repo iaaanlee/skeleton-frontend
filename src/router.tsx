@@ -1,19 +1,19 @@
 import { createBrowserRouter } from 'react-router-dom';
-import { CreateUserProfilePage } from './pages/createUserProfilePage';
+import { CreateProfilePage } from './pages/createProfilePage';
 
 export const getRouter = () => {
   return createBrowserRouter([
     {
       path: '/',
-      element: <CreateUserProfilePage />,
+      element: <CreateProfilePage />,
     },
     {
-      path: '/create-user-profile',
-      element: <CreateUserProfilePage />,
+      path: '/create-profile',
+      element: <CreateProfilePage />,
     },
     {
       path: '*',
-      element: <CreateUserProfilePage />,
+      element: <CreateProfilePage />,
     },
   ]);
 }; 

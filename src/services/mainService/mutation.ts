@@ -1,15 +1,15 @@
 // POST PUT
 import { useMutation } from "@tanstack/react-query";
 import { mainService } from "./service";
-import { CreateUserProfileRequest } from "../../types/request";
+import { CreateProfileRequest } from "../../types/request";
 
-export const useCreateNewUserProfileMutation = ({ onSuccess, onError }: {
+export const useCreateProfileMutation = ({ onSuccess, onError }: {
     onSuccess?: () => void;
     onError?: (error: Error) => void;
 } = {}) => {
     return useMutation({
-        mutationFn: async (userProfileInfo: CreateUserProfileRequest) => {
-            return await mainService.createNewUserProfile(userProfileInfo);
+        mutationFn: async (input: CreateProfileRequest) => {
+            return await mainService.createProfile(input);
         },
         onSuccess: () => {
             onSuccess?.();

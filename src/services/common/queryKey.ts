@@ -1,4 +1,4 @@
 export const queryKeys = {
   main: () => ['main'],
-  userProfile: (profileId: string) => ['userProfile', profileId],
+  profile: (profileId: string) => ['profile', profileId],
 };

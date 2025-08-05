@@ -1,8 +1,8 @@
-import { useCreateNewUserProfileMutation } from "../services/mainService/mutation";
-import { CreateUserProfileRequest } from "../types/request";
+import { useCreateProfileMutation } from "../services/mainService/mutation";
+import { CreateProfileRequest } from "../types/request";
 
 // Default values for the form (without _id and accountId)
-export const createUserDefaultValues: CreateUserProfileRequest = {
+export const createProfileDefaultValues: CreateProfileRequest = {
     profileName: '',
     bodyStatus: {
         gender: 'male',
@@ -36,16 +36,16 @@ export const createUserDefaultValues: CreateUserProfileRequest = {
     },
 };
 
-type CreateNewUserProfileHandlerProps = {
+type CreateProfileProps = {
     onSuccess?: () => void;
     onError?: (error: Error) => void;
 };
 
-export const useCreateNewUserProfileHandler = ({ onSuccess, onError }: CreateNewUserProfileHandlerProps) => {
-    const mutation = useCreateNewUserProfileMutation({ onSuccess, onError });
+export const useCreateProfile = ({ onSuccess, onError }: CreateProfileProps) => {
+    const mutation = useCreateProfileMutation({ onSuccess, onError });
 
     return {
-        handleCreateNewUserProfile: mutation.mutateAsync,
+        handleCreateProfile: mutation.mutateAsync,
         isPending: mutation.isPending,
         isSuccess: mutation.isSuccess,
         isError: mutation.isError,

@@ -1,10 +1,10 @@
 import { UseFormRegister, FieldErrors } from "react-hook-form";
 import { FormInput } from "../atoms/FormInput";
-import { CreateUserProfileRequest } from "../../../../types/request";
+import { CreateProfileRequest } from "../../../../types/request";
 
 interface ContactInfoSectionProps {
-    register: UseFormRegister<CreateUserProfileRequest>;
-    errors: FieldErrors<CreateUserProfileRequest>;
+    register: UseFormRegister<CreateProfileRequest>;
+    errors: FieldErrors<CreateProfileRequest>;
 }
 
 export const ContactInfoSection = ({ register, errors }: ContactInfoSectionProps) => {

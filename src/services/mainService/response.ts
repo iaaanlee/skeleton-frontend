@@ -1,22 +1,30 @@
 // service 내에서 response들의 type 정의
-import { UserProfileInfo } from "../../types/userProfile";
+import { ProfileInfo } from "../../types/profile";
+import { AccountInfo } from "../../types/account";
 
 export type IMainResponse = {
   message: string;
   userId: string;
 };
 
-export type IGetUserProfileInfoResponse = {
+export type IGetAccountResponse = {
   message: string;
   data: {
-    userProfileInfo: UserProfileInfo;
+    account: AccountInfo;
   };
 };
 
-export type ICreateNewUserProfileResponse = {
+export type IGetProfileResponse = {
   message: string;
   data: {
-    userId: string;
+    profile: ProfileInfo;
+  };
+};
+
+export type ICreateProfileResponse = {
+  message: string;
+  data: {
+    profileId: string;
   };
 };
 
