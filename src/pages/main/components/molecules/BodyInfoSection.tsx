@@ -83,7 +83,7 @@ export const BodyInfoSection = ({ register, errors }: BodyInfoSectionProps) => {
                     type="number"
                     placeholder="Skeletal muscle mass (kg)"
                     register={register}
-                    name="bodyStatus.detailInfo.skeletalMuscleMassKg"
+                    name="bodyStatus.detailInfo.skeletalMuscleMassKg (optional)"
                     validation={{
                         valueAsNumber: true,
                         min: { value: 0, message: '골격근량은 0 이상이어야 합니다' }
