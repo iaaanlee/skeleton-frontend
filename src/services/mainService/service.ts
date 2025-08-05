@@ -1,32 +1,35 @@
 // backend 요청 시 사용할 service 정의
 import { AxiosHttpClient } from "../common/axiosHttpClient";
 import { backendHttpClient } from "../common/httpClient";
-import { IMainResponse, ICreateNewUserResponse, IGetUserInfoResponse } from "./response";
-import { UserInfo } from "../../types/user";
+import { ICreateNewUserProfileResponse, IGetUserProfileInfoResponse } from "./response";
+import { CreateUserProfileRequest } from "../../types/request";
 
 type IMainService = {
-  createNewUser: (userInfo: UserInfo) => Promise<IMainResponse>;
+  getUserProfileInfo: ({profileId}: {profileId: string}) => Promise<IGetUserProfileInfoResponse>;
 };
 
 class MainService implements IMainService { 
   constructor(private httpClient: AxiosHttpClient) {}
 
   // GET 요청
-  async getUserInfo() {
-    const { data } = await this.httpClient.request<IGetUserInfoResponse>({
+  async getUserProfileInfo({profileId}: {profileId: string}) {
+    const { data } = await this.httpClient.request<IGetUserProfileInfoResponse>({
       method: 'GET',
-      url: `/user/get-user-info`,
+      url: `/user/get-profile-info`,
+      params: {
+        profileId,
+      },
     })
     return data
   }
 
   // POST 요청
-  async createNewUser({contactInfo, bodyStatus, exerciseInfoList, cautions, preferences}: UserInfo) {
-    const { data } = await this.httpClient.request<ICreateNewUserResponse>({
+  async createNewUserProfile({profileName, bodyStatus, exerciseInfoList, cautions, preferences}: CreateUserProfileRequest) {
+    const { data } = await this.httpClient.request<ICreateNewUserProfileResponse>({
       method: 'POST',
-      url: '/user/create-new-user',
+      url: '/user/create-new-profile',
       data: {
-        contactInfo,
+        profileName,
         bodyStatus,
         exerciseInfoList,
         cautions,

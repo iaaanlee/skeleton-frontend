@@ -1,19 +1,19 @@
-import { useCreateNewUserHandler, createUserDefaultValues } from "../../hooks/useCreateNewUserHandler";
+import { useCreateNewUserProfileHandler, createUserDefaultValues } from "../../hooks/useCreateNewUserHandler";
 import { useForm } from "react-hook-form";
-import { CreateUserRequest } from "../../types/request";
-import { ContactInfoSection } from "./components/molecules/ContactInfoSection";
-import { BodyInfoSection } from "./components/molecules/BodyInfoSection";
+import { CreateUserProfileRequest } from "../../types/request";
+import { ProfileNameSection } from "./components/molecules/ProfileNameSection";
+import { BodyStatusInfoSection } from "./components/molecules/BodyStatusInfoSection";
 import { ExerciseInfoSection } from "./components/organisms/ExerciseInfoSection";
 import { PreferencesSection } from "./components/organisms/PreferencesSection";
 import { CautionsSection } from "./components/organisms/CautionsSection";
 
-export const MainPage = () => {
+export const CreateUserProfilePage = () => { // 프로필 생성 페이지
     const { 
-        handleCreateNewUser,
+        handleCreateNewUserProfile,
         isPending: isPendingCreateUser, 
         isSuccess: isSuccessCreateUser, 
         isError: isErrorCreateUser 
-    } = useCreateNewUserHandler({
+    } = useCreateNewUserProfileHandler({
         onSuccess: () => {
             console.log('User created successfully!');
         },
@@ -29,13 +29,13 @@ export const MainPage = () => {
         reset,
         control,
         watch
-    } = useForm<CreateUserRequest>({
+    } = useForm<CreateUserProfileRequest>({
         defaultValues: createUserDefaultValues
     });
 
-    const onSubmit = async (data: CreateUserRequest) => {
+    const onSubmit = async (data: CreateUserProfileRequest) => {
         try {
-            await handleCreateNewUser(data);
+            await handleCreateNewUserProfile(data);
             reset(); // 성공 시 폼 초기화
         } catch (error) {
             console.error('Form submission error:', error);
@@ -44,11 +44,11 @@ export const MainPage = () => {
 
     return (
         <div className="p-5 max-w-4xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6 text-center">Create New User</h1>
+            <h1 className="text-2xl font-bold mb-6 text-center">Create New User Profile</h1>
             
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <ContactInfoSection register={register} errors={errors} />
-                <BodyInfoSection register={register} errors={errors} />
+                <ProfileNameSection register={register} errors={errors} />
+                <BodyStatusInfoSection register={register} errors={errors} />
                 <ExerciseInfoSection 
                     register={register} 
                     watch={watch} 
@@ -56,7 +56,7 @@ export const MainPage = () => {
                     control={control} 
                 />
                 <PreferencesSection register={register} />
-                <CautionsSection register={register} />
+                <CautionsSection register={register} watch={watch} reset={reset} />
 
                 <button 
                     type="submit"
@@ -73,13 +73,13 @@ export const MainPage = () => {
 
             {isSuccessCreateUser && (
                 <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md text-center">
-                    User created successfully!
+                    User profile created successfully!
                 </div>
             )}
 
             {isErrorCreateUser && (
                 <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-center">
-                    Error creating user. Please try again.
+                    Error creating user profile. Please try again.
                 </div>
             )}
         </div>

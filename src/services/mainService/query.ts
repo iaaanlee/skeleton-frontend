@@ -3,10 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { mainService } from "./service";
 import { queryKeys } from "../common/queryKey";
 
-export const useGetUserInfo = () => {
+export const useGetUserProfileInfo = ({profileId}: {profileId: string}) => {
   return useQuery({
-    queryKey: queryKeys.main(),
-    queryFn: () => mainService.getUserInfo(),
+    queryKey: queryKeys.userProfile(profileId),
+    queryFn: () => mainService.getUserProfileInfo({profileId}),
     select: (data) => {
       return data;
     },

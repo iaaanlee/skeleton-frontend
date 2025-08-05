@@ -1,14 +1,14 @@
 import { UseFormRegister, FieldErrors } from "react-hook-form";
 import { FormInput } from "../atoms/FormInput";
 import { FormSelect } from "../atoms/FormSelect";
-import { CreateUserRequest } from "../../../../types/request";
+import { CreateUserProfileRequest } from "../../../../types/request";
 
-interface BodyInfoSectionProps {
-    register: UseFormRegister<CreateUserRequest>;
-    errors: FieldErrors<CreateUserRequest>;
+interface BodyStatusInfoSectionProps {
+    register: UseFormRegister<CreateUserProfileRequest>;
+    errors: FieldErrors<CreateUserProfileRequest>;
 }
 
-export const BodyInfoSection = ({ register, errors }: BodyInfoSectionProps) => {
+export const BodyStatusInfoSection = ({ register, errors }: BodyStatusInfoSectionProps) => {
     const genderOptions = [
         { value: "male", label: "Male" },
         { value: "female", label: "Female" }

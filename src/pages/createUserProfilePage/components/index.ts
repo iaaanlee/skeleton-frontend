@@ -6,7 +6,8 @@ export { RemoveButton } from './atoms/RemoveButton';
 
 // Molecules
 export { ContactInfoSection } from './molecules/ContactInfoSection';
-export { BodyInfoSection } from './molecules/BodyInfoSection';
+export { ProfileNameSection } from './molecules/ProfileNameSection';
+export { BodyStatusInfoSection } from './molecules/BodyStatusInfoSection';
 export { ExerciseCard } from './molecules/ExerciseCard';
 
 // Organisms

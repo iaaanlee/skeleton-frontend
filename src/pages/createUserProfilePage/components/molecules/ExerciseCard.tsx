@@ -3,12 +3,12 @@ import { FormInput } from "../atoms/FormInput";
 import { FormSelect } from "../atoms/FormSelect";
 import { AddButton } from "../atoms/AddButton";
 import { RemoveButton } from "../atoms/RemoveButton";
-import { CreateUserRequest } from "../../../../types/request";
+import { CreateUserProfileRequest } from "../../../../types/request";
 
 interface ExerciseCardProps {
     exerciseIndex: number;
-    register: UseFormRegister<CreateUserRequest>;
-    watch: UseFormWatch<CreateUserRequest>;
+    register: UseFormRegister<CreateUserProfileRequest>;
+    watch: UseFormWatch<CreateUserProfileRequest>;
     onAddPerformance: (exerciseIndex: number) => void;
     onRemovePerformance: (exerciseIndex: number, perfIndex: number) => void;
     onRemoveExercise: (exerciseIndex: number) => void;

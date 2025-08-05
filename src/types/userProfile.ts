@@ -1,15 +1,14 @@
-export type UserInfo = {
-  contactInfo: ContactInfo
+export type UserProfileInfo = {
+  _id: string
+  accountId: string
+  profileName: string
   bodyStatus: BodyStatus
   exerciseInfoList: ExerciseInfo[]
   cautions: Cautions
   preferences: Preferences
-}
-
-export type ContactInfo = {
-  name: string
-  phoneNumber: string
-  email: string
+  createdAt: string
+  updatedAt: string
+  deletedAt?: string
 }
 
 export type BodyStatus = {
@@ -48,4 +47,4 @@ export type Preferences = {
   exerciseLocation?: string[]
   exerciseEquipment?: string[]
   // 추후에 추가 및 수정
-}
+} 

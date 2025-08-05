@@ -2,12 +2,12 @@ import { UseFormRegister, UseFormWatch, UseFormReset } from "react-hook-form";
 import { useFieldArray } from "react-hook-form";
 import { AddButton } from "../atoms/AddButton";
 import { ExerciseCard } from "../molecules/ExerciseCard";
-import { CreateUserRequest } from "../../../../types/request";
+import { CreateUserProfileRequest } from "../../../../types/request";
 
 interface ExerciseInfoSectionProps {
-    register: UseFormRegister<CreateUserRequest>;
-    watch: UseFormWatch<CreateUserRequest>;
-    reset: UseFormReset<CreateUserRequest>;
+    register: UseFormRegister<CreateUserProfileRequest>;
+    watch: UseFormWatch<CreateUserProfileRequest>;
+    reset: UseFormReset<CreateUserProfileRequest>;
     control: any;
 }
 
@@ -26,7 +26,7 @@ export const ExerciseInfoSection = ({
         appendExercise({
             exerciseName: '',
             exerciseLevel: 'low',
-            trainingYear: 0,
+            trainingYear: null,
             performanceDescription: [],
         });
     };

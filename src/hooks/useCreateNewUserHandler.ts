@@ -1,15 +1,9 @@
-import { useMutation } from "@tanstack/react-query";
-import { mainService } from "../services/mainService/service";
-import { CreateUserRequest } from "../types/request";
-import { UserInfo } from "../types/user";
+import { useCreateNewUserProfileMutation } from "../services/mainService/mutation";
+import { CreateUserProfileRequest } from "../types/request";
 
-// Default values for the form
-export const createUserDefaultValues: CreateUserRequest = {
-    contactInfo: {
-        name: '',
-        phoneNumber: '',
-        email: '',
-    },
+// Default values for the form (without _id and accountId)
+export const createUserDefaultValues: CreateUserProfileRequest = {
+    profileName: '',
     bodyStatus: {
         gender: 'male',
         birthYear: null,
@@ -42,34 +36,16 @@ export const createUserDefaultValues: CreateUserRequest = {
     },
 };
 
-type CreateNewUserHandlerProps = {
+type CreateNewUserProfileHandlerProps = {
     onSuccess?: () => void;
     onError?: (error: Error) => void;
 };
 
-export const useCreateNewUserHandler = ({ onSuccess, onError }: CreateNewUserHandlerProps) => {
-    const mutation = useMutation({
-        mutationFn: async (userData: CreateUserRequest) => {
-            const userInfo: UserInfo = {
-                contactInfo: userData.contactInfo,
-                bodyStatus: userData.bodyStatus,
-                exerciseInfoList: userData.exerciseInfoList,
-                cautions: userData.cautions,
-                preferences: userData.preferences,
-            };
-            
-            return await mainService.createNewUser(userInfo);
-        },
-        onSuccess: () => {
-            onSuccess?.();
-        },
-        onError: (error: Error) => {
-            onError?.(error);
-        },
-    });
+export const useCreateNewUserProfileHandler = ({ onSuccess, onError }: CreateNewUserProfileHandlerProps) => {
+    const mutation = useCreateNewUserProfileMutation({ onSuccess, onError });
 
     return {
-        handleCreateNewUser: mutation.mutateAsync,
+        handleCreateNewUserProfile: mutation.mutateAsync,
         isPending: mutation.isPending,
         isSuccess: mutation.isSuccess,
         isError: mutation.isError,
