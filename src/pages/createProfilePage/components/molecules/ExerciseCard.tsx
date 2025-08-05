@@ -3,7 +3,7 @@ import { FormInput } from "../atoms/FormInput";
 import { FormSelect } from "../atoms/FormSelect";
 import { AddButton } from "../atoms/AddButton";
 import { RemoveButton } from "../atoms/RemoveButton";
-import { CreateProfileRequest } from "../../../../types/request";
+import { CreateProfileRequest } from "../../../../types/profile/request";
 
 interface ExerciseCardProps {
     exerciseIndex: number;

@@ -1,6 +1,6 @@
 import { UseFormRegister } from "react-hook-form";
 import { FormSelect } from "../atoms/FormSelect";
-import { CreateProfileRequest } from "../../../../types/request";
+import { CreateProfileRequest } from "../../../../types/profile/request";
 
 interface PreferencesSectionProps {
     register: UseFormRegister<CreateProfileRequest>;

@@ -1,0 +1,24 @@
+import { useLoginMutation } from "../services/mainService/mutation";
+import { LoginRequest } from "../types/account/request";
+
+// Default values for the login form
+export const loginDefaultValues: LoginRequest = {
+    loginId: '',
+    password: '',
+};
+
+type LoginProps = {
+    onSuccess?: (data: any) => void;
+    onError?: (error: Error) => void;
+};
+
+export const useLogin = ({ onSuccess, onError }: LoginProps) => {
+    const mutation = useLoginMutation({ onSuccess, onError });
+
+    return {
+        handleLogin: mutation.mutateAsync,
+        isPending: mutation.isPending,
+        isSuccess: mutation.isSuccess,
+        isError: mutation.isError,
+    };
+}; 

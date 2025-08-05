@@ -1,6 +1,6 @@
 import { useCreateProfile, createProfileDefaultValues } from "../../hooks/useCreateProfileHandler";
 import { useForm } from "react-hook-form";
-import { CreateProfileRequest } from "../../types/request";
+import { CreateProfileRequest } from "../../types/profile/request";
 import { ProfileNameSection } from "./components/molecules/ProfileNameSection";
 import { BodyStatusInfoSection } from "./components/molecules/BodyStatusInfoSection";
 import { ExerciseInfoSection } from "./components/organisms/ExerciseInfoSection";

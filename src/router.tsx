@@ -1,11 +1,21 @@
 import { createBrowserRouter } from 'react-router-dom';
+import { LoginPage } from './pages/loginPage';
 import { CreateProfilePage } from './pages/createProfilePage';
+import { CreateAccountPage } from './pages/createAccountPage';
 
 export const getRouter = () => {
   return createBrowserRouter([
     {
       path: '/',
-      element: <CreateProfilePage />,
+      element: <LoginPage />,
+    },
+    {
+      path: '/login',
+      element: <LoginPage />,
+    },
+    {
+      path: '/create-account',
+      element: <CreateAccountPage />,
     },
     {
       path: '/create-profile',
@@ -13,7 +23,7 @@ export const getRouter = () => {
     },
     {
       path: '*',
-      element: <CreateProfilePage />,
+      element: <LoginPage />,
     },
   ]);
 }; 

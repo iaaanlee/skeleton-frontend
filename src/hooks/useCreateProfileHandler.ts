@@ -1,5 +1,5 @@
 import { useCreateProfileMutation } from "../services/mainService/mutation";
-import { CreateProfileRequest } from "../types/request";
+import { CreateProfileRequest } from "../types/profile/request";
 
 // Default values for the form (without _id and accountId)
 export const createProfileDefaultValues: CreateProfileRequest = {

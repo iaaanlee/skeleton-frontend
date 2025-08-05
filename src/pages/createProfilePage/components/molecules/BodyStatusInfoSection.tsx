@@ -1,7 +1,7 @@
 import { UseFormRegister, FieldErrors } from "react-hook-form";
 import { FormInput } from "../atoms/FormInput";
 import { FormSelect } from "../atoms/FormSelect";
-import { CreateProfileRequest } from "../../../../types/request";
+import { CreateProfileRequest } from "../../../../types/profile/request";
 
 interface BodyStatusInfoSectionProps {
     register: UseFormRegister<CreateProfileRequest>;

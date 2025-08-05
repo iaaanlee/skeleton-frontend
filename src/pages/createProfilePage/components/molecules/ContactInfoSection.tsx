@@ -1,6 +1,6 @@
 import { UseFormRegister, FieldErrors } from "react-hook-form";
 import { FormInput } from "../atoms/FormInput";
-import { CreateProfileRequest } from "../../../../types/request";
+import { CreateProfileRequest } from "../../../../types/profile/request";
 
 interface ContactInfoSectionProps {
     register: UseFormRegister<CreateProfileRequest>;

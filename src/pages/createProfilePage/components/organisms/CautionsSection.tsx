@@ -1,7 +1,7 @@
 import { UseFormRegister, UseFormWatch, UseFormReset } from "react-hook-form";
 import { AddButton } from "../atoms/AddButton";
 import { RemoveButton } from "../atoms/RemoveButton";
-import { CreateProfileRequest } from "../../../../types/request";
+import { CreateProfileRequest } from "../../../../types/profile/request";
 
 interface CautionsSectionProps {
     register: UseFormRegister<CreateProfileRequest>;
