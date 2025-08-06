@@ -1,4 +1,4 @@
-import { useLoginMutation } from "../services/mainService/mutation";
+import { useLoginMutation } from "../services/accountService";
 import { LoginRequest } from "../types/account/request";
 
 // Default values for the login form

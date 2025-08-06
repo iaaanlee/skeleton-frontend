@@ -3,9 +3,11 @@ import { useForm } from "react-hook-form";
 import { LoginRequest } from "../../types/account/request";
 import { LoginForm } from "./components/molecules/LoginForm";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 export const LoginPage = () => {
     const navigate = useNavigate();
+    const { login } = useAuth();
     
     const { 
         handleLogin,
@@ -15,7 +17,12 @@ export const LoginPage = () => {
     } = useLogin({
         onSuccess: (data) => {
             console.log('Login successful!', data);
-            // TODO: 토큰 저장 및 리다이렉트
+            // 토큰 저장
+            if (data.data?.token) {
+                login(data.data.token);
+            }
+            // 로그인 성공 후 메인 페이지로 리다이렉트
+            navigate('/main');
         },
         onError: (error) => {
             console.error('Login failed:', error.message);

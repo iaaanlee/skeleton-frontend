@@ -6,8 +6,14 @@ import { BodyStatusInfoSection } from "./components/molecules/BodyStatusInfoSect
 import { ExerciseInfoSection } from "./components/organisms/ExerciseInfoSection";
 import { PreferencesSection } from "./components/organisms/PreferencesSection";
 import { CautionsSection } from "./components/organisms/CautionsSection";
+import { useAuth } from "../../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 export const CreateProfilePage = () => { // 프로필 생성 페이지
+    const navigate = useNavigate();
+    const { isAuthenticated } = useAuth();
+    
     const { 
         handleCreateProfile,
         isPending: isPendingCreateProfile, 
@@ -32,6 +38,18 @@ export const CreateProfilePage = () => { // 프로필 생성 페이지
     } = useForm<CreateProfileRequest>({
         defaultValues: createProfileDefaultValues
     });
+    
+    // 인증 상태 확인
+    useEffect(() => {
+        if (!isAuthenticated) {
+            navigate('/login', { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
+    
+    // 로그인되지 않은 경우 로딩 표시
+    if (!isAuthenticated) {
+        return <div className="min-h-screen flex items-center justify-center">로그인 중...</div>;
+    }
 
     const onSubmit = async (data: CreateProfileRequest) => {
         try {

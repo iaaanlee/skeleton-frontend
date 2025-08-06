@@ -6,8 +6,11 @@ import { AccountNameSection } from "./components/molecules/AccountNameSection";
 import { PasswordSection } from "./components/molecules/PasswordSection";
 import { ContactInfoSection } from "./components/molecules/ContactInfoSection";
 import { PaymentInfoSection } from "./components/organisms/PaymentInfoSection";
+import { useNavigate } from "react-router-dom";
 
 export const CreateAccountPage = () => { // 계정 생성 페이지
+    const navigate = useNavigate();
+    
     const { 
         handleCreateAccount,
         isPending: isPendingCreateAccount, 
@@ -16,6 +19,8 @@ export const CreateAccountPage = () => { // 계정 생성 페이지
     } = useCreateAccount({
         onSuccess: () => {
             console.log('Account created successfully!');
+            // 계정 생성 성공 후 로그인 페이지로 리다이렉트
+            navigate('/login');
         },
         onError: (error) => {
             console.error('Error creating account:', error.message);

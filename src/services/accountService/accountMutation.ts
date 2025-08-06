@@ -1,7 +1,6 @@
-// POST PUT
+// Account 관련 mutations
 import { useMutation } from "@tanstack/react-query";
-import { mainService } from "./service";
-import { CreateProfileRequest } from "../../types/profile/request";
+import { accountService } from "./accountService";
 import { CreateAccountRequest, LoginRequest } from "../../types/account/request";
 
 export const useLoginMutation = ({ onSuccess, onError }: {
@@ -10,27 +9,10 @@ export const useLoginMutation = ({ onSuccess, onError }: {
 } = {}) => {
     return useMutation({
         mutationFn: async (input: LoginRequest) => {
-            return await mainService.login(input);
+            return await accountService.login(input);
         },
         onSuccess: (data) => {
             onSuccess?.(data);
-        },
-        onError: (error: Error) => {
-            onError?.(error);
-        },
-    });
-};
-
-export const useCreateProfileMutation = ({ onSuccess, onError }: {
-    onSuccess?: () => void;
-    onError?: (error: Error) => void;
-} = {}) => {
-    return useMutation({
-        mutationFn: async (input: CreateProfileRequest) => {
-            return await mainService.createProfile(input);
-        },
-        onSuccess: () => {
-            onSuccess?.();
         },
         onError: (error: Error) => {
             onError?.(error);
@@ -44,7 +26,7 @@ export const useCreateAccountMutation = ({ onSuccess, onError }: {
 } = {}) => {
     return useMutation({
         mutationFn: async (input: CreateAccountRequest) => {
-            return await mainService.createAccount(input);
+            return await accountService.createAccount(input);
         },
         onSuccess: () => {
             onSuccess?.();
@@ -53,4 +35,4 @@ export const useCreateAccountMutation = ({ onSuccess, onError }: {
             onError?.(error);
         },
     });
-};
+}; 

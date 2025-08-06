@@ -3,8 +3,13 @@ import { ProfileInfo } from './profile';
 export type IGetProfileResponse = {
   success: boolean;
   data: {
-    profile: ProfileInfo;
+    profile: ProfileInfo | null;
   };
+};
+
+export type IGetProfilesResponse = {
+  success: boolean;
+  data: ProfileInfo[];
 };
 
 export type ICreateProfileResponse = {

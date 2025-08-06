@@ -1,4 +1,4 @@
-import { useCreateAccountMutation } from "../services/mainService/mutation";
+import { useCreateAccountMutation } from "../services/accountService";
 import { CreateAccountRequest } from "../types/account/request";
 
 // Default values for the form (without _id, profileIds, createdAt, updatedAt, deletedAt)

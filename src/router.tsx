@@ -2,12 +2,17 @@ import { createBrowserRouter } from 'react-router-dom';
 import { LoginPage } from './pages/loginPage';
 import { CreateProfilePage } from './pages/createProfilePage';
 import { CreateAccountPage } from './pages/createAccountPage';
+import { SelectProfilePage } from './pages/selectProfilePage';
 
 export const getRouter = () => {
   return createBrowserRouter([
     {
       path: '/',
-      element: <LoginPage />,
+      element: <SelectProfilePage />,
+    },
+    {
+      path: '/main',
+      element: <SelectProfilePage />,
     },
     {
       path: '/login',
