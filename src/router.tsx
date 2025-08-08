@@ -8,7 +8,7 @@ import { ProfilePage } from './contexts/pages/profilePage';
 import { EditProfilePage } from './contexts/pages/editProfilePage';
 import { AnalyzeExercisePage } from './contexts/pages/analyzeExercisePage';
 import { CreateNewPrescriptionPage } from './contexts/pages/createNewPrescriptionPage';
-import { ProtectedRoute } from './components/ProtectedRoute';
+import { ProtectedRoute } from './routes';
 import { ROUTES } from './constants/routes';
 
 export const router = createBrowserRouter([
