@@ -15,4 +15,20 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* 숫자 입력 필드 스크롤 비활성화 */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Firefox에서 스크롤 화살표 숨기기 */
+input[type="number"]::-moz-number-spin-box {
+  -moz-appearance: textfield;
 } 

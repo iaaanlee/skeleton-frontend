@@ -34,9 +34,11 @@ export class AxiosHttpClient {
       },
       (error) => {
         // Handle common errors
-        if (error.response?.status === 401) {
-          // Handle unauthorized
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          // Handle unauthorized/forbidden (token expired or invalid)
           localStorage.removeItem('token');
+          // 페이지 새로고침하여 로그인 페이지로 리다이렉트
+          window.location.href = '/login';
         }
         return Promise.reject(error);
       }

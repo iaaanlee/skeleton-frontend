@@ -1,44 +1,43 @@
 // Profile 관련 API service 정의
-import { AxiosHttpClient } from "../common/axiosHttpClient";
-import { backendHttpClient } from "../common/httpClient";
-import { ICreateProfileResponse, IGetProfileResponse, IGetProfilesResponse } from "../../types/profile/response";
-import { CreateProfileRequest } from "../../types/profile/request";
+import { backendHttpClient } from '../common/httpClient';
+import { CreateProfileRequest, UpdateProfileRequest } from '../../types/profile/request';
+import { ICreateProfileResponse, IGetProfileResponse, IGetProfilesResponse } from '../../types/profile/response';
 
-type IProfileService = {
-  getProfileByProfileId: ({profileId}: {profileId: string}) => Promise<IGetProfileResponse>;
-  getProfilesByAccountId: () => Promise<IGetProfilesResponse>;
-  createProfile: (input: CreateProfileRequest) => Promise<ICreateProfileResponse>;
-};
-
-class ProfileService implements IProfileService { 
-  constructor(private httpClient: AxiosHttpClient) {}
-
-  // GET 요청
-  async getProfileByProfileId({profileId}: {profileId: string}) {
-    const { data } = await this.httpClient.request<IGetProfileResponse>({
+export const profileService = {
+  // GET
+  getProfileByProfileId: async ({ profileId }: { profileId: string }): Promise<IGetProfileResponse> => {
+    const response = await backendHttpClient.request({
       method: 'GET',
       url: `/profile/by-profile-id/${profileId}`,
-    })
-    return data
-  }
+    });
+    return response.data as IGetProfileResponse;
+  },
 
-  async getProfilesByAccountId() {
-    const { data } = await this.httpClient.request<IGetProfilesResponse>({
+  getProfilesByAccountId: async (): Promise<IGetProfilesResponse> => {
+    const response = await backendHttpClient.request({
       method: 'GET',
       url: '/profile/profiles/by-account-id',
-    })
-    return data
-  }
+    });
+    return response.data as IGetProfilesResponse;
+  },
 
-  // POST 요청
-  async createProfile(input: CreateProfileRequest) {
-    const { data } = await this.httpClient.request<ICreateProfileResponse>({
+  // POST
+  createProfile: async (data: CreateProfileRequest): Promise<ICreateProfileResponse> => {
+    const response = await backendHttpClient.request({
       method: 'POST',
       url: '/profile/create-profile',
-      data: input,
-    })
-    return data
-  }
-}
+      data,
+    });
+    return response.data as ICreateProfileResponse;
+  },
 
-export const profileService = new ProfileService(backendHttpClient); 
+  // PUT
+  updateProfile: async ({ profileId, ...data }: UpdateProfileRequest & { profileId: string }): Promise<IGetProfileResponse> => {
+    const response = await backendHttpClient.request({
+      method: 'PUT',
+      url: `/profile/update-profile/${profileId}`,
+      data,
+    });
+    return response.data as IGetProfileResponse;
+  },
+}; 
