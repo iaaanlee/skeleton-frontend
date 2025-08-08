@@ -3,4 +3,12 @@ export const queryKeys = {
   account: () => ['account'],
   profile: (profileId: string) => ['profile', profileId],
   profiles: () => ['profiles'],
+  files: () => ['files'],
+};
+
+export const QUERY_KEYS = {
+  main: queryKeys.main(),
+  account: queryKeys.account(),
+  profiles: queryKeys.profiles(),
+  files: queryKeys.files(),
 };

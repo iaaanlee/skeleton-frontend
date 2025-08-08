@@ -1,13 +1,13 @@
 import { createBrowserRouter } from 'react-router-dom';
-import { LoginPage } from './contexts/pages/loginPage';
-import { CreateAccountPage } from './contexts/pages/createAccountPage';
-import { SelectProfilePage } from './contexts/pages/selectProfilePage';
-import { CreateProfilePage } from './contexts/pages/createProfilePage';
-import { MainPage } from './contexts/pages/mainPage';
-import { ProfilePage } from './contexts/pages/profilePage';
-import { EditProfilePage } from './contexts/pages/editProfilePage';
-import { AnalyzeExercisePage } from './contexts/pages/analyzeExercisePage';
-import { CreateNewPrescriptionPage } from './contexts/pages/createNewPrescriptionPage';
+import { LoginPage } from './pages/loginPage';
+import { CreateAccountPage } from './pages/createAccountPage';
+import { SelectProfilePage } from './pages/selectProfilePage';
+import { CreateProfilePage } from './pages/createProfilePage';
+import { MainPage } from './pages/mainPage';
+import { ProfilePage } from './pages/profilePage';
+import { EditProfilePage } from './pages/editProfilePage';
+import { AnalyzeExercisePage } from './pages/analyzeExercisePage';
+import { CreatePrescriptionPage } from './pages/createPrescriptionPage';
 import { ProtectedRoute } from './routes';
 import { ROUTES } from './constants/routes';
 
@@ -50,6 +50,6 @@ export const router = createBrowserRouter([
     },
     {
         path: ROUTES.CREATE_PRESCRIPTION,
-        element: <ProtectedRoute requireProfile={true}><CreateNewPrescriptionPage /></ProtectedRoute>
+        element: <ProtectedRoute requireProfile={true}><CreatePrescriptionPage /></ProtectedRoute>
     }
 ]); 
