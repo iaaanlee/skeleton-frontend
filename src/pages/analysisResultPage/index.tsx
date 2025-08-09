@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../../components/common/templates/Header';
 import { BottomBar } from '../../components/common/templates/BottomBar';
@@ -6,30 +6,12 @@ import { ROUTES } from '../../constants/routes';
 import { useAnalysisResult } from '../../services/blazePoseService';
 import { AnalysisResultContent } from './components/organisms/AnalysisResultContent';
 import { AnalysisProgress } from './components/molecules/AnalysisProgress';
-import { BlazePoseResult } from '../../types/blazePose';
 
 export const AnalysisResultPage = () => {
   const { analysisId } = useParams<{ analysisId: string }>();
   const navigate = useNavigate();
-  const [analysisResult, setAnalysisResult] = useState<BlazePoseResult['data'] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const { data: result, isLoading: isResultLoading, error: resultError } = useAnalysisResult(analysisId || '');
-
-  useEffect(() => {
-    if (result) {
-      setAnalysisResult(result);
-      setIsLoading(false);
-    }
-  }, [result]);
-
-  useEffect(() => {
-    if (resultError) {
-      setError(resultError.message);
-      setIsLoading(false);
-    }
-  }, [resultError]);
+  const { data: result, isLoading, error } = useAnalysisResult(analysisId || '');
 
   const handleBack = () => {
     navigate(ROUTES.CREATE_PRESCRIPTION);
@@ -37,11 +19,11 @@ export const AnalysisResultPage = () => {
 
   const handleSaveResult = () => {
     // TODO: 분석 결과 저장 로직 구현
-    console.log('분석 결과 저장:', analysisResult);
+    console.log('분석 결과 저장:', result);
     alert('분석 결과가 저장되었습니다.');
   };
 
-  if (isLoading || isResultLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Header backRoute={ROUTES.CREATE_PRESCRIPTION} />
@@ -57,7 +39,7 @@ export const AnalysisResultPage = () => {
     );
   }
 
-  if (error || resultError) {
+  if (error) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Header backRoute={ROUTES.CREATE_PRESCRIPTION} />
@@ -68,7 +50,7 @@ export const AnalysisResultPage = () => {
               분석 결과를 불러올 수 없습니다
             </h2>
             <p className="text-gray-600 mb-4">
-              {error || resultError?.message || '알 수 없는 오류가 발생했습니다.'}
+              {error.message || '알 수 없는 오류가 발생했습니다.'}
             </p>
             <button
               onClick={handleBack}
@@ -83,7 +65,7 @@ export const AnalysisResultPage = () => {
     );
   }
 
-  if (!analysisResult) {
+  if (!result) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Header backRoute={ROUTES.CREATE_PRESCRIPTION} />
@@ -123,9 +105,24 @@ export const AnalysisResultPage = () => {
           </div>
 
           <AnalysisResultContent 
-            result={analysisResult!}
-            onSaveResult={handleSaveResult}
+            result={result}
           />
+
+          {/* 액션 버튼 */}
+          <div className="flex justify-center space-x-4">
+            <button
+              onClick={handleSaveResult}
+              className="px-8 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
+            >
+              결과 저장
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-8 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors font-medium"
+            >
+              결과 출력
+            </button>
+          </div>
         </div>
       </div>
 

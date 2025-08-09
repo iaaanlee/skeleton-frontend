@@ -1,5 +1,5 @@
 // 파일 크기 제한 (10MB)
-export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+export const MAX_FILE_MB = 10 // file size = 10 * 1024 * 1024
 
 // 지원 이미지 형식
 export const ALLOWED_IMAGE_TYPES = [

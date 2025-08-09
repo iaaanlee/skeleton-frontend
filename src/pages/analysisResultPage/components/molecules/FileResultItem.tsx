@@ -64,7 +64,7 @@ export const FileResultItem: React.FC<FileResultItemProps> = ({
         
         <div className="text-center p-3 bg-gray-50 rounded-lg">
           <div className="text-lg font-bold text-blue-600">
-            {fileResult.landmarks.length}
+            {fileResult.landmarks?.length || 0}
           </div>
           <div className="text-xs text-gray-600">관절 좌표</div>
         </div>
@@ -107,7 +107,7 @@ export const FileResultItem: React.FC<FileResultItemProps> = ({
               <h6 className="font-medium text-gray-700 mb-2">분석 결과</h6>
               <div className="space-y-1 text-sm text-gray-600">
                 <div>신뢰도: {formatConfidence(fileResult.confidence)}</div>
-                <div>관절 좌표 수: {fileResult.landmarks.length}개</div>
+                <div>관절 좌표 수: {fileResult.landmarks?.length || 0}개</div>
                 <div>상태: {fileResult.error ? '오류' : '성공'}</div>
               </div>
             </div>

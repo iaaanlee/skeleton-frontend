@@ -56,3 +56,12 @@ export const useUploadToS3 = () => {
     }
   })
 }
+
+export const useDownloadUrl = () => {
+  return useMutation({
+    mutationFn: (fileId: string) => fileService.getDownloadUrl(fileId),
+    onError: (error) => {
+      console.error('Download URL error:', error)
+    }
+  })
+}

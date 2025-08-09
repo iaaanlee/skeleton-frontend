@@ -3,3 +3,4 @@ export { CloseButton } from './CloseButton';
 export { DropdownButton } from './DropdownButton';
 export { NotificationButton } from './NotificationButton';
 export { BottomBarButton } from './BottomBarButton';
+export { UploadButton } from './UploadButton';

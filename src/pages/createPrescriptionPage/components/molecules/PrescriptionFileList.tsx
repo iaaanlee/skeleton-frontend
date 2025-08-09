@@ -1,44 +1,15 @@
 import React from 'react'
 import FileList from '../../../../components/common/molecules/FileList'
-import { ServerFile } from '../../../../types/files'
 
 type PrescriptionFileListProps = {
   profileId: string
-  onFileSelect?: (file: ServerFile) => void
-  onFileDelete?: (fileId: string) => void
-  onFileDownload?: (file: ServerFile) => void
-  onAnalysisStart?: (fileIds: string[]) => void
   className?: string
 }
 
-const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
+export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
   profileId,
-  onFileSelect,
-  onFileDelete,
-  onFileDownload,
-  onAnalysisStart,
   className = ''
 }) => {
-  const handleFileSelect = (file: ServerFile) => {
-    console.log('Prescription file selected:', file)
-    onFileSelect?.(file)
-  }
-
-  const handleFileDelete = (fileId: string) => {
-    console.log('Prescription file deleted:', fileId)
-    onFileDelete?.(fileId)
-  }
-
-  const handleFileDownload = (file: ServerFile) => {
-    console.log('Prescription file download:', file)
-    onFileDownload?.(file)
-  }
-
-  const handleAnalysisStart = (fileIds: string[]) => {
-    console.log('Prescription analysis started for files:', fileIds)
-    onAnalysisStart?.(fileIds)
-  }
-
   return (
     <div className={`space-y-4 ${className}`}>
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -51,10 +22,6 @@ const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
         
         <FileList
           profileId={profileId}
-          onFileSelect={handleFileSelect}
-          onFileDelete={handleFileDelete}
-          onFileDownload={handleFileDownload}
-          onAnalysisStart={handleAnalysisStart}
           showThumbnails={true}
           showFileInfo={true}
         />
@@ -62,5 +29,3 @@ const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
     </div>
   )
 }
-
-export default PrescriptionFileList

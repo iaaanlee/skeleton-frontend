@@ -1,79 +1,83 @@
-import { ServerFile } from './index'
-
 // 파일 업로드 컴포넌트 Props
 export type FileUploadProps = {
   profileId: string
-  onUploadSuccess?: (file: ServerFile) => void
-  onUploadError?: (error: string) => void
-  onUploadProgress?: (progress: number) => void
   multiple?: boolean
-  accept?: string
-  maxSize?: number
   className?: string
   disabled?: boolean
+}
+
+// 파일 선택 컴포넌트 Props
+export type FileSelectorProps = {
+  multiple?: boolean
+  disabled?: boolean
+  onFilesSelect: (files: File[]) => void
+  className?: string
+}
+
+// 업로드 진행 상태 컴포넌트 Props
+export type UploadProgressProps = {
+  status: 'idle' | 'uploading' | 'success' | 'error'
+  progress: number
+  error?: string
+  className?: string
+}
+
+// 업로드 버튼 컴포넌트 Props
+export type UploadButtonProps = {
+  fileCount: number
+  disabled?: boolean
+  onClick: () => void
+  className?: string
 }
 
 // 파일 목록 컴포넌트 Props
 export type FileListProps = {
   profileId: string
-  onFileSelect?: (file: ServerFile) => void
-  onFileDelete?: (fileId: string) => void
-  onFileDownload?: (file: ServerFile) => void
-  onAnalysisStart?: (fileIds: string[]) => void
   className?: string
   showThumbnails?: boolean
   showFileInfo?: boolean
 }
 
-// 프로그레스 바 Props
-export type ProgressBarProps = {
-  progress: number // 0-100
-  type?: 'circular' | 'linear'
-  size?: number
+// 선택된 파일 액션 바 컴포넌트 Props
+export type SelectedFilesActionBarProps = {
+  selectedCount: number
+  onAnalysisStart: () => void
+  onDownloadSelected: () => void
+  onDeleteSelected: () => void
+  isAnalyzing?: boolean
   className?: string
-  showPercentage?: boolean
-  color?: string
 }
 
-// 드래그&드롭 영역 Props
-export type DragDropAreaProps = {
-  onFilesDrop: (files: File[]) => void
-  onDragOver?: () => void
-  onDragLeave?: () => void
+// 파일 목록 상태 컴포넌트 Props
+export type FileListStatusProps = {
+  isLoading?: boolean
+  error?: any
   className?: string
-  disabled?: boolean
-  children?: React.ReactNode
 }
 
-// 이미지 미리보기 Props
-export type ImagePreviewProps = {
-  file: File | string // File 객체 또는 URL
+// 파일 그리드 컴포넌트 Props
+export type FileGridProps = {
+  files: any[]
+  onFileSelect: (file: any) => void
+  onFileDelete: (fileId: string) => void
+  onFileDownload: (file: any) => void
+  selectedFiles: string[]
   className?: string
-  width?: number
-  height?: number
-  alt?: string
 }
 
-// 파일 정보 표시 Props
-export type FileInfoProps = {
-  file: ServerFile
-  className?: string
-  showSize?: boolean
-  showDate?: boolean
-  showActions?: boolean
-}
-
-// 파일 아이템 Props
+// 파일 아이템 컴포넌트 Props
 export type FileItemProps = {
-  file: ServerFile
-  onSelect?: (file: ServerFile) => void
-  onDelete?: (fileId: string) => void
-  onDownload?: (file: ServerFile) => void
+  file: any
   isSelected?: boolean
+  onSelect?: (file: any) => void
+  onDelete?: (fileId: string) => void
+  onDownload?: (file: any) => void
+  showThumbnail?: boolean
+  showInfo?: boolean
   className?: string
 }
 
-// 파일 목록 헤더 Props
+// 파일 목록 헤더 컴포넌트 Props
 export type FileListHeaderProps = {
   totalCount: number
   sortBy?: 'date' | 'name' | 'size'
@@ -81,12 +85,31 @@ export type FileListHeaderProps = {
   className?: string
 }
 
-// 파일 그리드 Props
-export type FileGridProps = {
-  files: ServerFile[]
-  onFileSelect?: (file: ServerFile) => void
-  onFileDelete?: (fileId: string) => void
-  onFileDownload?: (file: ServerFile) => void
-  selectedFiles?: string[]
+// 드래그 드롭 영역 컴포넌트 Props
+export type DragDropAreaProps = {
+  onFilesDrop: (files: File[]) => void
+  onDragOver?: () => void
+  onDragLeave?: () => void
+  disabled?: boolean
+  className?: string
+  children?: React.ReactNode
+}
+
+// 이미지 미리보기 컴포넌트 Props
+export type ImagePreviewProps = {
+  file: File | string
+  width?: number
+  height?: number
+  className?: string
+  alt?: string
+}
+
+// 진행률 바 컴포넌트 Props
+export type ProgressBarProps = {
+  progress: number
+  type?: 'linear' | 'circular'
+  size?: number
+  showPercentage?: boolean
+  color?: string
   className?: string
 }

@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ProfileInfo } from '../types/profile/profile';
-import { useAccountAuth } from './AccountAuthContext'
+import { useAccountAuth } from './AccountAuthContext';
+import { secureSetItem, secureGetItem, secureRemoveItem } from '../utils/secureStorage';
 
 interface ProfileAuthContextType {
   selectedProfile: ProfileInfo | null;
@@ -21,7 +22,7 @@ export const useProfile = () => {
   return context;
 };
 
-interface ProfileProviderProps {
+type ProfileProviderProps = {
   children: ReactNode;
 }
 
@@ -61,10 +62,9 @@ export const ProfileAuthProvider: React.FC<ProfileProviderProps> = ({ children }
           return;
         }
 
-        const storedProfile = localStorage.getItem(storageKey);
+        const storedProfile = secureGetItem(storageKey);
         if (storedProfile) {
-          const profile = JSON.parse(storedProfile);
-          setSelectedProfile(profile);
+          setSelectedProfile(storedProfile);
         } else {
           setSelectedProfile(null);
         }
@@ -94,7 +94,7 @@ export const ProfileAuthProvider: React.FC<ProfileProviderProps> = ({ children }
     if (token) {
       const storageKey = getProfileStorageKey(token);
       if (storageKey) {
-        localStorage.removeItem(storageKey);
+        secureRemoveItem(storageKey);
       }
     }
     // 프로필 관련 쿼리 무효화
@@ -106,7 +106,7 @@ export const ProfileAuthProvider: React.FC<ProfileProviderProps> = ({ children }
     // selectedProfile_로 시작하는 모든 키 삭제
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith('selectedProfile_')) {
-        localStorage.removeItem(key);
+        secureRemoveItem(key);
       }
     });
     setSelectedProfile(null);
@@ -128,9 +128,9 @@ export const ProfileAuthProvider: React.FC<ProfileProviderProps> = ({ children }
     }
 
     if (profile) {
-      localStorage.setItem(storageKey, JSON.stringify(profile));
+      secureSetItem(storageKey, profile, 3); // 3시간 만료
     } else {
-      localStorage.removeItem(storageKey);
+      secureRemoveItem(storageKey);
     }
   };
 

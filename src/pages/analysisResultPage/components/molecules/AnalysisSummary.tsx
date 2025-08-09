@@ -4,14 +4,12 @@ type AnalysisSummaryProps = {
   totalFiles: number;
   totalConfidence: number;
   analysisTime: number;
-  onSaveResult: () => void;
 };
 
 export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
   totalFiles,
   totalConfidence,
-  analysisTime,
-  onSaveResult
+  analysisTime
 }) => {
   const formatTime = (milliseconds: number) => {
     const seconds = Math.floor(milliseconds / 1000);
@@ -42,21 +40,13 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
-            분석 완료
-          </h2>
-          <p className="text-gray-600">
-            BlazePose 분석이 성공적으로 완료되었습니다.
-          </p>
-        </div>
-        <button
-          onClick={onSaveResult}
-          className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
-        >
-          결과 저장
-        </button>
+      <div className="mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-2">
+          분석 완료
+        </h2>
+        <p className="text-gray-600">
+          BlazePose 분석이 성공적으로 완료되었습니다.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

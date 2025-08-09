@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { secureGetItem, secureRemoveItem } from '../../utils/secureStorage';
 
 export class AxiosHttpClient {
   private client: AxiosInstance;
@@ -16,7 +17,7 @@ export class AxiosHttpClient {
     this.client.interceptors.request.use(
       (config) => {
         // Add auth token if available
-        const token = localStorage.getItem('token');
+        const token = secureGetItem('token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -36,7 +37,7 @@ export class AxiosHttpClient {
         // Handle common errors
         if (error.response?.status === 401 || error.response?.status === 403) {
           // Handle unauthorized/forbidden (token expired or invalid)
-          localStorage.removeItem('token');
+          secureRemoveItem('token');
           // 페이지 새로고침하여 로그인 페이지로 리다이렉트
           window.location.href = '/login';
         }

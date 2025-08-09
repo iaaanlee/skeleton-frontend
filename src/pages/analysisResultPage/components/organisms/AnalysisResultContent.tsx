@@ -6,12 +6,10 @@ import { LandmarksVisualization } from '../molecules/LandmarksVisualization';
 
 type AnalysisResultContentProps = {
   result: BlazePoseResult['data'];
-  onSaveResult: () => void;
 };
 
 export const AnalysisResultContent: React.FC<AnalysisResultContentProps> = ({
-  result,
-  onSaveResult
+  result
 }) => {
   const formatTime = (milliseconds: number) => {
     const seconds = Math.floor(milliseconds / 1000);
@@ -35,7 +33,6 @@ export const AnalysisResultContent: React.FC<AnalysisResultContentProps> = ({
         totalFiles={result.fileResults.length}
         totalConfidence={result.totalConfidence}
         analysisTime={result.analysisTime}
-        onSaveResult={onSaveResult}
       />
 
       {/* 관절 좌표 시각화 */}
@@ -97,22 +94,6 @@ export const AnalysisResultContent: React.FC<AnalysisResultContentProps> = ({
             <div className="text-sm text-gray-600">분석 소요 시간</div>
           </div>
         </div>
-      </div>
-
-      {/* 액션 버튼 */}
-      <div className="flex justify-center space-x-4">
-        <button
-          onClick={onSaveResult}
-          className="px-8 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
-        >
-          결과 저장
-        </button>
-        <button
-          onClick={() => window.print()}
-          className="px-8 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors font-medium"
-        >
-          결과 출력
-        </button>
       </div>
     </div>
   );

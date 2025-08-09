@@ -11,13 +11,3 @@ export const useFileList = (userId: string, profileId: string) => {
     gcTime: 10 * 60 * 1000, // 10분
   })
 }
-
-export const useDownloadUrl = (fileId: string, enabled: boolean = true) => {
-  return useQuery({
-    queryKey: [...QUERY_KEYS.files, 'download', fileId],
-    queryFn: () => fileService.getDownloadUrl(fileId),
-    enabled: enabled && !!fileId,
-    staleTime: 5 * 60 * 1000, // 5분
-    gcTime: 10 * 60 * 1000, // 10분
-  })
-}

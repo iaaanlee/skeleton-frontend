@@ -1,1 +1,3 @@
-export const BACKEND_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000';
+import { URLS } from '../../../constants/ports';
+
+export const BACKEND_URL = URLS.BACKEND;

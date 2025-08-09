@@ -34,12 +34,10 @@ export type BlazePoseResult = {
   data: {
     analysisId: string
     status: 'completed' | 'failed'
-    landmarks: number[][] // [x, y, confidence] 형태의 관절 좌표들
-    overlayImageUrl: string // 분석 결과 이미지 URL
-    confidence: number // 전체 신뢰도
     totalConfidence: number // 전체 평균 신뢰도
     analysisTime: number // 분석 소요 시간 (ms)
     fileResults: BlazePoseFileResult[]
+    completedAt?: string
     error?: string
   }
 }

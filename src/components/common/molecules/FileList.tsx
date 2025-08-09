@@ -1,121 +1,112 @@
-import React, { useState } from 'react'
-import { FileListProps } from '../../../types/files/components'
-import { useFileList, useDeleteFile } from '../../../services/fileService'
+import React from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useFileList } from '../../../services/fileService'
 import { useAccountAuth } from '../../../contexts/AccountAuthContext'
+import { useFileSelection, useFileSorting, useFileActions } from '../../../hooks'
+import { validateAuthState, extractUserIdFromToken } from '../../../utils/auth'
 import FileListHeader from './FileListHeader'
 import FileGrid from './FileGrid'
-import { useStartAnalysis } from '../../../services/blazePoseService'
-import { ROUTES } from '../../../constants/routes'
+import { SelectedFilesActionBar } from './SelectedFilesActionBar'
+import { FileListStatus } from './FileListStatus'
+
+type FileListProps = {
+  profileId: string
+  className?: string
+  showThumbnails?: boolean
+  showFileInfo?: boolean
+}
 
 const FileList: React.FC<FileListProps> = ({
   profileId,
-  onFileSelect,
-  onFileDelete,
-  onFileDownload,
-  onAnalysisStart,
   className = '',
   showThumbnails = true,
   showFileInfo = true
 }) => {
+  const navigate = useNavigate()
   const { token } = useAccountAuth()
-  const deleteFileMutation = useDeleteFile()
-  const startAnalysisMutation = useStartAnalysis()
-  const [sortBy, setSortBy] = useState<'date' | 'name' | 'size'>('date')
-  const [selectedFiles, setSelectedFiles] = useState<string[]>([])
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
 
-  // 토큰에서 userId 추출
-  const userId = token ? (() => {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]))
-      return payload.sub || payload.id || payload.accountId
-    } catch {
-      return null
-    }
-  })() : null
+  // 토큰에서 userId 추출 (토큰이 없거나 유효하지 않으면 null 반환)
+  const userId = token ? extractUserIdFromToken(token) : null
 
-  // React Query로 파일 목록 조회
+  // React Query로 파일 목록 조회 (Hook은 항상 호출되어야 함)
   const { data: fileListResponse, isLoading, error } = useFileList(userId || '', profileId)
 
-  // 파일 목록
-  const files = fileListResponse?.files || []
+  // 커스텀 훅들 (Hook은 항상 호출되어야 함)
+  const {
+    selectedFiles,
+    selectFile,
+    clearSelection,
+    selectedCount
+  } = useFileSelection()
 
-  const handleSortChange = (newSortBy: 'date' | 'name' | 'size') => {
-    setSortBy(newSortBy)
+  const {
+    sortBy,
+    sortedFiles,
+    handleSortChange
+  } = useFileSorting(fileListResponse?.files || [])
+
+  const {
+    deleteFile,
+    downloadFile,
+    startAnalysis,
+    deleteMultipleFiles,
+    downloadMultipleFiles,
+    isAnalyzing
+  } = useFileActions(profileId, userId || '')
+
+  // 인증 상태 확인 (Hook 호출 후에 처리)
+  if (!validateAuthState(token, navigate)) {
+    return null // 로그아웃 처리 중이므로 아무것도 렌더링하지 않음
   }
 
+  // 이벤트 핸들러들
   const handleFileSelect = (file: any) => {
-    setSelectedFiles(prev => {
-      if (prev.includes(file._id)) {
-        return prev.filter(id => id !== file._id)
-      } else {
-        return [...prev, file._id]
-      }
-    })
-    onFileSelect?.(file)
+    selectFile(file._id)
   }
 
   const handleFileDelete = async (fileId: string) => {
-    try {
-      await deleteFileMutation.mutateAsync(fileId)
-      onFileDelete?.(fileId)
-    } catch (error) {
-      console.error('Delete file error:', error)
+    const success = await deleteFile(fileId)
+    if (success) {
+      // 선택된 파일에서도 제거
+      selectFile(fileId) // 토글하여 제거
     }
   }
 
   const handleFileDownload = (file: any) => {
-    // 실제로는 다운로드 URL 생성 후 다운로드
-    console.log('Download file:', file)
-    onFileDownload?.(file)
+    downloadFile(file)
   }
 
   const handleAnalysisStart = async () => {
-    if (selectedFiles.length === 0) {
-      alert('분석할 파일을 선택해주세요.')
-      return
-    }
-
-    setIsAnalyzing(true)
-    try {
-      const response = await startAnalysisMutation.mutateAsync({
-        fileIds: selectedFiles,
-        profileId
-      })
-      
-      console.log('Analysis started:', response)
-      onAnalysisStart?.(selectedFiles)
-      
-      // 분석 시작 후 선택 해제
-      setSelectedFiles([])
-      
-      // 분석 결과 페이지로 이동
-      if (response && response.analysisId) {
-        window.location.href = ROUTES.ANALYSIS_RESULT.replace(':analysisId', response.analysisId);
-      } else {
-        alert('분석이 시작되었습니다!')
-      }
-    } catch (error) {
-      console.error('Analysis error:', error)
-      alert('분석 시작 중 오류가 발생했습니다.')
-    } finally {
-      setIsAnalyzing(false)
+    const success = await startAnalysis(selectedFiles)
+    if (success) {
+      clearSelection()
     }
   }
 
-  // 정렬된 파일 목록
-  const sortedFiles = [...files].sort((a, b) => {
-    switch (sortBy) {
-      case 'date':
-        return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
-      case 'name':
-        return a.fileName.localeCompare(b.fileName)
-      case 'size':
-        return b.fileSize - a.fileSize
-      default:
-        return 0
+  const handleDownloadSelected = () => {
+    const selectedFileObjects = sortedFiles.filter(file => 
+      selectedFiles.includes(file._id)
+    )
+    downloadMultipleFiles(selectedFileObjects)
+  }
+
+  const handleDeleteSelected = async () => {
+    if (window.confirm(`선택된 ${selectedCount}개 파일을 삭제하시겠습니까?`)) {
+      const success = await deleteMultipleFiles(selectedFiles)
+      if (success) {
+        clearSelection()
+      }
     }
-  })
+  }
+
+  // 로딩/에러 상태 처리
+  if (isLoading || error) {
+    return (
+      <div className={`space-y-6 ${className}`}>
+        <FileListStatus isLoading={isLoading} error={error} />
+      </div>
+    )
+  }
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -135,58 +126,14 @@ const FileList: React.FC<FileListProps> = ({
         selectedFiles={selectedFiles}
       />
 
-      {/* 선택된 파일 정보 */}
-      {selectedFiles.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-blue-900">
-                {selectedFiles.length}개 파일 선택됨
-              </p>
-              <p className="text-xs text-blue-700">
-                선택된 파일에 대한 작업을 수행할 수 있습니다.
-              </p>
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={handleAnalysisStart}
-                disabled={isAnalyzing}
-                className={`px-3 py-1 text-xs rounded transition-colors ${
-                  isAnalyzing
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-green-500 hover:bg-green-600 text-white'
-                }`}
-              >
-                {isAnalyzing ? '분석 중...' : '분석 시작'}
-              </button>
-              <button
-                onClick={() => {
-                  // 선택된 파일들 다운로드
-                  selectedFiles.forEach(fileId => {
-                    const file = sortedFiles.find(f => f._id === fileId)
-                    if (file) handleFileDownload(file)
-                  })
-                }}
-                className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-              >
-                선택 다운로드
-              </button>
-              <button
-                onClick={() => {
-                  // 선택된 파일들 삭제
-                  if (window.confirm(`선택된 ${selectedFiles.length}개 파일을 삭제하시겠습니까?`)) {
-                    selectedFiles.forEach(fileId => handleFileDelete(fileId))
-                    setSelectedFiles([])
-                  }
-                }}
-                className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-              >
-                선택 삭제
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 선택된 파일 액션 바 */}
+      <SelectedFilesActionBar
+        selectedCount={selectedCount}
+        onAnalysisStart={handleAnalysisStart}
+        onDownloadSelected={handleDownloadSelected}
+        onDeleteSelected={handleDeleteSelected}
+        isAnalyzing={isAnalyzing}
+      />
     </div>
   )
 }

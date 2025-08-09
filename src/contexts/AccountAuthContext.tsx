@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { secureSetItem, secureGetItem, secureRemoveItem, initializeNewSession, cleanupExpiredData } from '../utils/secureStorage';
 
 interface AccountAuthContextType {
     isAuthenticated: boolean;
@@ -23,27 +24,35 @@ interface AccountAuthProviderProps {
 
 export const AccountAuthProvider: React.FC<AccountAuthProviderProps> = ({ children }) => {
     const [token, setToken] = useState<string | null>(() => {
-        return localStorage.getItem('token');
+        return secureGetItem('token');
     });
 
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-        const storedToken = localStorage.getItem('token');
+        const storedToken = secureGetItem('token');
         return !!storedToken;
     });
 
     const login = (newToken: string) => {
+        // 새 로그인 시 기존 세션 완전 초기화
+        initializeNewSession();
+        
         setToken(newToken);
         setIsAuthenticated(true);
-        localStorage.setItem('token', newToken);
+        secureSetItem('token', newToken, 3); // 3시간 만료
     };
 
     const logout = () => {
         setToken(null);
         setIsAuthenticated(false);
-        localStorage.removeItem('token');
+        secureRemoveItem('token');
     };
 
-    // 토큰 만료 체크
+    // 앱 시작 시 만료된 데이터 정리
+    useEffect(() => {
+        cleanupExpiredData();
+    }, []);
+
+    // 토큰 만료 체크 (JWT 토큰 자체의 만료시간도 체크)
     useEffect(() => {
         if (token) {
             try {
@@ -51,7 +60,7 @@ export const AccountAuthProvider: React.FC<AccountAuthProviderProps> = ({ childr
                 const currentTime = Date.now() / 1000;
                 
                 if (payload.exp && payload.exp < currentTime) {
-                    // 토큰이 만료된 경우
+                    // JWT 토큰이 만료된 경우
                     logout();
                 }
             } catch (error) {

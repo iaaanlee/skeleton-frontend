@@ -1,46 +1,32 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useProfile } from '../../contexts/ProfileAuthContext';
-import { useNavigate } from 'react-router-dom';
 import { Header } from '../../components/common/templates/Header';
 import { BottomBar } from '../../components/common/templates/BottomBar';
 import { ROUTES } from '../../constants/routes';
-import PrescriptionUploadSection from './components/organisms/PrescriptionUploadSection';
-import { ServerFile } from '../../types/files';
-
+import { PrescriptionUploadSection } from './components/organisms/PrescriptionUploadSection';
 
 export const CreatePrescriptionPage = () => {
-    const navigate = useNavigate();
     const { selectedProfile } = useProfile();
-    const [uploadedFiles, setUploadedFiles] = useState<ServerFile[]>([]);
-    
 
-    const handleUploadSuccess = (file: ServerFile) => {
-        // console.log('File uploaded successfully:', file);
-        setUploadedFiles(prev => [...prev, file]);
-    };
-
-    const handleUploadError = (error: string) => {
-        console.error('Upload error:', error);
-        // TODO: 에러 토스트 메시지 표시
-    };
-
-    const handleFileSelect = (file: ServerFile) => {
-        // console.log('File selected:', file);
-    };
-
-    const handleFileDelete = (fileId: string) => {
-        // console.log('File deleted:', fileId);
-        setUploadedFiles(prev => prev.filter(file => file._id !== fileId));
-    };
-
-      const handleFileDownload = (file: ServerFile) => {
-    // console.log('File download:', file);
-  };
-
-      const handleAnalysisStart = (fileIds: string[]) => {
-        console.log('Analysis started for files:', fileIds);
-        // 분석 시작 후 결과 페이지로 이동하는 로직은 여기에 추가할 수 있습니다
-    };
+    if (!selectedProfile?._id) {
+        return (
+            <div className="min-h-screen flex flex-col bg-gray-50">
+                <Header backRoute={ROUTES.ANALYZE_EXERCISE} />
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="text-gray-400 text-6xl mb-4">👤</div>
+                        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                            프로필을 선택해주세요
+                        </h2>
+                        <p className="text-gray-600">
+                            운동 분석을 위해 프로필을 먼저 선택해주세요.
+                        </p>
+                    </div>
+                </div>
+                <BottomBar />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen flex flex-col bg-gray-50">
@@ -53,17 +39,7 @@ export const CreatePrescriptionPage = () => {
                         <p className="text-gray-600">분석하고 싶은 운동 이미지를 업로드하고 분석을 시작하세요.</p>
                     </div>
                     
-                                               <PrescriptionUploadSection
-                               profileId={selectedProfile?._id || ''}
-                               onUploadSuccess={handleUploadSuccess}
-                               onUploadError={handleUploadError}
-                               onFileSelect={handleFileSelect}
-                               onFileDelete={handleFileDelete}
-                               onFileDownload={handleFileDownload}
-                               onAnalysisStart={handleAnalysisStart}
-                           />
-
-
+                    <PrescriptionUploadSection profileId={selectedProfile._id} />
                 </div>
             </div>
             
