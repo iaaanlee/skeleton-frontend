@@ -21,6 +21,12 @@ export const MainButtonList = () => {
         // TODO: 내 신체 상태 체크 페이지로 이동
     };
 
+    const handleAnalysisResults = () => {
+        console.log('분석 결과 보기 클릭');
+        // 임시로 테스트용 analysisId 사용 (실제로는 사용자의 최근 분석 결과를 조회해야 함)
+        navigate('/analysis-result/test-analysis-id');
+    };
+
     return (
         <div className="space-y-4">
             <MainButton 
@@ -34,6 +40,10 @@ export const MainButtonList = () => {
             <MainButton 
                 title="내 신체 상태 체크" 
                 onClick={handleBodyStatusCheck}
+            />
+            <MainButton 
+                title="분석 결과 보기" 
+                onClick={handleAnalysisResults}
             />
         </div>
     );

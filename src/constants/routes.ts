@@ -19,6 +19,7 @@ export const ROUTES = {
     // 운동 분석 관련
     ANALYZE_EXERCISE: '/analyze-exercise',
     CREATE_PRESCRIPTION: '/create-prescription',
+    ANALYSIS_RESULT: '/analysis-result/:analysisId',
     
     // 기타 (향후 확장용)
     CALENDAR: '/calendar',

@@ -58,15 +58,17 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
         </div>
       )}
       
-      <img
-        src={imageUrl}
-        alt={alt}
-        className={`w-full h-full object-cover transition-opacity duration-200 ${
-          isLoading ? 'opacity-0' : 'opacity-100'
-        }`}
-        onLoad={handleImageLoad}
-        onError={handleImageError}
-      />
+      {imageUrl && (
+        <img
+          src={imageUrl}
+          alt={alt}
+          className={`w-full h-full object-cover transition-opacity duration-200 ${
+            isLoading ? 'opacity-0' : 'opacity-100'
+          }`}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+        />
+      )}
     </div>
   )
 }

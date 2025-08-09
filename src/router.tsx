@@ -8,6 +8,7 @@ import { ProfilePage } from './pages/profilePage';
 import { EditProfilePage } from './pages/editProfilePage';
 import { AnalyzeExercisePage } from './pages/analyzeExercisePage';
 import { CreatePrescriptionPage } from './pages/createPrescriptionPage';
+import { AnalysisResultPage } from './pages/analysisResultPage';
 import { ProtectedRoute } from './routes';
 import { ROUTES } from './constants/routes';
 
@@ -51,5 +52,9 @@ export const router = createBrowserRouter([
     {
         path: ROUTES.CREATE_PRESCRIPTION,
         element: <ProtectedRoute requireProfile={true}><CreatePrescriptionPage /></ProtectedRoute>
+    },
+    {
+        path: ROUTES.ANALYSIS_RESULT,
+        element: <ProtectedRoute requireProfile={true}><AnalysisResultPage /></ProtectedRoute>
     }
 ]); 

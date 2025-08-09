@@ -19,6 +19,7 @@ export type FileListProps = {
   onFileSelect?: (file: ServerFile) => void
   onFileDelete?: (fileId: string) => void
   onFileDownload?: (file: ServerFile) => void
+  onAnalysisStart?: (fileIds: string[]) => void
   className?: string
   showThumbnails?: boolean
   showFileInfo?: boolean

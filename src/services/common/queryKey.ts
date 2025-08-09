@@ -4,6 +4,7 @@ export const queryKeys = {
   profile: (profileId: string) => ['profile', profileId],
   profiles: () => ['profiles'],
   files: () => ['files'],
+  blazePose: () => ['blazePose'],
 };
 
 export const QUERY_KEYS = {
@@ -11,4 +12,5 @@ export const QUERY_KEYS = {
   account: queryKeys.account(),
   profiles: queryKeys.profiles(),
   files: queryKeys.files(),
+  blazePose: queryKeys.blazePose(),
 };

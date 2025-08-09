@@ -10,6 +10,7 @@ type PrescriptionUploadSectionProps = {
   onFileSelect?: (file: ServerFile) => void
   onFileDelete?: (fileId: string) => void
   onFileDownload?: (file: ServerFile) => void
+  onAnalysisStart?: (fileIds: string[]) => void
   className?: string
 }
 
@@ -20,6 +21,7 @@ const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps> = ({
   onFileSelect,
   onFileDelete,
   onFileDownload,
+  onAnalysisStart,
   className = ''
 }) => {
   const [uploadedFiles, setUploadedFiles] = useState<ServerFile[]>([])
@@ -49,34 +51,10 @@ const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps> = ({
         onFileSelect={onFileSelect}
         onFileDelete={handleFileDelete}
         onFileDownload={onFileDownload}
+        onAnalysisStart={onAnalysisStart}
       />
 
-      {/* 업로드된 파일 개수 표시 */}
-      {uploadedFiles.length > 0 && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-900">
-                업로드된 파일: {uploadedFiles.length}개
-              </p>
-              <p className="text-xs text-gray-500">
-                분석 준비가 완료되었습니다.
-              </p>
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => {
-                  // 분석 시작 로직
-                  console.log('Start analysis with files:', uploadedFiles)
-                }}
-                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-              >
-                분석 시작
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   )
 }

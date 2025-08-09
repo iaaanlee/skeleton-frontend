@@ -7,6 +7,7 @@ type PrescriptionFileListProps = {
   onFileSelect?: (file: ServerFile) => void
   onFileDelete?: (fileId: string) => void
   onFileDownload?: (file: ServerFile) => void
+  onAnalysisStart?: (fileIds: string[]) => void
   className?: string
 }
 
@@ -15,6 +16,7 @@ const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
   onFileSelect,
   onFileDelete,
   onFileDownload,
+  onAnalysisStart,
   className = ''
 }) => {
   const handleFileSelect = (file: ServerFile) => {
@@ -32,6 +34,11 @@ const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
     onFileDownload?.(file)
   }
 
+  const handleAnalysisStart = (fileIds: string[]) => {
+    console.log('Prescription analysis started for files:', fileIds)
+    onAnalysisStart?.(fileIds)
+  }
+
   return (
     <div className={`space-y-4 ${className}`}>
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -47,6 +54,7 @@ const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
           onFileSelect={handleFileSelect}
           onFileDelete={handleFileDelete}
           onFileDownload={handleFileDownload}
+          onAnalysisStart={handleAnalysisStart}
           showThumbnails={true}
           showFileInfo={true}
         />

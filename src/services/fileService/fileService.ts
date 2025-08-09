@@ -24,32 +24,32 @@ class FileService implements IFileService {
 
   // 파일 업로드 초기화 (Pre-signed URL 생성)
   async initUpload(request: UploadInitRequest) {
-    const { data } = await this.httpClient.request<UploadInitResponse>({
+    const { data } = await this.httpClient.request<{ success: boolean; data: UploadInitResponse }>({
       method: 'POST',
       url: '/files/upload/init',
       data: request,
     })
-    return data
+    return data.data
   }
 
   // 파일 업로드 완료
   async completeUpload(request: UploadCompleteRequest) {
-    const { data } = await this.httpClient.request<UploadCompleteResponse>({
+    const { data } = await this.httpClient.request<{ success: boolean; data: UploadCompleteResponse }>({
       method: 'POST',
       url: '/files/upload/complete',
       data: request,
     })
-    return data
+    return data.data
   }
 
   // 파일 목록 조회
   async getFileList(userId: string, profileId: string) {
-    const { data } = await this.httpClient.request<FileListResponse>({
+    const { data } = await this.httpClient.request<{ success: boolean; data: FileListResponse }>({
       method: 'GET',
       url: '/files/list',
       params: { userId, profileId }
     })
-    return data
+    return data.data
   }
 
   // 파일 다운로드 URL 생성

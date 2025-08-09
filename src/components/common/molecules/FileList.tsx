@@ -4,20 +4,25 @@ import { useFileList, useDeleteFile } from '../../../services/fileService'
 import { useAccountAuth } from '../../../contexts/AccountAuthContext'
 import FileListHeader from './FileListHeader'
 import FileGrid from './FileGrid'
+import { useStartAnalysis } from '../../../services/blazePoseService'
+import { ROUTES } from '../../../constants/routes'
 
 const FileList: React.FC<FileListProps> = ({
   profileId,
   onFileSelect,
   onFileDelete,
   onFileDownload,
+  onAnalysisStart,
   className = '',
   showThumbnails = true,
   showFileInfo = true
 }) => {
   const { token } = useAccountAuth()
   const deleteFileMutation = useDeleteFile()
+  const startAnalysisMutation = useStartAnalysis()
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'size'>('date')
   const [selectedFiles, setSelectedFiles] = useState<string[]>([])
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
 
   // 토큰에서 userId 추출
   const userId = token ? (() => {
@@ -65,6 +70,39 @@ const FileList: React.FC<FileListProps> = ({
     onFileDownload?.(file)
   }
 
+  const handleAnalysisStart = async () => {
+    if (selectedFiles.length === 0) {
+      alert('분석할 파일을 선택해주세요.')
+      return
+    }
+
+    setIsAnalyzing(true)
+    try {
+      const response = await startAnalysisMutation.mutateAsync({
+        fileIds: selectedFiles,
+        profileId
+      })
+      
+      console.log('Analysis started:', response)
+      onAnalysisStart?.(selectedFiles)
+      
+      // 분석 시작 후 선택 해제
+      setSelectedFiles([])
+      
+      // 분석 결과 페이지로 이동
+      if (response && response.analysisId) {
+        window.location.href = ROUTES.ANALYSIS_RESULT.replace(':analysisId', response.analysisId);
+      } else {
+        alert('분석이 시작되었습니다!')
+      }
+    } catch (error) {
+      console.error('Analysis error:', error)
+      alert('분석 시작 중 오류가 발생했습니다.')
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
   // 정렬된 파일 목록
   const sortedFiles = [...files].sort((a, b) => {
     switch (sortBy) {
@@ -110,6 +148,17 @@ const FileList: React.FC<FileListProps> = ({
               </p>
             </div>
             <div className="flex space-x-2">
+              <button
+                onClick={handleAnalysisStart}
+                disabled={isAnalyzing}
+                className={`px-3 py-1 text-xs rounded transition-colors ${
+                  isAnalyzing
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-green-500 hover:bg-green-600 text-white'
+                }`}
+              >
+                {isAnalyzing ? '분석 중...' : '분석 시작'}
+              </button>
               <button
                 onClick={() => {
                   // 선택된 파일들 다운로드

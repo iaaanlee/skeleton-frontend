@@ -1,0 +1,71 @@
+// BlazePose 분석 요청
+export type BlazePoseAnalysisRequest = {
+  fileIds: string[]
+  profileId: string
+}
+
+// BlazePose 분석 응답
+export type BlazePoseAnalysisResponse = {
+  success: boolean
+  data: {
+    analysisId: string
+    status: 'pending' | 'processing' | 'completed' | 'failed'
+    estimatedTime?: number
+    message?: string
+  }
+}
+
+// BlazePose 분석 상태
+export type BlazePoseStatus = {
+  success: boolean
+  data: {
+    analysisId: string
+    status: 'pending' | 'processing' | 'completed' | 'failed'
+    progress?: number // 0-100
+    estimatedTime?: number
+    message?: string
+    error?: string
+  }
+}
+
+// BlazePose 분석 결과
+export type BlazePoseResult = {
+  success: boolean
+  data: {
+    analysisId: string
+    status: 'completed' | 'failed'
+    landmarks: number[][] // [x, y, confidence] 형태의 관절 좌표들
+    overlayImageUrl: string // 분석 결과 이미지 URL
+    confidence: number // 전체 신뢰도
+    totalConfidence: number // 전체 평균 신뢰도
+    analysisTime: number // 분석 소요 시간 (ms)
+    fileResults: BlazePoseFileResult[]
+    error?: string
+  }
+}
+
+// 개별 파일 분석 결과
+export type BlazePoseFileResult = {
+  fileId: string
+  fileName: string
+  landmarks: number[][]
+  overlayImageUrl: string
+  confidence: number
+  analysisTime: number
+  error?: string
+}
+
+// 관절 타입 정의
+export type JointType = 
+  | 'nose' | 'left_eye' | 'right_eye' | 'left_ear' | 'right_ear'
+  | 'left_shoulder' | 'right_shoulder' | 'left_elbow' | 'right_elbow'
+  | 'left_wrist' | 'right_wrist' | 'left_hip' | 'right_hip'
+  | 'left_knee' | 'right_knee' | 'left_ankle' | 'right_ankle'
+
+// 관절 좌표
+export type JointCoordinate = {
+  x: number
+  y: number
+  confidence: number
+  jointType: JointType
+}
