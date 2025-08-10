@@ -55,7 +55,9 @@ export const secureSetItem = (key: string, data: any, expiresInHours: number = 3
 export const secureGetItem = (key: string): any => {
   try {
     const stored = localStorage.getItem(key);
-    if (!stored) return null;
+    if (!stored) {
+      return null;
+    }
     
     const storedData: StoredData = JSON.parse(stored);
     

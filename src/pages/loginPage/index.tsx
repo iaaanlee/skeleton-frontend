@@ -19,8 +19,8 @@ export const LoginPage = () => {
     } = useLogin({
         onSuccess: (data) => {
             // 토큰 저장
-            if (data.data?.token) {
-                login(data.data.token);
+            if (data.token) {
+                login(data.token);
             }
             // 로그인 성공 후 select-profile 페이지로 리다이렉트
             navigate(ROUTES.SELECT_PROFILE);
