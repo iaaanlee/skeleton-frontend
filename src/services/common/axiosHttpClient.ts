@@ -75,4 +75,7 @@ export class AxiosHttpClient {
     const response = await this.client.patch<T>(url, data, config);
     return response.data;
   }
-} 
+}
+
+// Create and export the axiosHttpClient instance
+export const axiosHttpClient = new AxiosHttpClient(process.env.REACT_APP_API_URL || 'http://localhost:4000'); 

@@ -1,9 +1,7 @@
 import React from 'react';
-import ProgressBar from '../../../../components/common/molecules/ProgressBar';
 
 type AnalysisProgressProps = {
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  progress: number;
   message: string;
   estimatedTime?: number;
   error?: string;
@@ -11,7 +9,6 @@ type AnalysisProgressProps = {
 
 export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
   status,
-  progress,
   message,
   estimatedTime,
   error
@@ -69,19 +66,6 @@ export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
           {getStatusText()}
         </h3>
         <p className="text-gray-600 mt-2">{message}</p>
-      </div>
-
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium text-gray-700">진행률</span>
-          <span className="text-sm text-gray-500">{progress}%</span>
-        </div>
-        <ProgressBar 
-          progress={progress}
-          type="linear"
-          size={60}
-          color={status === 'failed' ? 'red' : status === 'completed' ? 'green' : 'blue'}
-        />
       </div>
 
       {estimatedTime && status === 'processing' && (

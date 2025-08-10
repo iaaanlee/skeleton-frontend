@@ -5,6 +5,7 @@ export const queryKeys = {
   profiles: () => ['profiles'],
   files: () => ['files'],
   blazePose: () => ['blazePose'],
+  prescriptions: () => ['prescriptions'],
 };
 
 export const QUERY_KEYS = {
@@ -13,4 +14,5 @@ export const QUERY_KEYS = {
   profiles: queryKeys.profiles(),
   files: queryKeys.files(),
   blazePose: queryKeys.blazePose(),
+  prescriptions: queryKeys.prescriptions(),
 };

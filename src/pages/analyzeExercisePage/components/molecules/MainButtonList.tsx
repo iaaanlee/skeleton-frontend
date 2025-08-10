@@ -13,7 +13,7 @@ export const MainButtonList = () => {
 
     const handlePastRecords = () => {
         console.log('처방 기록 보기 클릭');
-        // TODO: 처방 기록 페이지로 이동
+        navigate(ROUTES.PRESCRIPTION_HISTORY);
     };
 
     return (
