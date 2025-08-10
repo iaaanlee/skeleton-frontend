@@ -17,7 +17,7 @@ export const useFileActions = (profileId: string, userId: string) => {
 
   const deleteFile = useCallback(async (fileId: string) => {
     try {
-      await deleteFileMutation.mutateAsync(fileId)
+      await deleteFileMutation.mutateAsync({ fileId, profileId })
       
       // 파일 목록 쿼리 무효화하여 자동 갱신
       queryClient.invalidateQueries({
@@ -34,7 +34,10 @@ export const useFileActions = (profileId: string, userId: string) => {
   const downloadFile = useCallback(async (file: any) => {
     try {
       // 다운로드 URL 생성
-      const downloadUrlResponse = await downloadUrlMutation.mutateAsync(file._id)
+      const downloadUrlResponse = await downloadUrlMutation.mutateAsync({ 
+        fileId: file._id, 
+        profileId 
+      })
       
       // 새 창에서 다운로드
       const link = document.createElement('a')
@@ -45,9 +48,10 @@ export const useFileActions = (profileId: string, userId: string) => {
       document.body.removeChild(link)
     } catch (error) {
       console.error('Download file error:', error)
-      alert('파일 다운로드 중 오류가 발생했습니다.')
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류'
+      alert(`파일 다운로드 중 오류가 발생했습니다: ${errorMessage}`)
     }
-  }, [downloadUrlMutation])
+  }, [downloadUrlMutation, profileId])
 
   const startAnalysis = useCallback(async (fileIds: string[]) => {
     if (fileIds.length === 0) {

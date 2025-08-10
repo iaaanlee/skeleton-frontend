@@ -31,8 +31,9 @@ export const useDeleteFile = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: (fileId: string) => fileService.deleteFile(fileId),
-    onSuccess: (_, fileId) => {
+    mutationFn: ({ fileId, profileId }: { fileId: string; profileId: string }) => 
+      fileService.deleteFile(fileId, profileId),
+    onSuccess: (_, { fileId }) => {
       // 파일 목록 캐시 무효화
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.files })
       
@@ -59,7 +60,8 @@ export const useUploadToS3 = () => {
 
 export const useDownloadUrl = () => {
   return useMutation({
-    mutationFn: (fileId: string) => fileService.getDownloadUrl(fileId),
+    mutationFn: ({ fileId, profileId }: { fileId: string; profileId: string }) => 
+      fileService.getDownloadUrl(fileId, profileId),
     onError: (error) => {
       console.error('Download URL error:', error)
     }

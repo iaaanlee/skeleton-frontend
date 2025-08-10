@@ -15,30 +15,30 @@ class AccountService implements IAccountService {
 
   // GET 요청
   async getAccount() {
-    const { data } = await this.httpClient.request<IGetAccountResponse>({
+    const { data } = await this.httpClient.request<{ success: boolean; data: IGetAccountResponse }>({
       method: 'GET',
       url: '/account/account',
     })
-    return data
+    return data.data
   }
 
   // POST 요청
   async login(input: LoginRequest) {
-    const { data } = await this.httpClient.request<ILoginResponse>({
+    const { data } = await this.httpClient.request<{ success: boolean; data: ILoginResponse }>({
       method: 'POST',
       url: '/account/login',
       data: input,
     })
-    return data
+    return data.data
   }
 
   async createAccount(input: CreateAccountRequest) {
-    const { data } = await this.httpClient.request<ICreateAccountResponse>({
+    const { data } = await this.httpClient.request<{ success: boolean; data: ICreateAccountResponse }>({
       method: 'POST',
       url: '/account/create-account',
       data: input,
     })
-    return data
+    return data.data
   }
 }
 

@@ -14,8 +14,8 @@ type IFileService = {
   initUpload: (request: UploadInitRequest) => Promise<UploadInitResponse>;
   completeUpload: (request: UploadCompleteRequest) => Promise<UploadCompleteResponse>;
   getFileList: (userId: string, profileId: string) => Promise<FileListResponse>;
-  getDownloadUrl: (fileId: string) => Promise<DownloadUrlResponse>;
-  deleteFile: (fileId: string) => Promise<void>;
+  getDownloadUrl: (fileId: string, profileId: string) => Promise<DownloadUrlResponse>;
+  deleteFile: (fileId: string, profileId: string) => Promise<void>;
   uploadToS3: (uploadUrl: string, file: File) => Promise<void>;
 };
 
@@ -53,19 +53,21 @@ class FileService implements IFileService {
   }
 
   // 파일 다운로드 URL 생성
-  async getDownloadUrl(fileId: string) {
-    const { data } = await this.httpClient.request<DownloadUrlResponse>({
+  async getDownloadUrl(fileId: string, profileId: string) {
+    const { data } = await this.httpClient.request<{ success: boolean; data: DownloadUrlResponse }>({
       method: 'GET',
       url: `/files/${fileId}/download`,
+      params: { profileId }
     })
-    return data
+    return data.data
   }
 
   // 파일 삭제
-  async deleteFile(fileId: string) {
+  async deleteFile(fileId: string, profileId: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'DELETE',
       url: `/files/${fileId}`,
+      params: { profileId }
     })
     return data
   }

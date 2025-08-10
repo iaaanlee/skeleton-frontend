@@ -25,6 +25,15 @@ export const useAnalysisResult = (analysisId: string, enabled: boolean = true) =
     queryKey: [...QUERY_KEYS.blazePose, 'result', analysisId],
     queryFn: () => blazePoseService.getAnalysisResult(analysisId),
     enabled: enabled && !!analysisId,
+    retry: (failureCount, error: any) => {
+      // 400 에러(분석 미완료)는 재시도하지 않음
+      if (error?.response?.status === 400) {
+        return false
+      }
+      // 다른 에러는 3번까지 재시도
+      return failureCount < 3
+    },
+    retryDelay: 2000, // 2초 후 재시도
     staleTime: 5 * 60 * 1000, // 5분
     gcTime: 10 * 60 * 1000, // 10분
   })

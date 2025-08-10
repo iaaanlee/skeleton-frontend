@@ -1,17 +1,31 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Header } from '../../components/common/templates/Header';
-import { BottomBar } from '../../components/common/templates/BottomBar';
 import { ROUTES } from '../../constants/routes';
-import { useAnalysisResult } from '../../services/blazePoseService';
-import { AnalysisResultContent } from './components/organisms/AnalysisResultContent';
-import { AnalysisProgress } from './components/molecules/AnalysisProgress';
+import { useAnalysisStatus, useAnalysisResult } from '../../services/blazePoseService';
+import { AnalysisLoadingState } from './components/molecules/AnalysisLoadingState';
+import { AnalysisErrorState } from './components/molecules/AnalysisErrorState';
+import { AnalysisNoResultState } from './components/molecules/AnalysisNoResultState';
+import { AnalysisUnexpectedState } from './components/molecules/AnalysisUnexpectedState';
+import { AnalysisResultDisplay } from './components/organisms/AnalysisResultDisplay';
 
 export const AnalysisResultPage = () => {
   const { analysisId } = useParams<{ analysisId: string }>();
   const navigate = useNavigate();
 
-  const { data: result, isLoading, error } = useAnalysisResult(analysisId || '');
+  // 분석 상태 먼저 확인
+  const { 
+    data: status, 
+    isLoading: statusLoading, 
+    error: statusError 
+  } = useAnalysisStatus(analysisId || '', true);
+
+  // 분석이 완료된 경우에만 결과 요청
+  const isCompleted = status?.status === 'completed';
+  const { 
+    data: result, 
+    isLoading: resultLoading, 
+    error: resultError 
+  } = useAnalysisResult(analysisId || '', isCompleted);
 
   const handleBack = () => {
     navigate(ROUTES.CREATE_PRESCRIPTION);
@@ -23,110 +37,82 @@ export const AnalysisResultPage = () => {
     alert('분석 결과가 저장되었습니다.');
   };
 
-  if (isLoading) {
+  // 1. 로딩 중 (상태 확인 중)
+  if (statusLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50">
-        <Header backRoute={ROUTES.CREATE_PRESCRIPTION} />
-        <div className="flex-1 flex items-center justify-center">
-          <AnalysisProgress 
-            status="processing"
-            progress={50}
-            message="분석 결과를 불러오는 중..."
-          />
-        </div>
-        <BottomBar />
-      </div>
+      <AnalysisLoadingState 
+        message="분석 상태를 확인하는 중..."
+      />
     );
   }
 
-  if (error) {
+  // 2. 상태 확인 에러
+  if (statusError) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50">
-        <Header backRoute={ROUTES.CREATE_PRESCRIPTION} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-red-500 text-6xl mb-4">⚠️</div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              분석 결과를 불러올 수 없습니다
-            </h2>
-            <p className="text-gray-600 mb-4">
-              {error.message || '알 수 없는 오류가 발생했습니다.'}
-            </p>
-            <button
-              onClick={handleBack}
-              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              돌아가기
-            </button>
-          </div>
-        </div>
-        <BottomBar />
-      </div>
+      <AnalysisErrorState 
+        title="분석 상태를 확인할 수 없습니다"
+        message={statusError.message || '알 수 없는 오류가 발생했습니다.'}
+        onBack={handleBack}
+      />
     );
   }
 
-  if (!result) {
+  // 3. 분석 진행 중 (pending, processing)
+  if (status && ['pending', 'processing'].includes(status.status)) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50">
-        <Header backRoute={ROUTES.CREATE_PRESCRIPTION} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-gray-400 text-6xl mb-4">📊</div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              분석 결과가 없습니다
-            </h2>
-            <p className="text-gray-600 mb-4">
-              분석이 완료되지 않았거나 결과를 찾을 수 없습니다.
-            </p>
-            <button
-              onClick={handleBack}
-              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              돌아가기
-            </button>
-          </div>
-        </div>
-        <BottomBar />
-      </div>
+      <AnalysisLoadingState 
+        status={status.status}
+        progress={status.progress || 0}
+        message={status.message || "분석을 진행 중입니다..."}
+      />
     );
   }
 
+  // 4. 분석 완료되었지만 결과 로딩 중
+  if (isCompleted && resultLoading) {
+    return (
+      <AnalysisLoadingState 
+        status="completed"
+        progress={100}
+        message="분석 결과를 불러오는 중..."
+      />
+    );
+  }
+
+  // 5. 분석 완료되었지만 결과 요청 에러
+  if (isCompleted && resultError) {
+    return (
+      <AnalysisErrorState 
+        title="분석 결과를 불러올 수 없습니다"
+        message={resultError.message || '알 수 없는 오류가 발생했습니다.'}
+        onBack={handleBack}
+      />
+    );
+  }
+
+  // 6. 분석 완료되었지만 결과가 없음
+  if (isCompleted && !result) {
+    return (
+      <AnalysisNoResultState 
+        onBack={handleBack}
+      />
+    );
+  }
+
+  // 7. 분석 완료되고 결과 있음 - 결과 표시
+  if (isCompleted && result) {
+    return (
+      <AnalysisResultDisplay 
+        result={result}
+        onSaveResult={handleSaveResult}
+      />
+    );
+  }
+
+  // 8. 예상치 못한 상태 (fallback)
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header backRoute={ROUTES.CREATE_PRESCRIPTION} />
-      
-      <div className="flex-1 p-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">운동 분석 결과</h1>
-            <p className="text-gray-600">
-              BlazePose를 통해 분석된 운동 자세 결과입니다.
-            </p>
-          </div>
-
-          <AnalysisResultContent 
-            result={result}
-          />
-
-          {/* 액션 버튼 */}
-          <div className="flex justify-center space-x-4">
-            <button
-              onClick={handleSaveResult}
-              className="px-8 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
-            >
-              결과 저장
-            </button>
-            <button
-              onClick={() => window.print()}
-              className="px-8 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors font-medium"
-            >
-              결과 출력
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <BottomBar />
-    </div>
+    <AnalysisUnexpectedState 
+      onBack={handleBack}
+    />
   );
 };

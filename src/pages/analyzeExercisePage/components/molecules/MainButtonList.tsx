@@ -12,8 +12,8 @@ export const MainButtonList = () => {
     };
 
     const handlePastRecords = () => {
-        console.log('과거 처방 기록 보기 클릭');
-        // TODO: 과거 처방 기록 페이지로 이동
+        console.log('처방 기록 보기 클릭');
+        // TODO: 처방 기록 페이지로 이동
     };
 
     return (
@@ -23,7 +23,7 @@ export const MainButtonList = () => {
                 onClick={handleNewPrescription}
             />
             <MainButton 
-                title="과거 처방 기록 보기" 
+                title="처방 기록 보기" 
                 onClick={handlePastRecords}
             />
         </div>
