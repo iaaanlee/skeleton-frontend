@@ -11,8 +11,8 @@ export const extractTokenPayload = (token: string) => {
   }
 }
 
-// 토큰에서 userId 추출
-export const extractUserIdFromToken = (token: string): string | null => {
+// 토큰에서 accountId 추출
+export const extractAccountIdFromToken = (token: string): string | null => {
   const payload = extractTokenPayload(token)
   if (!payload) return null
   

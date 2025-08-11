@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useInitUpload, useCompleteUpload, useUploadToS3 } from '../services/fileService'
 import { useAccountAuth } from '../contexts/AccountAuthContext'
 import { QUERY_KEYS } from '../services/common/queryKey'
-import { validateAuthState, extractUserIdFromToken } from '../utils/auth'
+import { validateAuthState, extractAccountIdFromToken } from '../utils/auth'
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error'
 
@@ -20,8 +20,8 @@ export const useFileUpload = (profileId: string) => {
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string>('')
 
-  // 토큰에서 userId 추출 (토큰이 없거나 유효하지 않으면 null 반환)
-  const userId = token ? extractUserIdFromToken(token) : null
+  // 토큰에서 accountId 추출 (토큰이 없거나 유효하지 않으면 null 반환)
+  const accountId = token ? extractAccountIdFromToken(token) : null
 
   // 파일 업로드
   const uploadFiles = useCallback(async (files: File[]) => {
@@ -32,8 +32,8 @@ export const useFileUpload = (profileId: string) => {
       return
     }
 
-    if (!userId) {
-      console.error('User ID not found in token')
+    if (!accountId) {
+      console.error('Account ID not found in token')
       return
     }
 
@@ -77,7 +77,7 @@ export const useFileUpload = (profileId: string) => {
       
       // 파일 목록 쿼리 무효화하여 자동 갱신
       queryClient.invalidateQueries({
-        queryKey: [...QUERY_KEYS.files, 'list', userId, profileId]
+        queryKey: [...QUERY_KEYS.files, 'list', accountId, profileId]
       })
 
       // 3초 후 idle 상태로 복귀
@@ -92,7 +92,7 @@ export const useFileUpload = (profileId: string) => {
       setUploadStatus('error')
       setError(error instanceof Error ? error.message : '업로드 중 오류가 발생했습니다.')
     }
-  }, [token, userId, profileId, navigate, initUploadMutation, uploadToS3Mutation, completeUploadMutation, queryClient])
+  }, [token, accountId, profileId, navigate, initUploadMutation, uploadToS3Mutation, completeUploadMutation, queryClient])
 
   return {
     uploadStatus,

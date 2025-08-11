@@ -13,7 +13,7 @@ import {
 type IFileService = {
   initUpload: (request: UploadInitRequest) => Promise<UploadInitResponse>;
   completeUpload: (request: UploadCompleteRequest) => Promise<UploadCompleteResponse>;
-  getFileList: (userId: string, profileId: string, limit: number, offset: number) => Promise<FileListResponse>;
+  getFileList: (accountId: string, profileId: string, limit: number, offset: number) => Promise<FileListResponse>;
   getDownloadUrl: (fileId: string, profileId: string) => Promise<DownloadUrlResponse>;
   deleteFile: (fileId: string, profileId: string) => Promise<void>;
   uploadToS3: (uploadUrl: string, file: File) => Promise<void>;
@@ -43,11 +43,11 @@ class FileService implements IFileService {
   }
 
   // 파일 목록 조회
-  async getFileList(userId: string, profileId: string, limit: number = 20, offset: number = 0) {
+  async getFileList(accountId: string, profileId: string, limit: number = 20, offset: number = 0) {
     const { data } = await this.httpClient.request<{ success: boolean; data: FileListResponse }>({
       method: 'GET',
       url: '/files/list',
-      params: { userId, profileId, limit, offset }
+      params: { accountId, profileId, limit, offset }
     })
     return data.data
   }

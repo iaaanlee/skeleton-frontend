@@ -5,5 +5,5 @@ export type BaseResponse = {
 
 export type IMainResponse = {
   message: string;
-  userId: string;
+  accountId: string;
 }; 

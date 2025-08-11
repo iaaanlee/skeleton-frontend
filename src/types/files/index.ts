@@ -33,7 +33,7 @@ export type UploadCompleteRequest = {
 // 업로드 완료 응답
 export type UploadCompleteResponse = {
   fileId: string
-  userId: string
+  accountId: string
   profileId: string
   objectKey: string
   fileName: string
@@ -46,7 +46,7 @@ export type UploadCompleteResponse = {
 // 서버 파일 정보
 export type ServerFile = {
   _id: string
-  userId: string
+  accountId: string
   profileId: string
   objectKey: string
   fileName: string

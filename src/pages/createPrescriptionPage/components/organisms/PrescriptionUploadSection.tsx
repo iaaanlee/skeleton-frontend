@@ -1,8 +1,7 @@
 import React, { useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useFileActions } from '../../../../hooks'
 import { useAccountAuth } from '../../../../contexts/AccountAuthContext'
-import { extractUserIdFromToken } from '../../../../utils/auth'
+import { extractAccountIdFromToken } from '../../../../utils/auth'
 import { PrescriptionFileList } from '../molecules/PrescriptionFileList'
 import { DescriptionSection } from '../molecules/DescriptionSection'
 import { AnalysisStartButton } from '../molecules/AnalysisStartButton'
@@ -17,20 +16,20 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
   className = ''
 }) => {
   const { token } = useAccountAuth()
-  const userId = token ? extractUserIdFromToken(token) : null
+  const accountId = token ? extractAccountIdFromToken(token) : null
   
   const [selectedFiles, setSelectedFiles] = useState<string[]>([])
   const [description, setDescription] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
 
-  const { startAnalysis } = useFileActions(profileId, userId || '')
+  const { startAnalysis } = useFileActions(profileId, accountId || '')
 
   const handleSelectionChange = useCallback((files: string[]) => {
     setSelectedFiles(files)
   }, [])
 
   const handleAnalysisStart = async (fileIds: string[], descriptionText: string) => {
-    if (!userId) {
+    if (!accountId) {
       alert('로그인이 필요합니다.')
       return
     }

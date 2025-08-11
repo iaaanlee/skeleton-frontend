@@ -4,7 +4,7 @@ import { ROUTES } from '../../constants/routes';
 import { usePrescriptionHistory } from '../../services/prescriptionService';
 import { useAccountAuth } from '../../contexts/AccountAuthContext';
 import { useProfile } from '../../contexts/ProfileAuthContext';
-import { extractUserIdFromToken } from '../../utils/auth';
+import { extractAccountIdFromToken } from '../../utils/auth';
 import { PrescriptionHistoryContent } from './components/organisms/PrescriptionHistoryContent';
 
 export const PrescriptionHistoryPage = () => {
@@ -12,15 +12,22 @@ export const PrescriptionHistoryPage = () => {
   const { token } = useAccountAuth();
   const { selectedProfile } = useProfile();
   
-  const userId = token ? extractUserIdFromToken(token) : '';
+  const accountId = token ? extractAccountIdFromToken(token) : '';
   const profileId = selectedProfile?._id || '';
+
+  console.log('PrescriptionHistoryPage - accountId:', accountId);
+  console.log('PrescriptionHistoryPage - profileId:', profileId);
 
   // 처방 기록 조회
   const { 
     data: prescriptionData, 
     isLoading, 
     error 
-  } = usePrescriptionHistory(userId || '', profileId || '');
+  } = usePrescriptionHistory(accountId || '', profileId || '');
+
+  console.log('PrescriptionHistoryPage - prescriptionData:', prescriptionData);
+  console.log('PrescriptionHistoryPage - isLoading:', isLoading);
+  console.log('PrescriptionHistoryPage - error:', error);
 
   const handleBack = () => {
     navigate(ROUTES.ANALYZE_EXERCISE);

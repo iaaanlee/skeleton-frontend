@@ -43,7 +43,7 @@ export type UploadInitRequest = {
   fileName: string
   fileSize: number
   contentType: string
-  userId: string
+  accountId: string
   profileId: string
 }
 

@@ -15,11 +15,11 @@ export type PrescriptionHistoryResponse = {
 };
 
 class PrescriptionService {
-  async getPrescriptionHistory(userId: string, profileId: string): Promise<PrescriptionHistoryResponse> {
+  async getPrescriptionHistory(accountId: string, profileId: string): Promise<PrescriptionHistoryResponse> {
     const { data } = await axiosHttpClient.request<{ success: boolean; data: PrescriptionHistoryResponse }>({
       method: 'GET',
       url: '/prescriptions/history',
-      params: { userId, profileId }
+      params: { accountId, profileId }
     });
     return data.data;
   }

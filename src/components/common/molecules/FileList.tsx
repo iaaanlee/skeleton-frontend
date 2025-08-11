@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useFileList } from '../../../services/fileService'
 import { useAccountAuth } from '../../../contexts/AccountAuthContext'
 import { useFileSelection, useFileActions } from '../../../hooks'
-import { validateAuthState, extractUserIdFromToken } from '../../../utils/auth'
+import { validateAuthState, extractAccountIdFromToken } from '../../../utils/auth'
 import { FileListHeader } from './FileListHeader'
 import FileGrid from './FileGrid'
 import { SelectedFilesActionBar } from './SelectedFilesActionBar'
@@ -26,11 +26,11 @@ const FileList: React.FC<FileListProps> = ({
   const { token } = useAccountAuth()
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
-  // 토큰에서 userId 추출 (토큰이 없거나 유효하지 않으면 null 반환)
-  const userId = token ? extractUserIdFromToken(token) : null
+  // 토큰에서 accountId 추출 (토큰이 없거나 유효하지 않으면 null 반환)
+  const accountId = token ? extractAccountIdFromToken(token) : null
 
   // React Query로 파일 목록 조회 (Hook은 항상 호출되어야 함)
-  const { data: fileListResponse, isLoading, error, refetch } = useFileList(userId || '', profileId)
+  const { data: fileListResponse, isLoading, error, refetch } = useFileList(accountId || '', profileId)
 
   // 커스텀 훅들 (Hook은 항상 호출되어야 함)
   const {
@@ -47,7 +47,7 @@ const FileList: React.FC<FileListProps> = ({
     downloadFile,
     deleteMultipleFiles,
     downloadMultipleFiles
-  } = useFileActions(profileId, userId || '')
+  } = useFileActions(profileId, accountId || '')
 
   // 선택된 파일 변경 시 부모 컴포넌트에 알림 (Hook은 조건문 이전에 호출)
   React.useEffect(() => {

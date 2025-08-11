@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useFileList } from '../../../../services/fileService'
 import { useAccountAuth } from '../../../../contexts/AccountAuthContext'
 import { useSingleFileSelection, useFileActions } from '../../../../hooks'
-import { validateAuthState, extractUserIdFromToken } from '../../../../utils/auth'
+import { validateAuthState, extractAccountIdFromToken } from '../../../../utils/auth'
 import { UploadModal } from '../../../../components/common/molecules/UploadModal'
 
 type PrescriptionFileListProps = {
@@ -21,11 +21,11 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
   const { token } = useAccountAuth()
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
-  // 토큰에서 userId 추출
-  const userId = token ? extractUserIdFromToken(token) : null
+  // 토큰에서 accountId 추출
+  const accountId = token ? extractAccountIdFromToken(token) : null
 
   // React Query로 파일 목록 조회
-  const { data: fileListResponse, isLoading, error, refetch } = useFileList(userId || '', profileId)
+  const { data: fileListResponse, isLoading, error, refetch } = useFileList(accountId || '', profileId)
 
   // 단일 선택 훅 사용
   const {
@@ -43,7 +43,7 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
 
   const {
     deleteFile
-  } = useFileActions(profileId, userId || '')
+  } = useFileActions(profileId, accountId || '')
 
   // 선택된 파일 변경 시 부모 컴포넌트에 알림
   useEffect(() => {

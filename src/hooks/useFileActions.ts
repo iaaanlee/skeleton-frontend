@@ -6,7 +6,7 @@ import { useStartAnalysis, useCheckDuplicateAnalysis } from '../services/blazePo
 import { QUERY_KEYS } from '../services/common/queryKey'
 import { ROUTES } from '../constants/routes'
 
-export const useFileActions = (profileId: string, userId: string) => {
+export const useFileActions = (profileId: string, accountId: string) => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const deleteFileMutation = useDeleteFile()
@@ -22,7 +22,7 @@ export const useFileActions = (profileId: string, userId: string) => {
       
       // 파일 목록 쿼리 무효화하여 자동 갱신
       queryClient.invalidateQueries({
-        queryKey: [...QUERY_KEYS.files, 'list', userId, profileId]
+        queryKey: [...QUERY_KEYS.files, 'list', accountId, profileId]
       })
       
       return true
@@ -30,7 +30,7 @@ export const useFileActions = (profileId: string, userId: string) => {
       console.error('Delete file error:', error)
       return false
     }
-  }, [deleteFileMutation, queryClient, userId, profileId])
+  }, [deleteFileMutation, queryClient, accountId, profileId])
 
   const downloadFile = useCallback(async (file: any) => {
     try {
