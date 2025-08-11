@@ -15,19 +15,12 @@ export const PrescriptionHistoryPage = () => {
   const accountId = token ? extractAccountIdFromToken(token) : '';
   const profileId = selectedProfile?._id || '';
 
-  console.log('PrescriptionHistoryPage - accountId:', accountId);
-  console.log('PrescriptionHistoryPage - profileId:', profileId);
-
   // 처방 기록 조회
   const { 
     data: prescriptionData, 
     isLoading, 
     error 
   } = usePrescriptionHistory(accountId || '', profileId || '');
-
-  console.log('PrescriptionHistoryPage - prescriptionData:', prescriptionData);
-  console.log('PrescriptionHistoryPage - isLoading:', isLoading);
-  console.log('PrescriptionHistoryPage - error:', error);
 
   const handleBack = () => {
     navigate(ROUTES.ANALYZE_EXERCISE);

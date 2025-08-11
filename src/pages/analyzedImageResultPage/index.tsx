@@ -9,12 +9,16 @@ export const AnalyzedImageResultPage = () => {
   const { analysisId } = useParams<{ analysisId: string }>();
   const navigate = useNavigate();
 
-  // 분석 상태 조회
+  const handleBack = () => {
+    navigate(ROUTES.CREATE_PRESCRIPTION);
+  };
+
+  // 분석 상태 조회 - analysisId가 없어도 호출하되 enabled: false로 설정
   const { 
     data: status, 
     isLoading: statusLoading, 
     error: statusError 
-  } = useAnalysisStatus(analysisId || '', true);
+  } = useAnalysisStatus(analysisId || '', !!analysisId);
 
   // 분석이 완료된 경우에만 결과 요청
   const isCompleted = status?.status === 'completed';
@@ -24,9 +28,16 @@ export const AnalyzedImageResultPage = () => {
     error: resultError 
   } = useAnalysisResult(analysisId || '', isCompleted);
 
-  const handleBack = () => {
-    navigate(ROUTES.CREATE_PRESCRIPTION);
-  };
+  // analysisId가 없으면 에러 상태로 처리
+  if (!analysisId) {
+    return (
+      <AnalysisErrorState 
+        title="분석 ID가 없습니다"
+        message="올바르지 않은 분석 페이지입니다."
+        onBack={handleBack}
+      />
+    );
+  }
 
   const handleSaveResult = () => {
     // TODO: 분석 결과 저장 로직 구현
