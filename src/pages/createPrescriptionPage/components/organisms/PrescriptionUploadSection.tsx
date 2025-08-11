@@ -1,6 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ROUTES } from '../../../../constants/routes'
 import { useFileActions } from '../../../../hooks'
 import { useAccountAuth } from '../../../../contexts/AccountAuthContext'
 import { extractUserIdFromToken } from '../../../../utils/auth'
@@ -17,7 +16,6 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
   profileId,
   className = ''
 }) => {
-  const navigate = useNavigate()
   const { token } = useAccountAuth()
   const userId = token ? extractUserIdFromToken(token) : null
   
@@ -27,9 +25,9 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
 
   const { startAnalysis } = useFileActions(profileId, userId || '')
 
-  const handleSelectionChange = (files: string[]) => {
+  const handleSelectionChange = useCallback((files: string[]) => {
     setSelectedFiles(files)
-  }
+  }, [])
 
   const handleAnalysisStart = async (fileIds: string[], descriptionText: string) => {
     if (!userId) {

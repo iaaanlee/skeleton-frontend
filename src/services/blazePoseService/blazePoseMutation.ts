@@ -19,3 +19,13 @@ export const useStartAnalysis = () => {
     }
   })
 }
+
+export const useCheckDuplicateAnalysis = () => {
+  return useMutation({
+    mutationFn: (request: { profileId: string; fileIds: string[] }) => 
+      blazePoseService.checkDuplicateAnalysis(request),
+    onError: (error) => {
+      console.error('Check duplicate analysis error:', error)
+    }
+  })
+}

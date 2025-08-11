@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useDeleteFile, useDownloadUrl } from '../services/fileService'
-import { useStartAnalysis } from '../services/blazePoseService'
+import { useStartAnalysis, useCheckDuplicateAnalysis } from '../services/blazePoseService'
 import { QUERY_KEYS } from '../services/common/queryKey'
 import { ROUTES } from '../constants/routes'
 
@@ -11,6 +11,7 @@ export const useFileActions = (profileId: string, userId: string) => {
   const queryClient = useQueryClient()
   const deleteFileMutation = useDeleteFile()
   const startAnalysisMutation = useStartAnalysis()
+  const checkDuplicateMutation = useCheckDuplicateAnalysis()
   const downloadUrlMutation = useDownloadUrl()
   
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -55,12 +56,34 @@ export const useFileActions = (profileId: string, userId: string) => {
 
   const startAnalysis = useCallback(async (fileIds: string[]) => {
     if (fileIds.length === 0) {
-      alert('분석할 파일을 선택해주세요.')
+      alert('분석할 이미지를 선택해주세요.')
       return false
     }
 
     setIsAnalyzing(true)
     try {
+      // 1. 중복 체크 수행
+      const duplicateCheck = await checkDuplicateMutation.mutateAsync({
+        profileId,
+        fileIds
+      })
+
+      // 2. 중복된 분석이 있으면 해당 결과 페이지로 이동
+      if (duplicateCheck.hasDuplicate && duplicateCheck.duplicateAnalysis) {
+        const confirmed = window.confirm(
+          '이미 분석된 이미지입니다. 기존 분석 결과를 확인하시겠습니까?'
+        )
+        
+        if (confirmed) {
+          navigate(ROUTES.ANALYSIS_RESULT.replace(':analysisId', duplicateCheck.duplicateAnalysis.analysisId))
+          return true
+        } else {
+          setIsAnalyzing(false)
+          return false
+        }
+      }
+
+      // 3. 중복이 없으면 새로운 분석 시작
       const response = await startAnalysisMutation.mutateAsync({
         fileIds,
         profileId
@@ -83,7 +106,7 @@ export const useFileActions = (profileId: string, userId: string) => {
     } finally {
       setIsAnalyzing(false)
     }
-  }, [startAnalysisMutation, profileId, navigate])
+  }, [startAnalysisMutation, checkDuplicateMutation, profileId, navigate])
 
   const deleteMultipleFiles = useCallback(async (fileIds: string[]) => {
     const results = await Promise.all(

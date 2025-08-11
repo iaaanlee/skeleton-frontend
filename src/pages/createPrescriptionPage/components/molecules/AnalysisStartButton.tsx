@@ -36,7 +36,7 @@ export const AnalysisStartButton: React.FC<AnalysisStartButtonProps> = ({
             운동 분석 시작
           </h3>
           <p className="text-sm text-orange-700">
-            선택된 {selectedFiles.length}개 이미지와 요청사항으로 분석을 시작합니다.
+            선택된 이미지와 요청사항으로 분석을 시작합니다.
           </p>
         </div>
         

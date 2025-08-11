@@ -12,6 +12,11 @@ type IBlazePoseService = {
   startAnalysis: (request: BlazePoseAnalysisRequest) => Promise<BlazePoseAnalysisResponse['data']>;
   getAnalysisStatus: (analysisId: string) => Promise<BlazePoseStatus['data']>;
   getAnalysisResult: (analysisId: string) => Promise<BlazePoseResult['data']>;
+  checkDuplicateAnalysis: (request: { profileId: string; fileIds: string[] }) => Promise<{
+    hasDuplicate: boolean;
+    duplicateAnalysis: any | null;
+    duplicateFiles: any[];
+  }>;
 };
 
 class BlazePoseService implements IBlazePoseService { 
@@ -41,6 +46,23 @@ class BlazePoseService implements IBlazePoseService {
     const { data } = await this.httpClient.request<{ success: boolean; data: BlazePoseResult['data'] }>({
       method: 'GET',
       url: `/blazepose/result/${analysisId}`,
+    })
+    return data.data
+  }
+
+  // 중복 분석 체크
+  async checkDuplicateAnalysis(request: { profileId: string; fileIds: string[] }) {
+    const { data } = await this.httpClient.request<{ 
+      success: boolean; 
+      data: {
+        hasDuplicate: boolean;
+        duplicateAnalysis: any | null;
+        duplicateFiles: any[];
+      }
+    }>({
+      method: 'POST',
+      url: '/blazepose/check-duplicate',
+      data: request,
     })
     return data.data
   }
