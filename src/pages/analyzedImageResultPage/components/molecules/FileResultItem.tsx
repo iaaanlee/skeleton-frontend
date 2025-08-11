@@ -71,12 +71,12 @@ export const FileResultItem: React.FC<FileResultItemProps> = ({
       </div>
 
       {/* 분석 결과 이미지 */}
-      {(fileResult.processedImageUrl || fileResult.overlayImageUrl) && (
+      {(fileResult.estimatedImageUrl || fileResult.overlayImageUrl) && (
         <div className="mb-4">
           <h5 className="font-medium text-gray-900 mb-2">분석 결과 이미지</h5>
           <div className="relative">
             <img
-              src={fileResult.processedImageUrl || fileResult.overlayImageUrl}
+              src={fileResult.estimatedImageUrl || fileResult.overlayImageUrl}
               alt={`${fileResult.fileName} 분석 결과`}
               className="w-full max-w-md rounded-lg border border-gray-200"
               onError={handleImageError}

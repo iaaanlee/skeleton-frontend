@@ -48,8 +48,8 @@ export type BlazePoseFileResult = {
   fileName: string
   landmarks: number[][]
   overlayImageUrl?: string // 기존 호환성을 위해 유지
-  processedImageUrl?: string // 새로운 processed 이미지 URL
-  processedImageKey?: string // S3에서의 processed 파일 경로
+  estimatedImageUrl?: string // 새로운 estimated 이미지 URL
+  estimatedImageKey?: string // S3에서의 estimated 파일 경로
   confidence: number
   analysisTime: number
   error?: string
