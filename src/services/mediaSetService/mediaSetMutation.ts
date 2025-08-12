@@ -21,7 +21,8 @@ export const useDeleteMediaSet = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: (mediaSetId: string) => mediaSetService.deleteMediaSet(mediaSetId),
+    mutationFn: ({ mediaSetId, profileId }: { mediaSetId: string; profileId: string }) => 
+      mediaSetService.deleteMediaSet(mediaSetId, profileId),
     onSuccess: () => {
       // 미디어 세트 목록 쿼리 무효화
       queryClient.invalidateQueries({

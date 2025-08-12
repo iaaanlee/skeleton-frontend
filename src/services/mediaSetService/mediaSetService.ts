@@ -66,13 +66,27 @@ export type UploadCompleteResponse = {
   mediaSet: MediaSet;
 }
 
+export type UploadCompleteMultipleRequest = {
+  profileId: string;
+  files: Array<{
+    objectKey: string;
+    fileName: string;
+    fileSize: number;
+  }>;
+}
+
+export type UploadCompleteMultipleResponse = {
+  mediaSet: MediaSet;
+}
+
 type IMediaSetService = {
   initUpload: (request: UploadInitRequest) => Promise<UploadInitResponse>;
   createMediaSet: (request: CreateMediaSetRequest) => Promise<CreateMediaSetResponse>;
   completeUpload: (request: UploadCompleteRequest) => Promise<UploadCompleteResponse>;
+  completeUploadMultiple: (request: UploadCompleteMultipleRequest) => Promise<UploadCompleteMultipleResponse>;
   getMediaSetList: (accountId: string, profileId: string, limit?: number, offset?: number) => Promise<MediaSetListResponse>;
   getMediaSetById: (mediaSetId: string) => Promise<MediaSet>;
-  deleteMediaSet: (mediaSetId: string) => Promise<void>;
+  deleteMediaSet: (mediaSetId: string, profileId: string) => Promise<void>;
   uploadToS3: (uploadUrl: string, file: File) => Promise<void>;
 };
 
@@ -109,6 +123,16 @@ class MediaSetService implements IMediaSetService {
     return data.data
   }
 
+  // 여러 파일 업로드 완료 (하나의 미디어 세트로)
+  async completeUploadMultiple(request: UploadCompleteMultipleRequest) {
+    const { data } = await this.httpClient.request<{ success: boolean; data: UploadCompleteMultipleResponse }>({
+      method: 'POST',
+      url: '/mediaSet/upload/complete-multiple',
+      data: request,
+    })
+    return data.data
+  }
+
   // 미디어 세트 목록 조회
   async getMediaSetList(accountId: string, profileId: string, limit: number = 20, offset: number = 0) {
     const { data } = await this.httpClient.request<{ success: boolean; data: MediaSetListResponse }>({
@@ -123,16 +147,17 @@ class MediaSetService implements IMediaSetService {
   async getMediaSetById(mediaSetId: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: MediaSet }>({
       method: 'GET',
-      url: `/mediaSet/${mediaSetId}`,
+      url: `/mediaSet/mediaSetById/${mediaSetId}`,
     })
     return data.data
   }
 
   // 미디어 세트 삭제
-  async deleteMediaSet(mediaSetId: string) {
+  async deleteMediaSet(mediaSetId: string, profileId: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'DELETE',
-      url: `/mediaSet/${mediaSetId}`,
+      url: `/mediaSet/mediaSetById/${mediaSetId}`,
+      params: { profileId }
     })
     return data
   }

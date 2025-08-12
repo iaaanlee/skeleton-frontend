@@ -35,11 +35,6 @@ export const AnalysisStartButton: React.FC<AnalysisStartButtonProps> = ({
       return;
     }
     
-    if (!description.ans1.trim() || !description.ans2.trim()) {
-      alert('운동 분석 요청사항을 모두 입력해주세요.');
-      return;
-    }
-    
     if (!selectedPromptId) {
       alert('분석 프롬프트를 선택해주세요.');
       return;
@@ -52,7 +47,7 @@ export const AnalysisStartButton: React.FC<AnalysisStartButtonProps> = ({
     });
   };
 
-  const isButtonDisabled = disabled || isCreating || !selectedMediaSetId || !description.ans1.trim() || !description.ans2.trim() || !selectedPromptId;
+  const isButtonDisabled = disabled || isCreating || !selectedMediaSetId || !selectedPromptId;
 
   return (
     <div className={`bg-orange-50 border border-orange-200 rounded-lg p-4 ${className}`}>

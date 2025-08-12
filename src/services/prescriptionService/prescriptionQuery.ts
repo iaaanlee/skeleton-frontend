@@ -28,11 +28,11 @@ export const usePrescriptionHistoryV2 = (
   })
 }
 
-export const usePrescriptionById = (prescriptionId: string) => {
+export const usePrescriptionById = (prescriptionId: string, profileId: string) => {
   return useQuery({
-    queryKey: [...QUERY_KEYS.prescriptions, 'detail', prescriptionId],
-    queryFn: () => prescriptionService.getPrescriptionById(prescriptionId),
-    enabled: !!prescriptionId,
+    queryKey: [...QUERY_KEYS.prescriptions, 'detail', prescriptionId, profileId],
+    queryFn: () => prescriptionService.getPrescriptionById(prescriptionId, profileId),
+    enabled: !!prescriptionId && !!profileId,
   })
 }
 

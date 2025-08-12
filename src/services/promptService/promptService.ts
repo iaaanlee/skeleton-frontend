@@ -62,7 +62,7 @@ class PromptService implements IPromptService {
   async getPromptById(promptId: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: Prompt }>({
       method: 'GET',
-      url: `/prompt/${promptId}`,
+      url: `/prompt/promptById/${promptId}`,
     })
     return data.data
   }
@@ -89,7 +89,7 @@ class PromptService implements IPromptService {
   async updatePrompt(promptId: string, request: UpdatePromptRequest) {
     const { data } = await this.httpClient.request<{ success: boolean; data: UpdatePromptResponse }>({
       method: 'PUT',
-      url: `/prompt/${promptId}`,
+      url: `/prompt/promptById/${promptId}`,
       data: request,
     })
     return data.data
@@ -99,7 +99,7 @@ class PromptService implements IPromptService {
   async deletePrompt(promptId: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'DELETE',
-      url: `/prompt/${promptId}`,
+      url: `/prompt/promptById/${promptId}`,
     })
     return data
   }
@@ -108,7 +108,7 @@ class PromptService implements IPromptService {
   async permanentlyDeletePrompt(promptId: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'DELETE',
-      url: `/prompt/${promptId}/permanent`,
+      url: `/prompt/promptById/${promptId}/permanent`,
     })
     return data
   }
@@ -117,7 +117,7 @@ class PromptService implements IPromptService {
   async restorePrompt(promptId: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: UpdatePromptResponse }>({
       method: 'POST',
-      url: `/prompt/${promptId}/restore`,
+      url: `/prompt/promptById/${promptId}/restore`,
     })
     return data.data
   }

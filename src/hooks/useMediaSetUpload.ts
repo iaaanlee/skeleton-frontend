@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useInitUpload, useCompleteUpload, useUploadToS3 } from '../services/mediaSetService'
+import { mediaSetService } from '../services/mediaSetService/mediaSetService'
 import { useAccountAuth } from '../contexts/AccountAuthContext'
 import { QUERY_KEYS } from '../services/common/queryKey'
 import { validateAuthState, extractAccountIdFromToken } from '../utils/auth'
@@ -42,14 +43,22 @@ export const useMediaSetUpload = (profileId: string) => {
     setError('')
 
     try {
+      // 모든 파일의 업로드 정보를 저장할 배열
+      const uploadInfos: Array<{
+        uploadUrl: string;
+        objectKey: string;
+        file: File;
+      }> = [];
+
+      // 1단계: 모든 파일의 업로드 초기화 (Pre-signed URL 발급)
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
         
-        // 진행률 업데이트
-        const fileProgress = ((i + 1) / files.length) * 100
-        setProgress(fileProgress)
+        // 진행률 업데이트 (초기화 단계: 30%)
+        const initProgress = (i / files.length) * 30
+        setProgress(initProgress)
 
-        // 1. 업로드 초기화 (Pre-signed URL 발급)
+        // 업로드 초기화
         const uploadInitResponse = await initUploadMutation.mutateAsync({
           profileId,
           fileName: file.name,
@@ -57,22 +66,44 @@ export const useMediaSetUpload = (profileId: string) => {
           fileSize: file.size
         })
 
-        // 2. S3에 직접 업로드
-        await uploadToS3Mutation.mutateAsync({
+        uploadInfos.push({
           uploadUrl: uploadInitResponse.uploadUrl,
-          file: file as any
-        })
-
-        // 3. 업로드 완료 알림
-        await completeUploadMutation.mutateAsync({
-          profileId,
           objectKey: uploadInitResponse.objectKey,
-          fileName: file.name,
-          fileSize: file.size
+          file: file
         })
       }
 
+      // 2단계: 모든 파일을 S3에 업로드
+      for (let i = 0; i < uploadInfos.length; i++) {
+        const uploadInfo = uploadInfos[i]
+        
+        // 진행률 업데이트 (S3 업로드 단계: 30% ~ 80%)
+        const uploadProgress = 30 + (i / uploadInfos.length) * 50
+        setProgress(uploadProgress)
+
+        await uploadToS3Mutation.mutateAsync({
+          uploadUrl: uploadInfo.uploadUrl,
+          file: uploadInfo.file as any
+        })
+      }
+
+      // 3단계: 모든 파일을 하나의 미디어 세트로 생성
+      setProgress(80)
+      
+      // 여러 파일을 한 번에 미디어 세트로 생성
+      const filesData = uploadInfos.map(uploadInfo => ({
+        objectKey: uploadInfo.objectKey,
+        fileName: uploadInfo.file.name,
+        fileSize: uploadInfo.file.size
+      }))
+
+      await mediaSetService.completeUploadMultiple({
+        profileId,
+        files: filesData
+      })
+
       // 업로드 성공 후 상태 초기화
+      setProgress(100)
       setUploadStatus('success')
       
       // 미디어 세트 목록 쿼리 무효화하여 자동 갱신
@@ -92,7 +123,7 @@ export const useMediaSetUpload = (profileId: string) => {
       setUploadStatus('error')
       setError(error instanceof Error ? error.message : '업로드 중 오류가 발생했습니다.')
     }
-  }, [token, accountId, profileId, navigate, initUploadMutation, uploadToS3Mutation, completeUploadMutation, queryClient])
+  }, [token, accountId, profileId, navigate, initUploadMutation, uploadToS3Mutation, queryClient])
 
   return {
     uploadStatus,

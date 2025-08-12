@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useActivePrompts } from '../../../../services/promptService'
 
 type PromptSelectorProps = {
@@ -13,6 +13,13 @@ export const PromptSelector: React.FC<PromptSelectorProps> = ({
   className = ''
 }) => {
   const { data: promptList, isLoading, error } = useActivePrompts()
+
+  // 첫 번째 프롬프트를 기본으로 선택
+  useEffect(() => {
+    if (promptList?.prompts && promptList.prompts.length > 0 && !selectedPromptId) {
+      onSelectionChange(promptList.prompts[0]._id)
+    }
+  }, [promptList, selectedPromptId, onSelectionChange])
 
   const handlePromptClick = (promptId: string) => {
     if (selectedPromptId === promptId) {

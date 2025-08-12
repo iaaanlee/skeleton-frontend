@@ -30,10 +30,10 @@ export const usePrescriptionActions = (profileId: string, accountId: string) => 
       return false
     }
 
-    if (!inputs.description.ans1 || !inputs.description.ans2) {
-      alert('운동 분석 요청사항을 모두 입력해주세요.')
-      return false
-    }
+    // if (!inputs.description.ans1 || !inputs.description.ans2) {
+    //   alert('운동 분석 요청사항을 모두 입력해주세요.')
+    //   return false
+    // }
 
     if (!inputs.promptId) {
       alert('분석 프롬프트를 선택해주세요.')

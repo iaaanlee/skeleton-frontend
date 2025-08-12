@@ -71,7 +71,7 @@ export const MediaSetList: React.FC<MediaSetListProps> = ({
 
   const handleMediaSetDelete = async (mediaSetId: string) => {
     try {
-      await deleteMediaSetMutation.mutateAsync(mediaSetId)
+      await deleteMediaSetMutation.mutateAsync({ mediaSetId, profileId })
       if (selectedMediaSetId === mediaSetId) {
         clearSelectionRef.current()
       }

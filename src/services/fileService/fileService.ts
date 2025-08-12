@@ -56,7 +56,7 @@ class FileService implements IFileService {
   async getDownloadUrl(fileId: string, profileId: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: DownloadUrlResponse }>({
       method: 'GET',
-      url: `/files/${fileId}/download`,
+      url: `/files/fileById/${fileId}/download`,
       params: { profileId }
     })
     return data.data
@@ -66,7 +66,7 @@ class FileService implements IFileService {
   async deleteFile(fileId: string, profileId: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'DELETE',
-      url: `/files/${fileId}`,
+      url: `/files/fileById/${fileId}`,
       params: { profileId }
     })
     return data

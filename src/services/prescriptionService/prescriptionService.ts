@@ -69,7 +69,7 @@ export type SaveLLMResultsRequest = {
 
 type IPrescriptionService = {
   createPrescription: (request: CreatePrescriptionRequest) => Promise<CreatePrescriptionResponse>;
-  getPrescriptionById: (prescriptionId: string) => Promise<Prescription>;
+  getPrescriptionById: (prescriptionId: string, profileId: string) => Promise<Prescription>;
   getPrescriptionHistory: (accountId: string, profileId: string, limit?: number, offset?: number) => Promise<PrescriptionListResponse>;
   getPrescriptionHistoryV2: (accountId: string, profileId: string, limit?: number, offset?: number) => Promise<PrescriptionListResponse>;
   getCompletedPrescriptions: (accountId: string, profileId: string, limit?: number, offset?: number) => Promise<PrescriptionListResponse>;
@@ -97,10 +97,11 @@ class PrescriptionService implements IPrescriptionService {
   }
 
   // 처방 상세 조회
-  async getPrescriptionById(prescriptionId: string) {
+  async getPrescriptionById(prescriptionId: string, profileId: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: Prescription }>({
       method: 'GET',
-      url: `/prescription/${prescriptionId}`,
+      url: `/prescription/prescriptionById/${prescriptionId}`,
+      params: { profileId }
     })
     return data.data
   }
@@ -157,7 +158,7 @@ class PrescriptionService implements IPrescriptionService {
   async updatePrescriptionStatus(prescriptionId: string, request: UpdatePrescriptionStatusRequest) {
     const { data } = await this.httpClient.request<void>({
       method: 'PATCH',
-      url: `/prescription/${prescriptionId}/status`,
+      url: `/prescription/prescriptionById/${prescriptionId}/status`,
       data: request,
     })
     return data
@@ -167,7 +168,7 @@ class PrescriptionService implements IPrescriptionService {
   async saveBlazePoseResults(prescriptionId: string, request: SaveBlazePoseResultsRequest) {
     const { data } = await this.httpClient.request<void>({
       method: 'POST',
-      url: `/prescription/${prescriptionId}/blazepose-results`,
+      url: `/prescription/prescriptionById/${prescriptionId}/blazepose-results`,
       data: request,
     })
     return data
@@ -177,7 +178,7 @@ class PrescriptionService implements IPrescriptionService {
   async saveLLMResults(prescriptionId: string, request: SaveLLMResultsRequest) {
     const { data } = await this.httpClient.request<void>({
       method: 'POST',
-      url: `/prescription/${prescriptionId}/llm-results`,
+      url: `/prescription/prescriptionById/${prescriptionId}/llm-results`,
       data: request,
     })
     return data
@@ -187,7 +188,7 @@ class PrescriptionService implements IPrescriptionService {
   async completePrescription(prescriptionId: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'POST',
-      url: `/prescription/${prescriptionId}/complete`,
+      url: `/prescription/prescriptionById/${prescriptionId}/complete`,
     })
     return data
   }
@@ -196,7 +197,7 @@ class PrescriptionService implements IPrescriptionService {
   async failPrescription(prescriptionId: string, error?: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'POST',
-      url: `/prescription/${prescriptionId}/fail`,
+      url: `/prescription/prescriptionById/${prescriptionId}/fail`,
       data: { error },
     })
     return data
@@ -206,7 +207,7 @@ class PrescriptionService implements IPrescriptionService {
   async deletePrescription(prescriptionId: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'DELETE',
-      url: `/prescription/${prescriptionId}`,
+      url: `/prescription/prescriptionById/${prescriptionId}`,
     })
     return data
   }
