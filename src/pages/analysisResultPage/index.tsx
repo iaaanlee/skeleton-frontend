@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
-import { useAnalysisStatus } from '../../services/blazePoseService';
+import { useAnalysisStatus } from '../../services/analysisService';
 import { AnalysisResultContent } from './components/organisms';
 
 export const AnalysisResultPage = () => {
@@ -13,11 +13,11 @@ export const AnalysisResultPage = () => {
     data: status, 
     isLoading: statusLoading, 
     error: statusError 
-  } = useAnalysisStatus(analysisId || '', true);
+  } = useAnalysisStatus(analysisId || '');
 
   // 페이지 로드 시 자동으로 Prescription으로 저장
   useEffect(() => {
-    if (status?.status === 'completed' && analysisId) {
+    if (status?.status === 'llm_completed' && analysisId) {
       // TODO: Prescription으로 자동 저장 로직 구현
       console.log('분석 결과를 Prescription으로 자동 저장:', analysisId);
     }
@@ -78,7 +78,7 @@ export const AnalysisResultPage = () => {
   }
 
   // 분석 진행 중
-  if (status && ['pending', 'processing'].includes(status.status)) {
+  if (status && ['pending', 'blazepose_processing', 'llm_processing'].includes(status.status)) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
         <div className="flex-1 flex items-center justify-center">
@@ -97,7 +97,7 @@ export const AnalysisResultPage = () => {
   }
 
   // 분석 완료 - 결과 선택 페이지
-  if (status?.status === 'completed') {
+  if (status?.status === 'llm_completed') {
     return (
       <AnalysisResultContent
         analysisId={analysisId || ''}

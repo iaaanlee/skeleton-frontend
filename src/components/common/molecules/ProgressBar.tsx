@@ -1,5 +1,5 @@
 import React from 'react'
-import { PROGRESS_TYPE } from '../../../constants/upload'
+// import { PROGRESS_TYPE } from '../../../constants/upload'
 import { ProgressBarProps } from '../../../types/files/components'
 
 const ProgressBar: React.FC<ProgressBarProps> = ({

@@ -3,10 +3,10 @@ import { Header } from '../../../../components/common/templates/Header';
 import { BottomBar } from '../../../../components/common/templates/BottomBar';
 import { AnalysisResultContent } from './AnalysisResultContent';
 import { ROUTES, RouteValue } from '../../../../constants/routes';
-import { BlazePoseResult } from '../../../../types/blazePose';
+import { AnalysisJob } from '../../../../services/analysisService';
 
 type AnalysisResultDisplayProps = {
-  result: BlazePoseResult['data'];
+  result: AnalysisJob;
   onSaveResult: () => void;
   backRoute?: RouteValue;
 };

@@ -6,7 +6,7 @@ interface StoredData {
 }
 
 // 간단한 암호화 키 (실제 프로덕션에서는 환경변수로 관리)
-const ENCRYPTION_KEY = 'skeleton-app-secure-key-2024';
+// const ENCRYPTION_KEY = 'skeleton-app-secure-key-2024';
 
 // 데이터 암호화
 const encryptData = (data: any): string => {

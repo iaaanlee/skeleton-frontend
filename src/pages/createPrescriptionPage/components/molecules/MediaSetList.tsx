@@ -2,17 +2,19 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMediaSetList } from '../../../../services/mediaSetService'
 import { useAccountAuth } from '../../../../contexts/AccountAuthContext'
-import { useSingleFileSelection, useFileActions } from '../../../../hooks'
+import { useSingleFileSelection } from '../../../../hooks'
+import { useDeleteMediaSet } from '../../../../services/mediaSetService'
 import { validateAuthState, extractAccountIdFromToken } from '../../../../utils/auth'
-import { UploadModal } from '../../../../components/common/molecules/UploadModal'
+import { MediaSetUploadModal } from './MediaSetUploadModal'
+import { MediaSet } from '../../../../services/mediaSetService/mediaSetService'
 
-type PrescriptionFileListProps = {
+type MediaSetListProps = {
   profileId: string
-  onSelectionChange?: (selectedFiles: string[]) => void
+  onSelectionChange?: (selectedMediaSetId: string | null) => void
   className?: string
 }
 
-export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
+export const MediaSetList: React.FC<MediaSetListProps> = ({
   profileId,
   onSelectionChange,
   className = ''
@@ -29,58 +31,54 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
 
   // 단일 선택 훅 사용
   const {
-    selectedFile,
-    selectedFiles,
-    selectFile,
+    selectedFile: selectedMediaSetId,
+    selectFile: selectMediaSet,
     clearSelection,
     isSelected,
-    // selectedCount
   } = useSingleFileSelection()
 
   // clearSelection 함수를 ref로 저장
   const clearSelectionRef = useRef(clearSelection)
   clearSelectionRef.current = clearSelection
 
-  const {
-    deleteFile
-  } = useFileActions(profileId, accountId || '')
+  const deleteMediaSetMutation = useDeleteMediaSet()
 
-  // 선택된 파일 변경 시 부모 컴포넌트에 알림
+  // 선택된 미디어 세트 변경 시 부모 컴포넌트에 알림
   useEffect(() => {
     if (onSelectionChange) {
-      onSelectionChange(selectedFiles)
+      onSelectionChange(selectedMediaSetId)
     }
-  }, [selectedFiles, onSelectionChange])
+  }, [selectedMediaSetId, onSelectionChange])
 
   // 미디어 세트 목록이 변경될 때 선택 상태 동기화
   useEffect(() => {
-    if (mediaSetListResponse?.mediaSets && selectedFile) {
-      const allFileIds = mediaSetListResponse.mediaSets.flatMap(mediaSet => 
-        mediaSet.files.map(file => file._id)
-      )
-      if (!allFileIds.includes(selectedFile)) {
+    if (mediaSetListResponse?.mediaSets && selectedMediaSetId) {
+      const existingMediaSetIds = mediaSetListResponse.mediaSets.map(mediaSet => mediaSet._id)
+      if (!existingMediaSetIds.includes(selectedMediaSetId)) {
         clearSelectionRef.current()
       }
     }
-  }, [mediaSetListResponse?.mediaSets, selectedFile])
+  }, [mediaSetListResponse?.mediaSets, selectedMediaSetId])
 
   // 인증 상태 확인
   if (!validateAuthState(token, navigate)) {
     return null
   }
 
-  const handleFileSelect = (file: any) => {
-    selectFile(file._id)
+  const handleMediaSetSelect = (mediaSet: MediaSet) => {
+    selectMediaSet(mediaSet._id)
   }
 
-  const handleFileDelete = async (fileId: string) => {
-    const success = await deleteFile(fileId)
-    if (success && selectedFile === fileId) {
-      clearSelectionRef.current()
+  const handleMediaSetDelete = async (mediaSetId: string) => {
+    try {
+      await deleteMediaSetMutation.mutateAsync(mediaSetId)
+      if (selectedMediaSetId === mediaSetId) {
+        clearSelectionRef.current()
+      }
+    } catch (error) {
+      console.error('Delete media set error:', error)
     }
   }
-
-
 
   const handleUploadSuccess = () => {
     setIsUploadModalOpen(false)
@@ -100,10 +98,10 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
       <div className={`space-y-4 ${className}`}>
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <h3 className="text-lg font-medium text-green-900 mb-2">
-            운동 이미지 선택
+            미디어 세트 선택
           </h3>
           <p className="text-sm text-green-700 mb-4">
-            자세를 분석할 이미지를 업로드하고 선택해주세요.
+            분석할 미디어 세트를 업로드하고 선택해주세요.
           </p>
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
@@ -121,24 +119,23 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
             오류 발생
           </h3>
           <p className="text-sm text-red-700">
-            파일 목록을 불러오는 중 오류가 발생했습니다.
+            미디어 세트 목록을 불러오는 중 오류가 발생했습니다.
           </p>
         </div>
       </div>
     )
   }
 
-  // 모든 미디어 세트에서 파일들을 추출
-  const files = mediaSetListResponse?.mediaSets?.flatMap(mediaSet => mediaSet.files) || []
+  const mediaSets = mediaSetListResponse?.mediaSets || []
 
   return (
     <div className={`space-y-4 ${className}`}>
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
         <h3 className="text-lg font-medium text-green-900 mb-2">
-          운동 이미지 선택
+          미디어 세트 선택
         </h3>
         <p className="text-sm text-green-700 mb-4">
-          자세를 분석할 이미지를 업로드하고 선택해주세요. (하나만 선택 가능)
+          분석할 미디어 세트를 업로드하고 선택해주세요. (하나만 선택 가능)
         </p>
         
         {/* 업로드 버튼 */}
@@ -150,40 +147,40 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
-            이미지 추가
+            미디어 세트 추가
           </button>
         </div>
 
-        {/* 파일 그리드 */}
-        {files.length === 0 ? (
+        {/* 미디어 세트 그리드 */}
+        {mediaSets.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <p className="mt-2">업로드된 이미지가 없습니다.</p>
+            <p className="mt-2">업로드된 미디어 세트가 없습니다.</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {files.map((file) => (
+            {mediaSets.map((mediaSet) => (
               <div
-                key={file._id}
+                key={mediaSet._id}
                 className={`
                   relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all duration-200
-                  ${isSelected(file._id)
+                  ${isSelected(mediaSet._id)
                     ? 'border-green-500 ring-2 ring-green-200'
                     : 'border-gray-200 hover:border-gray-300'
                   }
                 `}
-                onClick={() => handleFileSelect(file)}
+                onClick={() => handleMediaSetSelect(mediaSet)}
               >
                 {/* 썸네일 */}
                 <div className="aspect-square bg-gray-100">
-                  {file.thumbnailKey ? (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
+                  {mediaSet.thumbnailUrls && mediaSet.thumbnailUrls.length > 0 ? (
+                    <img
+                      src={mediaSet.thumbnailUrls[0]}
+                      alt={`미디어 세트 ${mediaSet._id}`}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -197,8 +194,8 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    if (window.confirm('이 파일을 삭제하시겠습니까?')) {
-                      handleFileDelete(file._id)
+                    if (window.confirm('이 미디어 세트를 삭제하시겠습니까?')) {
+                      handleMediaSetDelete(mediaSet._id)
                     }
                   }}
                   className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors z-10 opacity-0 group-hover:opacity-100"
@@ -210,7 +207,7 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
                 </button>
 
                 {/* 선택 표시 - 중앙에 체크 표시 */}
-                {isSelected(file._id) && (
+                {isSelected(mediaSet._id) && (
                   <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
                     <div className="bg-green-500 text-white rounded-full p-2">
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -220,10 +217,13 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
                   </div>
                 )}
 
-                {/* 파일명 */}
+                {/* 미디어 세트 정보 */}
                 <div className="p-2 bg-white">
-                  <p className="text-xs text-gray-600 truncate" title={file.fileName}>
-                    {file.fileName}
+                  <p className="text-xs text-gray-600 truncate" title={mediaSet._id}>
+                    {mediaSet._id.substring(0, 10)}...
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    파일 {mediaSet.files.length}개
                   </p>
                 </div>
               </div>
@@ -231,18 +231,18 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
           </div>
         )}
 
-        {/* 선택된 파일 정보 */}
-        {selectedFile && (
+        {/* 선택된 미디어 세트 정보 */}
+        {selectedMediaSetId && (
           <div className="mt-4 p-3 bg-green-100 border border-green-300 rounded-lg">
             <p className="text-sm text-green-800">
-              <span className="font-medium">선택된 파일:</span> {files.find(f => f._id === selectedFile)?.fileName}
+              <span className="font-medium">선택된 미디어 세트:</span> {mediaSets.find(ms => ms._id === selectedMediaSetId)?._id.substring(0, 10)}...
             </p>
           </div>
         )}
       </div>
 
       {/* 업로드 모달 */}
-      <UploadModal
+      <MediaSetUploadModal
         isOpen={isUploadModalOpen}
         onClose={handleModalClose}
         onUploadSuccess={handleUploadSuccess}

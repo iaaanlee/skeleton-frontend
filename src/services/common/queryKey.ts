@@ -4,8 +4,11 @@ export const queryKeys = {
   profile: (profileId: string) => ['profile', profileId],
   profiles: () => ['profiles'],
   files: () => ['files'],
+  mediaSets: () => ['mediaSets'],
+  prompts: () => ['prompts'],
   blazePose: () => ['blazePose'],
   prescriptions: () => ['prescriptions'],
+  analysis: () => ['analysis'],
 };
 
 export const QUERY_KEYS = {
@@ -13,6 +16,9 @@ export const QUERY_KEYS = {
   account: queryKeys.account(),
   profiles: queryKeys.profiles(),
   files: queryKeys.files(),
+  mediaSets: queryKeys.mediaSets(),
+  prompts: queryKeys.prompts(),
   blazePose: queryKeys.blazePose(),
   prescriptions: queryKeys.prescriptions(),
+  analysis: queryKeys.analysis(),
 };

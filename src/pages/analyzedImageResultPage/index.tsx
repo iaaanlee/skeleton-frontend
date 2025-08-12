@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
-import { useAnalysisStatus, useAnalysisResult } from '../../services/blazePoseService';
+import { useAnalysisStatus, useAnalysisJob } from '../../services/analysisService';
 import { AnalysisLoadingState, AnalysisErrorState, AnalysisNoResultState, AnalysisUnexpectedState } from './components/molecules';
 import { AnalysisResultDisplay } from './components/organisms';
 
@@ -18,15 +18,15 @@ export const AnalyzedImageResultPage = () => {
     data: status, 
     isLoading: statusLoading, 
     error: statusError 
-  } = useAnalysisStatus(analysisId || '', !!analysisId);
+  } = useAnalysisStatus(analysisId || '');
 
   // 분석이 완료된 경우에만 결과 요청
-  const isCompleted = status?.status === 'completed';
+  const isCompleted = status?.status === 'llm_completed';
   const { 
     data: result, 
     isLoading: resultLoading, 
     error: resultError 
-  } = useAnalysisResult(analysisId || '', isCompleted);
+  } = useAnalysisJob(analysisId || '');
 
   // analysisId가 없으면 에러 상태로 처리
   if (!analysisId) {
@@ -65,11 +65,11 @@ export const AnalyzedImageResultPage = () => {
     );
   }
 
-  // 3. 분석 진행 중 (pending, processing)
-  if (status && ['pending', 'processing'].includes(status.status)) {
+  // 3. 분석 진행 중 (pending, blazepose_processing, llm_processing)
+  if (status && ['pending', 'blazepose_processing', 'llm_processing'].includes(status.status)) {
     return (
       <AnalysisLoadingState 
-        status={status.status}
+        status="processing"
         message={status.message || "분석을 진행 중입니다..."}
       />
     );

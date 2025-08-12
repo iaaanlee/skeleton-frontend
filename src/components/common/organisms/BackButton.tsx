@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES, RouteValue } from '../../../constants/routes';
+import { RouteValue } from '../../../constants/routes';
 
 interface BackButtonProps {
     backRoute: RouteValue;

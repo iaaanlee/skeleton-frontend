@@ -31,9 +31,9 @@ const FileItem: React.FC<FileItemProps> = ({
     setShowDeleteModal(false)
   }
 
-  const handleDownload = () => {
-    onDownload?.(file)
-  }
+  // const handleDownload = () => {
+  //   onDownload?.(file)
+  // }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)

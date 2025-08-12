@@ -1,26 +1,15 @@
 import React from 'react';
-import { BlazePoseResult, JointType } from '../../../../types/blazePose';
+import { AnalysisJob } from '../../../../services/analysisService';
 import { AnalysisSummary } from '../molecules/AnalysisSummary';
-import { FileResultList } from '../molecules/FileResultList';
-import { LandmarksVisualization } from '../molecules/LandmarksVisualization';
 
 type AnalysisResultContentProps = {
-  result: BlazePoseResult['data'];
+  result: AnalysisJob;
 };
 
 export const AnalysisResultContent: React.FC<AnalysisResultContentProps> = ({
   result
 }) => {
-  const formatTime = (milliseconds: number) => {
-    const seconds = Math.floor(milliseconds / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    
-    if (minutes > 0) {
-      return `${minutes}분 ${remainingSeconds}초`;
-    }
-    return `${remainingSeconds}초`;
-  };
+
 
   const formatConfidence = (confidence: number) => {
     return `${(confidence * 100).toFixed(1)}%`;
@@ -30,44 +19,55 @@ export const AnalysisResultContent: React.FC<AnalysisResultContentProps> = ({
     <div className="space-y-6">
       {/* 분석 요약 */}
       <AnalysisSummary 
-        totalFiles={result.fileResults.length}
-        totalConfidence={result.totalConfidence}
-        analysisTime={result.analysisTime}
+        totalFiles={result.blazePoseResults?.estimatedImageKeys?.length || 0}
+        totalConfidence={result.blazePoseResults?.confidence || 0}
+        analysisTime={0} // TODO: 분석 시간 계산 로직 추가
       />
 
-      {/* 관절 좌표 시각화 */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          관절 좌표 분석
-        </h3>
-        <LandmarksVisualization 
-          landmarks={result.fileResults[0]?.landmarks?.map((landmark, index) => {
-            // BlazePose의 33개 관절 순서에 맞게 매핑
-            const jointTypes: JointType[] = [
-              'nose', 'left_eye', 'right_eye', 'left_ear', 'right_ear',
-              'left_shoulder', 'right_shoulder', 'left_elbow', 'right_elbow',
-              'left_wrist', 'right_wrist', 'left_hip', 'right_hip',
-              'left_knee', 'right_knee', 'left_ankle', 'right_ankle'
-            ];
-            
-            return {
-              x: landmark[0],
-              y: landmark[1],
-              confidence: landmark[2],
-              jointType: jointTypes[index] || 'nose'
-            };
-          }) || []}
-          confidence={result.fileResults[0]?.confidence || 0}
-        />
-      </div>
+      {/* LLM 분석 결과 */}
+      {result.llmResults && (
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            LLM 분석 결과
+          </h3>
+          <div className="prose max-w-none">
+            <p className="text-gray-700 whitespace-pre-wrap">
+              {result.llmResults.analysisText}
+            </p>
+          </div>
+        </div>
+      )}
 
-      {/* 개별 파일 결과 */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          파일별 분석 결과
-        </h3>
-        <FileResultList fileResults={result.fileResults} />
-      </div>
+      {/* BlazePose 결과 */}
+      {result.blazePoseResults && (
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            BlazePose 분석 결과
+          </h3>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">
+                  {result.blazePoseResults.estimatedImageKeys.length}
+                </div>
+                <div className="text-sm text-gray-600">분석된 이미지</div>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">
+                  {formatConfidence(result.blazePoseResults.confidence)}
+                </div>
+                <div className="text-sm text-gray-600">전체 신뢰도</div>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">
+                  {result.blazePoseResults.jointPositions.length}
+                </div>
+                <div className="text-sm text-gray-600">관절 좌표 수</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 분석 통계 */}
       <div className="bg-white rounded-lg shadow-sm p-6">
@@ -77,21 +77,21 @@ export const AnalysisResultContent: React.FC<AnalysisResultContentProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="text-center p-4 bg-blue-50 rounded-lg">
             <div className="text-2xl font-bold text-blue-600">
-              {result.fileResults.length}
+              {result.blazePoseResults?.estimatedImageKeys?.length || 0}
             </div>
             <div className="text-sm text-gray-600">분석된 파일</div>
           </div>
           <div className="text-center p-4 bg-green-50 rounded-lg">
             <div className="text-2xl font-bold text-green-600">
-              {formatConfidence(result.totalConfidence)}
+              {formatConfidence(result.blazePoseResults?.confidence || 0)}
             </div>
             <div className="text-sm text-gray-600">전체 신뢰도</div>
           </div>
           <div className="text-center p-4 bg-purple-50 rounded-lg">
             <div className="text-2xl font-bold text-purple-600">
-              {formatTime(result.analysisTime)}
+              {result.status}
             </div>
-            <div className="text-sm text-gray-600">분석 소요 시간</div>
+            <div className="text-sm text-gray-600">분석 상태</div>
           </div>
         </div>
       </div>

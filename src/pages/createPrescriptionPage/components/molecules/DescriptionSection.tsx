@@ -1,8 +1,11 @@
 import React from 'react';
 
 type DescriptionSectionProps = {
-  value: string;
-  onChange: (value: string) => void;
+  value: {
+    ans1: string;
+    ans2: string;
+  };
+  onChange: (value: { ans1: string; ans2: string }) => void;
   className?: string;
 };
 
@@ -11,8 +14,12 @@ export const DescriptionSection: React.FC<DescriptionSectionProps> = ({
   onChange,
   className = ''
 }) => {
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onChange(e.target.value);
+  const handleAns1Change = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onChange({ ...value, ans1: e.target.value });
+  };
+
+  const handleAns2Change = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onChange({ ...value, ans2: e.target.value });
   };
 
   return (
@@ -21,20 +28,40 @@ export const DescriptionSection: React.FC<DescriptionSectionProps> = ({
         운동 분석 요청사항
       </h3>
       <p className="text-sm text-blue-700 mb-4">
-        분석하고 싶은 운동에 대한 설명이나 특별한 요청사항을 자유롭게 작성해주세요.
+        분석하고 싶은 운동에 대한 질문에 답변해주세요.
       </p>
       
-      <div className="space-y-3">
-        <textarea
-          value={value}
-          onChange={handleChange}
-          placeholder="예시: 스쿼트 자세가 올바른지 확인해주세요. 무릎이 발끝을 넘어가지 않는지, 허리가 굽지 않는지 중점적으로 분석해주세요."
-          className="w-full h-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-        />
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-blue-800 mb-2">
+            질문 1
+          </label>
+          <textarea
+            value={value.ans1}
+            onChange={handleAns1Change}
+            placeholder="첫 번째 질문에 대한 답변을 입력해주세요..."
+            className="w-full h-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+          />
+          <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
+            <span>첫 번째 질문 답변</span>
+            <span>{value.ans1.length} / 500자</span>
+          </div>
+        </div>
         
-        <div className="flex justify-between items-center text-xs text-gray-500">
-          <span>자유롭게 운동 분석 요청사항을 작성하세요</span>
-          <span>{value.length} / 1000자</span>
+        <div>
+          <label className="block text-sm font-medium text-blue-800 mb-2">
+            질문 2
+          </label>
+          <textarea
+            value={value.ans2}
+            onChange={handleAns2Change}
+            placeholder="두 번째 질문에 대한 답변을 입력해주세요..."
+            className="w-full h-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+          />
+          <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
+            <span>두 번째 질문 답변</span>
+            <span>{value.ans2.length} / 500자</span>
+          </div>
         </div>
       </div>
     </div>

@@ -16,7 +16,7 @@ export const CreateAccountPage = () => {
     const { 
         handleCreateAccount,
         isPending: isPendingCreateAccount, 
-        isSuccess: isSuccessCreateAccount, 
+        // isSuccess: isSuccessCreateAccount, 
         isError: isErrorCreateAccount 
     } = useCreateAccount({
         onSuccess: () => {

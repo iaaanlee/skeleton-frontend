@@ -1,0 +1,157 @@
+// MediaSet 관련 API service 정의
+import { AxiosHttpClient } from "../common/axiosHttpClient";
+import { backendHttpClient } from "../common/httpClient";
+
+export type MediaSet = {
+  _id: string;
+  accountId: string;
+  profileId: string;
+  name?: string;
+  files: MediaFile[];
+  thumbnailUrls?: string[];
+  status: 'active' | 'deleted';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MediaFile = {
+  _id: string;
+  fileName: string;
+  fileSize: number;
+  contentType: string;
+  originalKey: string;
+  thumbnailKey?: string;
+  preProcessedKey?: string;
+  estimatedKey?: string;
+  hash: string;
+  uploadedAt: string;
+}
+
+export type MediaSetListResponse = {
+  mediaSets: MediaSet[];
+  total: number;
+}
+
+export type CreateMediaSetRequest = {
+  profileId: string;
+  objectKey: string;
+  fileName: string;
+  fileSize: number;
+}
+
+export type CreateMediaSetResponse = {
+  mediaSet: MediaSet;
+}
+
+export type UploadInitRequest = {
+  fileName: string;
+  fileSize: number;
+  contentType: string;
+  profileId: string;
+}
+
+export type UploadInitResponse = {
+  uploadUrl: string;
+  objectKey: string;
+}
+
+export type UploadCompleteRequest = {
+  objectKey: string;
+  profileId: string;
+  fileName: string;
+  fileSize: number;
+}
+
+export type UploadCompleteResponse = {
+  mediaSet: MediaSet;
+}
+
+type IMediaSetService = {
+  initUpload: (request: UploadInitRequest) => Promise<UploadInitResponse>;
+  createMediaSet: (request: CreateMediaSetRequest) => Promise<CreateMediaSetResponse>;
+  completeUpload: (request: UploadCompleteRequest) => Promise<UploadCompleteResponse>;
+  getMediaSetList: (accountId: string, profileId: string, limit?: number, offset?: number) => Promise<MediaSetListResponse>;
+  getMediaSetById: (mediaSetId: string) => Promise<MediaSet>;
+  deleteMediaSet: (mediaSetId: string) => Promise<void>;
+  uploadToS3: (uploadUrl: string, file: File) => Promise<void>;
+};
+
+class MediaSetService implements IMediaSetService { 
+  constructor(private httpClient: AxiosHttpClient) {}
+
+  // 파일 업로드 초기화 (Pre-signed URL 생성)
+  async initUpload(request: UploadInitRequest) {
+    const { data } = await this.httpClient.request<{ success: boolean; data: UploadInitResponse }>({
+      method: 'POST',
+      url: '/mediaSet/upload/init',
+      data: request,
+    })
+    return data.data
+  }
+
+  // 미디어 세트 생성
+  async createMediaSet(request: CreateMediaSetRequest) {
+    const { data } = await this.httpClient.request<{ success: boolean; data: CreateMediaSetResponse }>({
+      method: 'POST',
+      url: '/mediaSet/create',
+      data: request,
+    })
+    return data.data
+  }
+
+  // 파일 업로드 완료
+  async completeUpload(request: UploadCompleteRequest) {
+    const { data } = await this.httpClient.request<{ success: boolean; data: UploadCompleteResponse }>({
+      method: 'POST',
+      url: '/mediaSet/upload/complete',
+      data: request,
+    })
+    return data.data
+  }
+
+  // 미디어 세트 목록 조회
+  async getMediaSetList(accountId: string, profileId: string, limit: number = 20, offset: number = 0) {
+    const { data } = await this.httpClient.request<{ success: boolean; data: MediaSetListResponse }>({
+      method: 'GET',
+      url: '/mediaSet/list',
+      params: { profileId, limit, offset }
+    })
+    return data.data
+  }
+
+  // 미디어 세트 상세 조회
+  async getMediaSetById(mediaSetId: string) {
+    const { data } = await this.httpClient.request<{ success: boolean; data: MediaSet }>({
+      method: 'GET',
+      url: `/mediaSet/${mediaSetId}`,
+    })
+    return data.data
+  }
+
+  // 미디어 세트 삭제
+  async deleteMediaSet(mediaSetId: string) {
+    const { data } = await this.httpClient.request<void>({
+      method: 'DELETE',
+      url: `/mediaSet/${mediaSetId}`,
+    })
+    return data
+  }
+
+  // S3에 직접 파일 업로드 (Pre-signed URL 사용)
+  async uploadToS3(uploadUrl: string, file: File): Promise<void> {
+    const response = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type,
+        'Content-Length': file.size.toString()
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to upload file to S3: ${response.statusText}`)
+    }
+  }
+}
+
+export const mediaSetService = new MediaSetService(backendHttpClient);
