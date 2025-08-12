@@ -3,17 +3,19 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { useAnalysisStatus } from '../../services/analysisService';
 import { AnalysisResultContent } from './components/organisms';
+import { useProfile } from '../../contexts/ProfileAuthContext';
 
 export const AnalysisResultPage = () => {
   const { analysisId } = useParams<{ analysisId: string }>();
   const navigate = useNavigate();
+  const { selectedProfile } = useProfile();
 
   // 분석 상태 조회
   const { 
     data: status, 
     isLoading: statusLoading, 
     error: statusError 
-  } = useAnalysisStatus(analysisId || '');
+  } = useAnalysisStatus(analysisId || '', selectedProfile?._id || '');
 
   // 페이지 로드 시 자동으로 Prescription으로 저장
   useEffect(() => {

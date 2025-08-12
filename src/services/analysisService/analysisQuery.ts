@@ -2,18 +2,17 @@ import { useQuery } from '@tanstack/react-query'
 import { analysisService } from './analysisService'
 import { QUERY_KEYS } from '../common/queryKey'
 
-export const useAnalysisStatus = (analysisJobId: string) => {
+export const useAnalysisStatus = (analysisJobId: string, profileId?: string) => {
   return useQuery({
-    queryKey: [...QUERY_KEYS.analysis, 'status', analysisJobId],
-    queryFn: () => analysisService.getAnalysisStatus(analysisJobId),
-    enabled: !!analysisJobId,
-    refetchInterval: (data: any) => {
-      // 분석이 진행 중일 때만 폴링
-      if (data?.status === 'pending' || data?.status === 'blazepose_processing' || data?.status === 'llm_processing') {
-        return 2000 // 2초마다 폴링
-      }
-      return false // 완료되면 폴링 중단
+    queryKey: [...QUERY_KEYS.analysis, 'status', analysisJobId, profileId],
+    queryFn: async () => {
+      const result = await analysisService.getAnalysisStatus(analysisJobId, profileId);
+      console.log('queryFn 반환값:', result);
+      return result;
     },
+    enabled: !!analysisJobId,
+    refetchInterval: 2000, // 고정 2초마다 폴링
+    refetchIntervalInBackground: true,
   })
 }
 

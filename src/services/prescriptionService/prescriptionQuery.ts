@@ -48,3 +48,11 @@ export const useCompletedPrescriptions = (
     enabled: !!accountId && !!profileId,
   })
 }
+
+export const usePrescriptionByAnalysisJob = (analysisJobId: string, profileId?: string) => {
+  return useQuery({
+    queryKey: [...QUERY_KEYS.prescriptions, 'by-analysis', analysisJobId],
+    queryFn: () => prescriptionService.getPrescriptionByAnalysisJob(analysisJobId),
+    enabled: !!analysisJobId,
+  })
+}

@@ -8,6 +8,7 @@ import { ProfilePage } from './pages/profilePage';
 import { EditProfilePage } from './pages/editProfilePage';
 import { AnalyzeExercisePage } from './pages/analyzeExercisePage';
 import { CreatePrescriptionPage } from './pages/createPrescriptionPage';
+import { AnalysisProgressPage } from './pages/analysisProgressPage';
 import { AnalysisResultPage } from './pages/analysisResultPage';
 import { AnalyzedImageResultPage } from './pages/analyzedImageResultPage';
 import { PrescriptionHistoryPage } from './pages/prescriptionHistoryPage';
@@ -73,6 +74,10 @@ export const router = createBrowserRouter([
     {
         path: ROUTES.CREATE_PRESCRIPTION,
         element: <ProtectedRoute requireProfile={true}><CreatePrescriptionPage /></ProtectedRoute>
+    },
+    {
+        path: ROUTES.ANALYSIS_PROGRESS,
+        element: <ProtectedRoute requireProfile={true}><AnalysisProgressPage /></ProtectedRoute>
     },
     {
         path: ROUTES.ANALYSIS_RESULT,

@@ -27,9 +27,14 @@ export type AnalysisJob = {
 }
 
 export type AnalysisStatus = {
+  analysisJobId: string;
   status: 'pending' | 'blazepose_processing' | 'blazepose_completed' | 'llm_processing' | 'llm_completed' | 'failed';
   progress: number;
   message: string;
+  error: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
 }
 
 export type StartAnalysisRequest = {
@@ -47,7 +52,7 @@ export type StartAnalysisResponse = {
 
 type IAnalysisService = {
   startAnalysis: (request: StartAnalysisRequest) => Promise<StartAnalysisResponse>;
-  getAnalysisStatus: (analysisJobId: string) => Promise<AnalysisStatus>;
+  getAnalysisStatus: (analysisJobId: string, profileId?: string) => Promise<AnalysisStatus>;
   getAnalysisJob: (analysisJobId: string) => Promise<AnalysisJob>;
   cancelAnalysis: (analysisJobId: string) => Promise<void>;
 };
@@ -66,11 +71,14 @@ class AnalysisService implements IAnalysisService {
   }
 
   // 분석 상태 조회
-  async getAnalysisStatus(analysisJobId: string) {
+  async getAnalysisStatus(analysisJobId: string, profileId?: string) {
+    console.log('getAnalysisStatus 호출:', { analysisJobId, profileId });
     const { data } = await this.httpClient.request<{ success: boolean; data: AnalysisStatus }>({
       method: 'GET',
       url: `/analysis/status/${analysisJobId}`,
+      params: profileId ? { profileId } : undefined
     })
+    console.log('getAnalysisStatus 응답:', data);
     return data.data
   }
 

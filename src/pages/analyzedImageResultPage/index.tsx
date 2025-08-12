@@ -4,10 +4,12 @@ import { ROUTES } from '../../constants/routes';
 import { useAnalysisStatus, useAnalysisJob } from '../../services/analysisService';
 import { AnalysisLoadingState, AnalysisErrorState, AnalysisNoResultState, AnalysisUnexpectedState } from './components/molecules';
 import { AnalysisResultDisplay } from './components/organisms';
+import { useProfile } from '../../contexts/ProfileAuthContext';
 
 export const AnalyzedImageResultPage = () => {
   const { analysisId } = useParams<{ analysisId: string }>();
   const navigate = useNavigate();
+  const { selectedProfile } = useProfile();
 
   const handleBack = () => {
     navigate(ROUTES.CREATE_PRESCRIPTION);
@@ -18,7 +20,7 @@ export const AnalyzedImageResultPage = () => {
     data: status, 
     isLoading: statusLoading, 
     error: statusError 
-  } = useAnalysisStatus(analysisId || '');
+  } = useAnalysisStatus(analysisId || '', selectedProfile?._id || '');
 
   // 분석이 완료된 경우에만 결과 요청
   const isCompleted = status?.status === 'llm_completed';
