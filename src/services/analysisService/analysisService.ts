@@ -78,7 +78,7 @@ class AnalysisService implements IAnalysisService {
   async getAnalysisJob(analysisJobId: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: AnalysisJob }>({
       method: 'GET',
-      url: `/analysis/${analysisJobId}`,
+      url: `/analysis/analysisJobById/${analysisJobId}`,
     })
     return data.data
   }
