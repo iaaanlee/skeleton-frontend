@@ -11,12 +11,9 @@ export const AnalysisProgressPage = () => {
   const navigate = useNavigate();
   const { selectedProfile } = useProfile();
   
-  // 최소 대기 시간 관리를 위한 상태
+  // 현재 표시 상태 관리
   const [displayStatus, setDisplayStatus] = useState<string>('pending');
   const [stageStartTime, setStageStartTime] = useState<number>(Date.now());
-  const stageTimersRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
-  const [serverStatusHistory, setServerStatusHistory] = useState<string[]>(['pending']);
-  const [currentStageIndex, setCurrentStageIndex] = useState<number>(0);
 
   // 분석 상태 조회
   const { 
@@ -25,81 +22,45 @@ export const AnalysisProgressPage = () => {
     error: statusError 
   } = useAnalysisStatus(analysisJobId || '', selectedProfile?._id);
 
+
+
   // 처방 정보 조회 (현재는 사용하지 않지만 향후 확장을 위해 유지)
   const {
     isLoading: prescriptionLoading
   } = usePrescriptionByAnalysisJob(analysisJobId || '');
 
-  // 서버 상태 히스토리 업데이트
+  // 페이지 마운트 시 상태 초기화 (재진입 시에도 항상 초기화)
+  useEffect(() => {
+    console.log('AnalysisProgressPage 마운트됨, 상태 초기화');
+    setDisplayStatus('pending');
+    setStageStartTime(Date.now());
+  }, []); // 빈 dependency 배열로 마운트 시에만 실행
+
+  // 서버 상태에 따른 표시 상태 업데이트
   useEffect(() => {
     if (!status?.status) return;
 
     console.log('서버 상태:', status.status, '현재 표시 상태:', displayStatus);
 
-    // 서버 상태 히스토리에 새로운 상태 추가 (중복 제거)
-    setServerStatusHistory(prev => {
-      if (!prev.includes(status.status)) {
-        console.log('서버 상태 히스토리 업데이트:', [...prev, status.status]);
-        return [...prev, status.status];
-      }
-      return prev;
-    });
-  }, [status?.status]);
-
-  // 단계별 순차 진행
-  useEffect(() => {
-    const currentTime = Date.now();
-    const elapsedTime = currentTime - stageStartTime;
-
-    // 현재 표시 상태의 최소 대기 시간
-    const getMinDuration = (s: string) => {
-      switch (s) {
-        case 'pending':
-          return ANALYSIS_STAGE_MIN_DURATION.PENDING;
-        case 'blazepose_processing':
-          return ANALYSIS_STAGE_MIN_DURATION.BLAZEPOSE_PROCESSING;
-        case 'blazepose_completed':
-          return ANALYSIS_STAGE_MIN_DURATION.BLAZEPOSE_COMPLETED;
-        case 'llm_processing':
-          return ANALYSIS_STAGE_MIN_DURATION.LLM_PROCESSING;
-        case 'llm_completed':
-          return ANALYSIS_STAGE_MIN_DURATION.LLM_COMPLETED;
-        default:
-          return 0;
-      }
-    };
-
-    const currentMinDuration = getMinDuration(displayStatus);
-    const canAdvance = elapsedTime >= currentMinDuration;
-
-    // 다음 단계로 진행할 수 있는지 확인
-    const nextStageIndex = currentStageIndex + 1;
-    const nextStage = serverStatusHistory[nextStageIndex];
-
-    if (canAdvance && nextStage && nextStage !== displayStatus) {
-      console.log('다음 단계로 진행:', displayStatus, '→', nextStage);
-      setDisplayStatus(nextStage);
-      setCurrentStageIndex(nextStageIndex);
-      setStageStartTime(currentTime);
-    } else if (!canAdvance && nextStage) {
-      // 최소 시간이 안 지났지만 다음 단계가 있으면 타이머 설정
-      const remainingTime = currentMinDuration - elapsedTime;
-      console.log(`${remainingTime}ms 후 다음 단계 진행 예정:`, nextStage);
-      
-      if (stageTimersRef.current['nextStage']) {
-        clearTimeout(stageTimersRef.current['nextStage']);
-      }
-      
-      stageTimersRef.current['nextStage'] = setTimeout(() => {
-        console.log('타이머로 다음 단계 진행:', nextStage);
-        setDisplayStatus(nextStage);
-        setCurrentStageIndex(nextStageIndex);
-        setStageStartTime(Date.now());
-      }, remainingTime) as unknown as NodeJS.Timeout;
+    // 이미 완료된 분석이라면 바로 prescription-history로 이동
+    if (status.status === 'llm_completed') {
+      console.log('이미 완료된 분석 발견, prescription-history로 즉시 이동');
+      navigate(ROUTES.PRESCRIPTION_HISTORY);
+      return;
     }
 
-    // 완료 시 네비게이션
-    if (displayStatus === 'llm_completed' || displayStatus === 'failed') {
+    // 서버 상태가 변경되면 바로 표시 상태도 업데이트
+    if (status.status !== displayStatus) {
+      console.log('상태 업데이트:', displayStatus, '→', status.status);
+      setDisplayStatus(status.status);
+      setStageStartTime(Date.now());
+    }
+  }, [status?.status]);
+
+  // 상태에 따른 네비게이션 처리
+  useEffect(() => {
+    // 완료 시 네비게이션 (분석 진행 중 완료된 경우에만 타이머 사용)
+    if (displayStatus === 'llm_completed') {
       console.log('분석 완료, 네비게이션 준비');
       const finalTimer = setTimeout(() => {
         console.log('처방 기록 페이지로 이동');
@@ -109,13 +70,40 @@ export const AnalysisProgressPage = () => {
       return () => clearTimeout(finalTimer);
     }
 
-    // 언마운트 시 타이머 정리
-    return () => {
-      Object.values(stageTimersRef.current).forEach(timer => {
-        if (timer) clearTimeout(timer);
-      });
-    };
-  }, [serverStatusHistory, currentStageIndex, displayStatus, stageStartTime, navigate]);
+    // BlazePose 서버 실패 시 create-prescription 페이지로 돌아가기
+    if (displayStatus === 'blazepose_server_failed') {
+      console.log('BlazePose 서버 실패 감지, create-prescription 페이지로 돌아가기 준비');
+      
+      const failedTimer = setTimeout(() => {
+        console.log('create-prescription 페이지로 이동');
+        navigate(ROUTES.CREATE_PRESCRIPTION);
+      }, ANALYSIS_STAGE_MIN_DURATION.BLAZEPOSE_FAILED);
+      
+      return () => clearTimeout(failedTimer);
+    }
+
+    // BlazePose 포즈 감지 실패 시 create-prescription 페이지로 돌아가기
+    if (displayStatus === 'blazepose_pose_failed') {
+      console.log('BlazePose 포즈 감지 실패 감지, create-prescription 페이지로 돌아가기 준비');
+      
+      const failedTimer = setTimeout(() => {
+        console.log('create-prescription 페이지로 이동');
+        navigate(ROUTES.CREATE_PRESCRIPTION);
+      }, ANALYSIS_STAGE_MIN_DURATION.BLAZEPOSE_FAILED);
+      
+      return () => clearTimeout(failedTimer);
+    }
+
+    // 기타 실패 시 처방 기록 페이지로 이동
+    if (displayStatus === 'failed') {
+      console.log('분석 실패, 처방 기록 페이지로 이동');
+      const failedTimer = setTimeout(() => {
+        navigate(ROUTES.PRESCRIPTION_HISTORY);
+      }, ANALYSIS_STAGE_MIN_DURATION.BLAZEPOSE_FAILED);
+      
+      return () => clearTimeout(failedTimer);
+    }
+  }, [displayStatus, status?.error, analysisJobId, navigate]);
 
   // 로딩 중
   if (statusLoading || prescriptionLoading) {
@@ -150,8 +138,8 @@ export const AnalysisProgressPage = () => {
     );
   }
 
-  const getStatusText = (status: string) => {
-    switch (status) {
+  const getStatusText = (statusStr: string) => {
+    switch (statusStr) {
       case 'pending':
         return ANALYSIS_STAGE_TEXT.PENDING;
       case 'blazepose_processing':
@@ -162,6 +150,10 @@ export const AnalysisProgressPage = () => {
         return ANALYSIS_STAGE_TEXT.LLM_PROCESSING;
       case 'llm_completed':
         return ANALYSIS_STAGE_TEXT.LLM_COMPLETED;
+      case 'blazepose_server_failed':
+        return ANALYSIS_STAGE_TEXT.BLAZEPOSE_FAILED;
+      case 'blazepose_pose_failed':
+        return '포즈 감지 실패';
       case 'failed':
         return '분석 실패';
       default:
@@ -181,6 +173,8 @@ export const AnalysisProgressPage = () => {
         return 80;
       case 'llm_completed':
         return 100;
+      case 'blazepose_server_failed':
+      case 'blazepose_pose_failed':
       case 'failed':
         return 0;
       default:
@@ -188,16 +182,30 @@ export const AnalysisProgressPage = () => {
     }
   };
 
-  // 단계별 완료 상태 확인
+  // 단계별 완료 상태 확인 (서버 상태 기준)
   const isStageCompleted = (stage: string) => {
-    const stageIndex = ANALYSIS_STAGES.indexOf(stage as typeof ANALYSIS_STAGES[number]);
-    const currentIndex = ANALYSIS_STAGES.indexOf(displayStatus as typeof ANALYSIS_STAGES[number]);
-    return stageIndex <= currentIndex;
+    const serverStatus = status?.status || 'pending';
+    
+    // 각 단계별 완료 조건
+    switch (stage) {
+      case 'pending':
+        return ['blazepose_processing', 'blazepose_completed', 'llm_processing', 'llm_completed'].includes(serverStatus);
+      case 'blazepose_processing':
+        return ['blazepose_completed', 'llm_processing', 'llm_completed'].includes(serverStatus);
+      case 'blazepose_completed':
+        return ['llm_processing', 'llm_completed'].includes(serverStatus);
+      case 'llm_processing':
+        return ['llm_completed'].includes(serverStatus);
+      case 'llm_completed':
+        return serverStatus === 'llm_completed';
+      default:
+        return false;
+    }
   };
 
-  // 단계별 활성 상태 확인
+  // 단계별 활성 상태 확인 (서버 상태 기준)
   const isStageActive = (stage: string) => {
-    return displayStatus === stage;
+    return status?.status === stage;
   };
 
   return (
@@ -254,7 +262,7 @@ export const AnalysisProgressPage = () => {
                   </svg>
                 </div>
               )}
-              {displayStatus === 'failed' && (
+              {(displayStatus === 'failed' || displayStatus === 'blazepose_server_failed' || displayStatus === 'blazepose_pose_failed') && (
                 <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -265,7 +273,11 @@ export const AnalysisProgressPage = () => {
                 {getStatusText(displayStatus)}
               </h2>
               <p className="text-gray-600">
-                {status?.message || '분석이 진행 중입니다. 잠시만 기다려주세요.'}
+                {displayStatus === 'blazepose_server_failed'
+                  ? 'BlazePose 서버 연결에 실패했습니다. 잠시 후 운동 처방 페이지로 돌아갑니다.'
+                  : displayStatus === 'blazepose_pose_failed'
+                  ? '업로드하신 이미지에서 포즈를 감지할 수 없습니다. 다른 이미지로 다시 시도해주세요.'
+                  : status?.message || '분석이 진행 중입니다. 잠시만 기다려주세요.'}
               </p>
             </div>
 

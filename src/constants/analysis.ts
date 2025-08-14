@@ -5,6 +5,7 @@ export const ANALYSIS_STAGE_MIN_DURATION = {
   BLAZEPOSE_COMPLETED: 1000, // 1초
   LLM_PROCESSING: 1000, // 1초
   LLM_COMPLETED: 2000, // 2초
+  BLAZEPOSE_FAILED: 500, // 0.5초 - BlazePose 실패 시 대기 시간
 } as const;
 
 // 분석 단계별 텍스트
@@ -14,6 +15,7 @@ export const ANALYSIS_STAGE_TEXT = {
   BLAZEPOSE_COMPLETED: '주요 관절과 근육을 자세히 판별하고 있어요',
   LLM_PROCESSING: '취약 부위와 원인을 파악하고 있어요',
   LLM_COMPLETED: '처방을 진행하고 있어요',
+  BLAZEPOSE_FAILED: '운동 분석 서버 연결에 실패했습니다',
 } as const;
 
 // 분석 단계 순서
