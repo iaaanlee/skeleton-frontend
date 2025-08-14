@@ -1,9 +1,21 @@
 import React from 'react';
-import { BlazePoseFileResult } from '../../../../types/blazePose';
+import { BlazePoseLandmark } from '../../../../types/blazePose';
 import { FileResultItem } from './FileResultItem';
 
+// 실제 사용하는 타입 정의
+type FileResultForDisplay = {
+  fileId: string;
+  fileName: string;
+  confidence: number;
+  analysisTime: number;
+  landmarks: BlazePoseLandmark[];
+  estimatedImageUrl?: string;
+  overlayImageUrl?: string;
+  error?: string;
+};
+
 type FileResultListProps = {
-  fileResults: BlazePoseFileResult[];
+  fileResults: FileResultForDisplay[];
 };
 
 export const FileResultList: React.FC<FileResultListProps> = ({ fileResults }) => {

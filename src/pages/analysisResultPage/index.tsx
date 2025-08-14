@@ -21,7 +21,6 @@ export const AnalysisResultPage = () => {
   useEffect(() => {
     if (status?.status === 'llm_completed' && analysisId) {
       // TODO: Prescription으로 자동 저장 로직 구현
-      console.log('분석 결과를 Prescription으로 자동 저장:', analysisId);
     }
   }, [status?.status, analysisId]);
 
@@ -31,7 +30,10 @@ export const AnalysisResultPage = () => {
 
   const handleAnalyzedImageClick = () => {
     if (analysisId) {
+      console.log('Navigating to analyzed image result with analysisId:', analysisId);
       navigate(ROUTES.ANALYZED_IMAGE_RESULT.replace(':analysisId', analysisId));
+    } else {
+      console.error('analysisId is missing');
     }
   };
 

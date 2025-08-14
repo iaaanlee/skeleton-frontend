@@ -3,10 +3,10 @@ import { Header } from '../../../../components/common/templates/Header';
 import { BottomBar } from '../../../../components/common/templates/BottomBar';
 import { AnalysisResultContent } from './AnalysisResultContent';
 import { ROUTES, RouteValue } from '../../../../constants/routes';
-import { AnalysisJob } from '../../../../services/analysisService';
+import { Prescription } from '../../../../services/prescriptionService';
 
 type AnalysisResultDisplayProps = {
-  result: AnalysisJob;
+  result: Prescription;
   onSaveResult: () => void;
   backRoute?: RouteValue;
 };
@@ -14,7 +14,7 @@ type AnalysisResultDisplayProps = {
 export const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
   result,
   onSaveResult,
-  backRoute = ROUTES.CREATE_PRESCRIPTION
+  backRoute = ROUTES.PRESCRIPTION_HISTORY
 }) => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">

@@ -1,6 +1,7 @@
 // Analysis 관련 API service 정의
 import { AxiosHttpClient } from "../common/axiosHttpClient";
 import { backendHttpClient } from "../common/httpClient";
+import { BlazePoseResultsFromBackend } from "../../types/blazePose";
 
 export type AnalysisJob = {
   _id: string;
@@ -13,11 +14,7 @@ export type AnalysisJob = {
   };
   promptId: string;
   status: 'pending' | 'blazepose_processing' | 'blazepose_completed' | 'llm_processing' | 'llm_completed' | 'failed';
-  blazePoseResults?: {
-    estimatedImageKeys: string[];
-    jointPositions: any[];
-    confidence: number;
-  };
+  blazePoseResults?: BlazePoseResultsFromBackend;
   llmResults?: {
     analysisText: string;
   };
@@ -29,8 +26,12 @@ export type AnalysisJob = {
 export type AnalysisStatus = {
   analysisJobId: string;
   status: 'pending' | 'blazepose_processing' | 'blazepose_completed' | 'llm_processing' | 'llm_completed' | 'failed';
-  progress: number;
   message: string;
+  completedSteps: Array<{
+    step: string;
+    completedAt: string;
+    description: string;
+  }>;
   error: string | null;
   startedAt: string | null;
   completedAt: string | null;
@@ -53,7 +54,7 @@ export type StartAnalysisResponse = {
 type IAnalysisService = {
   startAnalysis: (request: StartAnalysisRequest) => Promise<StartAnalysisResponse>;
   getAnalysisStatus: (analysisJobId: string, profileId?: string) => Promise<AnalysisStatus>;
-  getAnalysisJob: (analysisJobId: string) => Promise<AnalysisJob>;
+  getAnalysisJob: (analysisJobId: string, profileId?: string) => Promise<AnalysisJob>;
   cancelAnalysis: (analysisJobId: string) => Promise<void>;
 };
 
@@ -72,21 +73,20 @@ class AnalysisService implements IAnalysisService {
 
   // 분석 상태 조회
   async getAnalysisStatus(analysisJobId: string, profileId?: string) {
-    console.log('getAnalysisStatus 호출:', { analysisJobId, profileId });
     const { data } = await this.httpClient.request<{ success: boolean; data: AnalysisStatus }>({
       method: 'GET',
       url: `/analysis/status/${analysisJobId}`,
       params: profileId ? { profileId } : undefined
     })
-    console.log('getAnalysisStatus 응답:', data);
     return data.data
   }
 
   // 분석 작업 조회
-  async getAnalysisJob(analysisJobId: string) {
+  async getAnalysisJob(analysisJobId: string, profileId?: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: AnalysisJob }>({
       method: 'GET',
       url: `/analysis/analysisJobById/${analysisJobId}`,
+      params: profileId ? { profileId } : undefined
     })
     return data.data
   }

@@ -1,8 +1,19 @@
 import React, { useState } from 'react';
-import { BlazePoseFileResult } from '../../../../types/blazePose';
+import { BlazePoseLandmark } from '../../../../types/blazePose';
+
+type FileResultForDisplay = {
+  fileId: string;
+  fileName: string;
+  confidence: number;
+  analysisTime: number;
+  landmarks: BlazePoseLandmark[];
+  estimatedImageUrl?: string;
+  overlayImageUrl?: string;
+  error?: string;
+};
 
 type FileResultItemProps = {
-  fileResult: BlazePoseFileResult;
+  fileResult: FileResultForDisplay;
   index: number;
   totalFiles: number;
   formatConfidence: (confidence: number) => string;
@@ -23,7 +34,9 @@ export const FileResultItem: React.FC<FileResultItemProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    e.currentTarget.src = '/placeholder-image.png'; // 기본 이미지
+    // placeholder 이미지 대신 data URL 사용
+    e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik04MCAxMDBDODAgODkuNTQ0IDg4LjU0NCA4MSA5OSA4MUgxMDFDMTExLjQ1NiA4MSAxMjAgODkuNTQ0IDEyMCAxMDBWMTEwQzEyMCAxMjAuNDU2IDExMS40NTYgMTI5IDEwMSAxMjlIOTlDODguNTQ0IDEyOSA4MCAxMjAuNDU2IDgwIDExMFYxMDBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik04MCAxNDBDODAgMTI5LjU0NCA4OC41NDQgMTIxIDk5IDEyMUgxMDFDMTExLjQ1NiAxMjEgMTIwIDEyOS41NDQgMTIwIDE0MFYxNTBDMTIwIDE2MC40NTYgMTExLjQ1NiAxNjkgMTAxIDE2OUg5OUM4OC41NDQgMTY5IDgwIDE2MC40NTYgODAgMTUwVjE0MFoiIGZpbGw9IiM5QjlCQTAiLz4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyQzIgMTcuNTIgNi40OCAyMiAxMiAyMkMxNy41MiAyMiAyMiAxNy41MiAyMiAxMkMyMiA2LjQ4IDE3LjUyIDIgMTIgMloiIGZpbGw9IiM5QjlCQTAiLz4KPHBhdGggZD0iTTEyIDZDMTAuMzQgNiA5IDcuMzQgOSA5QzkgMTAuNjYgMTAuMzQgMTIgMTIgMTJDMTMuNjYgMTIgMTUgMTAuNjYgMTUgOUMxNSA3LjM0IDEzLjY2IDYgMTIgNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xMiAxNEM5LjMzIDE0IDcgMTEuNjcgNyA5QzcgNi4zMyA5LjMzIDQgMTIgNEMxNC42NyA0IDE3IDYuMzMgMTcgOUMxNyAxMS42NyAxNC42NyAxNCAxMiAxNFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo8L3N2Zz4K';
+    e.currentTarget.style.opacity = '0.6';
   };
 
   return (

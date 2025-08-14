@@ -16,9 +16,21 @@ export type Prescription = {
   };
   analysisJobId: string;
   blazePoseResults?: {
-    estimatedImageKeys: string[];
-    jointPositions: any[];
-    confidence: number;
+    totalFiles: number;
+    results: Array<{
+      fileIndex: number;
+      fileName: string;
+      landmarks: Array<Array<{
+        index: number;
+        visibility: number;
+        x: number;
+        y: number;
+        z: number;
+      }>>;
+      confidence: number[];
+      estimatedKeys: string[];
+    }>;
+    completedAt: string;
   };
   llmResults?: {
     analysisText: string;

@@ -5,21 +5,17 @@ import { QUERY_KEYS } from '../common/queryKey'
 export const useAnalysisStatus = (analysisJobId: string, profileId?: string) => {
   return useQuery({
     queryKey: [...QUERY_KEYS.analysis, 'status', analysisJobId, profileId],
-    queryFn: async () => {
-      const result = await analysisService.getAnalysisStatus(analysisJobId, profileId);
-      console.log('queryFn 반환값:', result);
-      return result;
-    },
+    queryFn: () => analysisService.getAnalysisStatus(analysisJobId, profileId),
     enabled: !!analysisJobId,
     refetchInterval: 2000, // 고정 2초마다 폴링
     refetchIntervalInBackground: true,
   })
 }
 
-export const useAnalysisJob = (analysisJobId: string) => {
+export const useAnalysisJob = (analysisJobId: string, profileId?: string) => {
   return useQuery({
-    queryKey: [...QUERY_KEYS.analysis, 'job', analysisJobId],
-    queryFn: () => analysisService.getAnalysisJob(analysisJobId),
+    queryKey: [...QUERY_KEYS.analysis, 'job', analysisJobId, profileId],
+    queryFn: () => analysisService.getAnalysisJob(analysisJobId, profileId),
     enabled: !!analysisJobId,
   })
 }

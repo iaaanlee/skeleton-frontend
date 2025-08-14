@@ -55,6 +55,30 @@ export type BlazePoseFileResult = {
   error?: string
 }
 
+// 실제 백엔드 데이터 구조에 맞는 타입
+export type BlazePoseLandmark = {
+  index: number
+  visibility: number
+  x: number
+  y: number
+  z: number
+}
+
+export type BlazePoseFileResultFromBackend = {
+  fileIndex: number
+  fileName: string
+  landmarks: BlazePoseLandmark[][]
+  confidence: number[]
+  estimatedKeys: string[]
+  estimatedImageUrls?: Array<{downloadUrl: string, expiresIn: number}> // pre-signed URL 배열
+}
+
+export type BlazePoseResultsFromBackend = {
+  totalFiles: number
+  results: BlazePoseFileResultFromBackend[]
+  completedAt: string
+}
+
 // 관절 타입 정의
 export type JointType = 
   | 'nose' | 'left_eye' | 'right_eye' | 'left_ear' | 'right_ear'

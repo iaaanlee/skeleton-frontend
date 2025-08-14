@@ -57,7 +57,7 @@ export const PrescriptionList: React.FC<PrescriptionListProps> = ({
         <PrescriptionItem
           key={prescription.id}
           prescription={prescription}
-          onClick={() => onPrescriptionClick(prescription.id)}
+          onClick={() => onPrescriptionClick(prescription.analysisId)}
         />
       ))}
     </div>

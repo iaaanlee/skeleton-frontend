@@ -1,7 +1,8 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
-import { useAnalysisStatus, useAnalysisJob } from '../../services/analysisService';
+import { useAnalysisStatus } from '../../services/analysisService';
+import { usePrescriptionByAnalysisJob } from '../../services/prescriptionService';
 import { AnalysisLoadingState, AnalysisErrorState, AnalysisNoResultState, AnalysisUnexpectedState } from './components/molecules';
 import { AnalysisResultDisplay } from './components/organisms';
 import { useProfile } from '../../contexts/ProfileAuthContext';
@@ -10,6 +11,8 @@ export const AnalyzedImageResultPage = () => {
   const { analysisId } = useParams<{ analysisId: string }>();
   const navigate = useNavigate();
   const { selectedProfile } = useProfile();
+
+
 
   const handleBack = () => {
     navigate(ROUTES.CREATE_PRESCRIPTION);
@@ -22,13 +25,15 @@ export const AnalyzedImageResultPage = () => {
     error: statusError 
   } = useAnalysisStatus(analysisId || '', selectedProfile?._id || '');
 
-  // 분석이 완료된 경우에만 결과 요청
+  // 분석이 완료된 경우에만 prescription 결과 요청
   const isCompleted = status?.status === 'llm_completed';
   const { 
-    data: result, 
-    isLoading: resultLoading, 
-    error: resultError 
-  } = useAnalysisJob(analysisId || '');
+    data: prescription, 
+    isLoading: prescriptionLoading, 
+    error: prescriptionError 
+  } = usePrescriptionByAnalysisJob(analysisId || '', selectedProfile?._id);
+
+
 
   // analysisId가 없으면 에러 상태로 처리
   if (!analysisId) {
@@ -43,7 +48,6 @@ export const AnalyzedImageResultPage = () => {
 
   const handleSaveResult = () => {
     // TODO: 분석 결과 저장 로직 구현
-    console.log('분석 결과 저장:', result);
     alert('분석 결과가 저장되었습니다.');
   };
 
@@ -77,8 +81,8 @@ export const AnalyzedImageResultPage = () => {
     );
   }
 
-  // 4. 분석 완료되었지만 결과 로딩 중
-  if (isCompleted && resultLoading) {
+  // 4. 분석 완료되었지만 prescription 로딩 중
+  if (isCompleted && prescriptionLoading) {
     return (
       <AnalysisLoadingState 
         status="completed"
@@ -87,19 +91,19 @@ export const AnalyzedImageResultPage = () => {
     );
   }
 
-  // 5. 분석 완료되었지만 결과 요청 에러
-  if (isCompleted && resultError) {
+  // 5. 분석 완료되었지만 prescription 요청 에러
+  if (isCompleted && prescriptionError) {
     return (
       <AnalysisErrorState 
         title="분석 결과를 불러올 수 없습니다"
-        message={resultError.message || '알 수 없는 오류가 발생했습니다.'}
+        message={prescriptionError.message || '알 수 없는 오류가 발생했습니다.'}
         onBack={handleBack}
       />
     );
   }
 
-  // 6. 분석 완료되었지만 결과가 없음
-  if (isCompleted && !result) {
+  // 6. 분석 완료되었지만 prescription이 없음
+  if (isCompleted && !prescription) {
     return (
       <AnalysisNoResultState 
         onBack={handleBack}
@@ -107,11 +111,12 @@ export const AnalyzedImageResultPage = () => {
     );
   }
 
-  // 7. 분석 완료되고 결과 있음 - 결과 표시
-  if (isCompleted && result) {
+  // 7. 분석 완료되고 prescription 있음 - 결과 표시
+  if (isCompleted && prescription) {
+    console.log('Rendering AnalysisResultDisplay with prescription:', prescription);
     return (
       <AnalysisResultDisplay 
-        result={result}
+        result={prescription}
         onSaveResult={handleSaveResult}
       />
     );

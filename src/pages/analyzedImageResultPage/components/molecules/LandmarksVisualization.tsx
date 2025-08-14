@@ -1,8 +1,8 @@
 import React from 'react';
-import { JointCoordinate } from '../../../../types/blazePose';
+import { BlazePoseLandmark } from '../../../../types/blazePose';
 
 type LandmarksVisualizationProps = {
-  landmarks: JointCoordinate[];
+  landmarks: BlazePoseLandmark[];
   confidence: number;
 };
 
@@ -20,35 +20,35 @@ export const LandmarksVisualization: React.FC<LandmarksVisualizationProps> = ({
     return 'text-red-600';
   };
 
-  const getJointName = (jointType: string) => {
-    const jointNames: Record<string, string> = {
-      nose: '코',
-      left_eye: '왼쪽 눈',
-      right_eye: '오른쪽 눈',
-      left_ear: '왼쪽 귀',
-      right_ear: '오른쪽 귀',
-      left_shoulder: '왼쪽 어깨',
-      right_shoulder: '오른쪽 어깨',
-      left_elbow: '왼쪽 팔꿈치',
-      right_elbow: '오른쪽 팔꿈치',
-      left_wrist: '왼쪽 손목',
-      right_wrist: '오른쪽 손목',
-      left_hip: '왼쪽 엉덩이',
-      right_hip: '오른쪽 엉덩이',
-      left_knee: '왼쪽 무릎',
-      right_knee: '오른쪽 무릎',
-      left_ankle: '왼쪽 발목',
-      right_ankle: '오른쪽 발목'
+  const getJointName = (index: number) => {
+    const jointNames: Record<number, string> = {
+      0: '코',
+      1: '왼쪽 눈',
+      2: '오른쪽 눈',
+      3: '왼쪽 귀',
+      4: '오른쪽 귀',
+      5: '왼쪽 어깨',
+      6: '오른쪽 어깨',
+      7: '왼쪽 팔꿈치',
+      8: '오른쪽 팔꿈치',
+      9: '왼쪽 손목',
+      10: '오른쪽 손목',
+      11: '왼쪽 엉덩이',
+      12: '오른쪽 엉덩이',
+      13: '왼쪽 무릎',
+      14: '오른쪽 무릎',
+      15: '왼쪽 발목',
+      16: '오른쪽 발목'
     };
-    return jointNames[jointType] || jointType;
+    return jointNames[index] || `관절 ${index}`;
   };
 
-  const getJointCategory = (jointType: string) => {
-    if (jointType.includes('eye') || jointType.includes('ear') || jointType === 'nose') {
+  const getJointCategory = (index: number) => {
+    if (index <= 4) {
       return 'head';
-    } else if (jointType.includes('shoulder') || jointType.includes('elbow') || jointType.includes('wrist')) {
+    } else if (index <= 10) {
       return 'upper_body';
-    } else if (jointType.includes('hip') || jointType.includes('knee') || jointType.includes('ankle')) {
+    } else if (index <= 16) {
       return 'lower_body';
     }
     return 'other';
@@ -68,13 +68,13 @@ export const LandmarksVisualization: React.FC<LandmarksVisualizationProps> = ({
   };
 
   const groupedLandmarks = landmarks.reduce((acc, landmark) => {
-    const category = getJointCategory(landmark.jointType);
+    const category = getJointCategory(landmark.index);
     if (!acc[category]) {
       acc[category] = [];
     }
     acc[category].push(landmark);
     return acc;
-  }, {} as Record<string, JointCoordinate[]>);
+  }, {} as Record<string, BlazePoseLandmark[]>);
 
   if (landmarks.length === 0) {
     return (
@@ -113,22 +113,22 @@ export const LandmarksVisualization: React.FC<LandmarksVisualizationProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {categoryLandmarks.map((landmark, index) => (
                 <div
-                  key={`${landmark.jointType}-${index}`}
+                  key={`${landmark.index}-${index}`}
                   className="p-3 border border-gray-200 rounded-lg"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium text-sm text-gray-900">
-                      {getJointName(landmark.jointType)}
+                      {getJointName(landmark.index)}
                     </span>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(category)}`}>
-                      {formatConfidence(landmark.confidence)}
+                      {formatConfidence(landmark.visibility)}
                     </span>
                   </div>
                   
                   <div className="space-y-1 text-xs text-gray-600">
                     <div>X: {landmark.x.toFixed(2)}</div>
                     <div>Y: {landmark.y.toFixed(2)}</div>
-                    <div>신뢰도: {formatConfidence(landmark.confidence)}</div>
+                    <div>신뢰도: {formatConfidence(landmark.visibility)}</div>
                   </div>
                 </div>
               ))}
@@ -147,19 +147,19 @@ export const LandmarksVisualization: React.FC<LandmarksVisualizationProps> = ({
           </div>
           <div className="text-center">
             <div className="font-bold text-green-600">
-              {landmarks.filter(l => l.confidence >= 0.8).length}
+              {landmarks.filter(l => l.visibility >= 0.8).length}
             </div>
             <div className="text-gray-600">높은 신뢰도</div>
           </div>
           <div className="text-center">
             <div className="font-bold text-yellow-600">
-              {landmarks.filter(l => l.confidence >= 0.6 && l.confidence < 0.8).length}
+              {landmarks.filter(l => l.visibility >= 0.6 && l.visibility < 0.8).length}
             </div>
             <div className="text-gray-600">보통 신뢰도</div>
           </div>
           <div className="text-center">
             <div className="font-bold text-red-600">
-              {landmarks.filter(l => l.confidence < 0.6).length}
+              {landmarks.filter(l => l.visibility < 0.6).length}
             </div>
             <div className="text-gray-600">낮은 신뢰도</div>
           </div>
