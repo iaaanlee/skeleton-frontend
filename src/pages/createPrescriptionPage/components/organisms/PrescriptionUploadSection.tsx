@@ -48,20 +48,7 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
     };
     promptId: string;
   }) => {
-    if (!accountId) {
-      alert('로그인이 필요합니다.')
-      return
-    }
-
-    try {
-      const success = await createPrescription(inputs)
-      if (success) {
-        console.log('처방이 생성되었습니다.')
-      }
-    } catch (error) {
-      console.error('Prescription creation error:', error)
-      alert('처방 생성 중 오류가 발생했습니다.')
-    }
+    await createPrescription(inputs)
   }
 
   return (

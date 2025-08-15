@@ -1,0 +1,1 @@
+export { PrescriptionHistoryContent } from './PrescriptionHistoryContent';

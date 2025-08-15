@@ -5,7 +5,7 @@ import { useCompletedPrescriptions } from '../../services/prescriptionService';
 import { useAccountAuth } from '../../contexts/AccountAuthContext';
 import { useProfile } from '../../contexts/ProfileAuthContext';
 import { extractAccountIdFromToken } from '../../utils/auth';
-import { PrescriptionHistoryContent } from './components/organisms/PrescriptionHistoryContent';
+import { PrescriptionHistoryLayout } from './components';
 
 export const PrescriptionHistoryPage = () => {
   const navigate = useNavigate();
@@ -15,6 +15,10 @@ export const PrescriptionHistoryPage = () => {
   const accountId = token ? extractAccountIdFromToken(token) : '';
   const profileId = selectedProfile?._id || '';
 
+  const handlePrescriptionClick = (prescriptionId: string) => {
+    navigate(ROUTES.ANALYSIS_RESULT.replace(':analysisId', prescriptionId));
+  };
+
   // 완료된 처방 기록 조회
   const { 
     data: prescriptionData, 
@@ -22,21 +26,12 @@ export const PrescriptionHistoryPage = () => {
     error 
   } = useCompletedPrescriptions(accountId || '', profileId || '');
 
-  const handleBack = () => {
-    navigate(ROUTES.ANALYZE_EXERCISE);
-  };
-
-  const handlePrescriptionClick = (prescriptionId: string) => {
-    navigate(ROUTES.ANALYSIS_RESULT.replace(':analysisId', prescriptionId));
-  };
-
   return (
-    <PrescriptionHistoryContent
+    <PrescriptionHistoryLayout
       prescriptions={prescriptionData?.prescriptions || []}
       isLoading={isLoading}
       error={error}
       onPrescriptionClick={handlePrescriptionClick}
-      onBack={handleBack}
     />
   );
 };

@@ -1,0 +1,1 @@
+export { default as AnalysisResultLayout } from './AnalysisResultLayout';

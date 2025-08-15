@@ -1,0 +1,1 @@
+export { PrescriptionUploadSection } from './PrescriptionUploadSection';

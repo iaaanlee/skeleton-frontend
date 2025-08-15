@@ -3,22 +3,33 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { useAnalysisStatus } from '../../services/analysisService';
 import { usePrescriptionByAnalysisJob } from '../../services/prescriptionService';
-import { AnalysisLoadingState, AnalysisErrorState, AnalysisNoResultState, AnalysisUnexpectedState } from './components/molecules';
-import { AnalysisResultDisplay } from './components/organisms';
 import { useProfile } from '../../contexts/ProfileAuthContext';
+import {
+  LoadingState,
+  ErrorState,
+  ProgressingState,
+  UnexpectedState,
+  NoResultState,
+  AnalysisResultLayout
+} from './components';
+import { useToast } from '../../contexts/ToastContext';
 
 export const AnalyzedImageResultPage = () => {
   const { analysisId } = useParams<{ analysisId: string }>();
+  const { showSuccess } = useToast();
   const navigate = useNavigate();
   const { selectedProfile } = useProfile();
-
-
 
   const handleBack = () => {
     navigate(ROUTES.CREATE_PRESCRIPTION);
   };
 
-  // 분석 상태 조회 - analysisId가 없어도 호출하되 enabled: false로 설정
+  const handleSaveResult = () => {
+    // TODO: 분석 결과 저장 로직 구현
+    showSuccess('분석 결과가 저장되었습니다.');
+  };
+
+  // 분석 상태 조회
   const { 
     data: status, 
     isLoading: statusLoading, 
@@ -33,12 +44,10 @@ export const AnalyzedImageResultPage = () => {
     error: prescriptionError 
   } = usePrescriptionByAnalysisJob(analysisId || '', selectedProfile?._id);
 
-
-
-  // analysisId가 없으면 에러 상태로 처리
+  // 조건부 렌더링
   if (!analysisId) {
     return (
-      <AnalysisErrorState 
+      <ErrorState 
         title="분석 ID가 없습니다"
         message="올바르지 않은 분석 페이지입니다."
         onBack={handleBack}
@@ -46,24 +55,13 @@ export const AnalyzedImageResultPage = () => {
     );
   }
 
-  const handleSaveResult = () => {
-    // TODO: 분석 결과 저장 로직 구현
-    alert('분석 결과가 저장되었습니다.');
-  };
-
-  // 1. 로딩 중 (상태 확인 중)
   if (statusLoading) {
-    return (
-      <AnalysisLoadingState 
-        message="분석 상태를 확인하는 중..."
-      />
-    );
+    return <LoadingState message="분석 상태를 확인하는 중..." />;
   }
 
-  // 2. 상태 확인 에러
   if (statusError) {
     return (
-      <AnalysisErrorState 
+      <ErrorState 
         title="분석 상태를 확인할 수 없습니다"
         message={statusError.message || '알 수 없는 오류가 발생했습니다.'}
         onBack={handleBack}
@@ -71,30 +69,17 @@ export const AnalyzedImageResultPage = () => {
     );
   }
 
-  // 3. 분석 진행 중 (pending, blazepose_processing, llm_processing)
   if (status && ['pending', 'blazepose_processing', 'llm_processing'].includes(status.status)) {
-    return (
-      <AnalysisLoadingState 
-        status="processing"
-        message={status.message || "분석을 진행 중입니다..."}
-      />
-    );
+    return <ProgressingState status={status} />;
   }
 
-  // 4. 분석 완료되었지만 prescription 로딩 중
   if (isCompleted && prescriptionLoading) {
-    return (
-      <AnalysisLoadingState 
-        status="completed"
-        message="분석 결과를 불러오는 중..."
-      />
-    );
+    return <LoadingState status="completed" message="분석 결과를 불러오는 중..." />;
   }
 
-  // 5. 분석 완료되었지만 prescription 요청 에러
   if (isCompleted && prescriptionError) {
     return (
-      <AnalysisErrorState 
+      <ErrorState 
         title="분석 결과를 불러올 수 없습니다"
         message={prescriptionError.message || '알 수 없는 오류가 발생했습니다.'}
         onBack={handleBack}
@@ -102,30 +87,19 @@ export const AnalyzedImageResultPage = () => {
     );
   }
 
-  // 6. 분석 완료되었지만 prescription이 없음
   if (isCompleted && !prescription) {
-    return (
-      <AnalysisNoResultState 
-        onBack={handleBack}
-      />
-    );
+    return <NoResultState onBack={handleBack} />;
   }
 
-  // 7. 분석 완료되고 prescription 있음 - 결과 표시
   if (isCompleted && prescription) {
-    console.log('Rendering AnalysisResultDisplay with prescription:', prescription);
     return (
-      <AnalysisResultDisplay 
+      <AnalysisResultLayout 
         result={prescription}
         onSaveResult={handleSaveResult}
       />
     );
   }
 
-  // 8. 예상치 못한 상태 (fallback)
-  return (
-    <AnalysisUnexpectedState 
-      onBack={handleBack}
-    />
-  );
+  // 예상치 못한 상태
+  return <UnexpectedState onBack={handleBack} />;
 };
