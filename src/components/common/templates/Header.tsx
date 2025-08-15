@@ -1,4 +1,4 @@
-import { HeaderContent } from '../organisms/HeaderContent';
+import { HeaderContent } from '../molecules/HeaderContent';
 import { RouteValue } from '../../../constants/routes';
 
 interface HeaderProps {

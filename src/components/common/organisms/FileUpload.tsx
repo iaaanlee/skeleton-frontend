@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { FileSelector } from './FileSelector'
-import { UploadProgress } from './UploadProgress'
+import { FileSelector } from '../molecules/FileSelector'
+import { UploadProgress } from '../molecules/UploadProgress'
 import { UploadButton } from '../atoms/UploadButton'
 import { useFileUpload } from '../../../hooks/useFileUpload'
 

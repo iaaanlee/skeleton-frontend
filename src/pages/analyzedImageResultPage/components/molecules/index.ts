@@ -5,6 +5,14 @@ export { FileResultItem } from './FileResultItem';
 export { FileResultList } from './FileResultList';
 export { LandmarksVisualization } from './LandmarksVisualization';
 
+// New refactored components
+export { default as PageHeader } from './PageHeader';
+export { default as ExpandableSection } from './ExpandableSection';
+export { default as StatisticsGrid } from './StatisticsGrid';
+export { default as ActionButtonGroup } from './ActionButtonGroup';
+export { default as JointCategorySection } from './JointCategorySection';
+export { default as LandmarkStatistics } from './LandmarkStatistics';
+
 // State components - simplified naming
 export { default as LoadingState } from './LoadingState';
 export { default as ErrorState } from './ErrorState';

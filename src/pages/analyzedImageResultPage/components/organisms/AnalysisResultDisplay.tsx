@@ -1,57 +1,164 @@
-import React from 'react';
-import { Header } from '../../../../components/common/templates/Header';
-import { BottomBar } from '../../../../components/common/templates/BottomBar';
-import { AnalysisResultContent } from './AnalysisResultContent';
-import { ROUTES, RouteValue } from '../../../../constants/routes';
+import React, { useState } from 'react';
 import { Prescription } from '../../../../services/prescriptionService';
+import { AnalysisSummary } from '../molecules/AnalysisSummary';
+import { FileResultList } from '../molecules/FileResultList';
+import { LandmarksVisualization } from '../molecules/LandmarksVisualization';
+import ExpandableSection from '../molecules/ExpandableSection';
+import StatisticsGrid from '../molecules/StatisticsGrid';
+import ActionButtonGroup from '../molecules/ActionButtonGroup';
+import { 
+  formatConfidence, 
+  calculateAverageConfidence, 
+  convertToFileResults 
+} from '../../utils/analysisResultUtils';
 
 type AnalysisResultDisplayProps = {
   result: Prescription;
   onSaveResult: () => void;
-  backRoute?: RouteValue;
 };
 
-export const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
+const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
   result,
-  onSaveResult,
-  backRoute = ROUTES.PRESCRIPTION_HISTORY
+  onSaveResult
 }) => {
+  const [expandedSections, setExpandedSections] = useState<{
+    llm: boolean;
+    blazePose: boolean;
+    landmarks: boolean;
+  }>({
+    llm: true,
+    blazePose: true,
+    landmarks: false
+  });
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  const fileResults = convertToFileResults(result);
+  const averageConfidence = calculateAverageConfidence(result);
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const blazePoseStatistics = [
+    {
+      value: result.blazePoseResults?.totalFiles || 0,
+      label: '분석된 이미지',
+      color: 'blue' as const
+    },
+    {
+      value: formatConfidence(averageConfidence),
+      label: '전체 신뢰도',
+      color: 'green' as const
+    },
+    {
+      value: result.blazePoseResults?.results?.[0]?.landmarks?.[0]?.length || 0,
+      label: '관절 좌표 수',
+      color: 'purple' as const
+    }
+  ];
+
+  const generalStatistics = [
+    {
+      value: result.blazePoseResults?.totalFiles || 0,
+      label: '분석된 파일',
+      color: 'blue' as const
+    },
+    {
+      value: formatConfidence(result.blazePoseResults?.results?.[0]?.confidence?.[0] || 0),
+      label: '전체 신뢰도',
+      color: 'green' as const
+    },
+    {
+      value: result.status,
+      label: '분석 상태',
+      color: 'purple' as const
+    }
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header backRoute={backRoute} />
-      
-      <div className="flex-1 p-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">운동 분석 결과</h1>
-            <p className="text-gray-600">
-              BlazePose를 통해 분석된 운동 자세 결과입니다.
+    <div className="space-y-6">
+      {/* 분석 요약 */}
+      <AnalysisSummary 
+        totalFiles={result.blazePoseResults?.totalFiles || 0}
+        totalConfidence={averageConfidence}
+        analysisTime={0}
+      />
+
+      {/* LLM 분석 결과 */}
+      {result.llmResults && (
+        <ExpandableSection
+          title="LLM 분석 결과"
+          isExpanded={expandedSections.llm}
+          onToggle={() => toggleSection('llm')}
+        >
+          <div className="prose max-w-none">
+            <p className="text-gray-700 whitespace-pre-wrap">
+              {result.llmResults.analysisText}
             </p>
           </div>
+        </ExpandableSection>
+      )}
 
-          <AnalysisResultContent 
-            result={result}
-          />
+      {/* BlazePose 분석 결과 */}
+      {result.blazePoseResults && (
+        <ExpandableSection
+          title="BlazePose 분석 결과"
+          isExpanded={expandedSections.blazePose}
+          onToggle={() => toggleSection('blazePose')}
+        >
+          <div className="space-y-4">
+            {/* 전체 통계 */}
+            <StatisticsGrid items={blazePoseStatistics} />
 
-          {/* 액션 버튼 */}
-          <div className="flex justify-center space-x-4">
-            <button
-              onClick={onSaveResult}
-              className="px-8 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
-            >
-              결과 저장
-            </button>
-            <button
-              onClick={() => window.print()}
-              className="px-8 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors font-medium"
-            >
-              결과 출력
-            </button>
+            {/* 파일별 상세 결과 */}
+            {fileResults.length > 0 && (
+              <div>
+                <h4 className="text-md font-semibold text-gray-900 mb-4">
+                  파일별 분석 결과
+                </h4>
+                <FileResultList fileResults={fileResults} />
+              </div>
+            )}
           </div>
-        </div>
+        </ExpandableSection>
+      )}
+
+      {/* 관절 좌표 시각화 */}
+      {result.blazePoseResults?.results?.[0]?.landmarks?.[0] && 
+       result.blazePoseResults.results[0].landmarks[0].length > 0 && (
+        <ExpandableSection
+          title="관절 좌표 상세 정보"
+          isExpanded={expandedSections.landmarks}
+          onToggle={() => toggleSection('landmarks')}
+        >
+          <LandmarksVisualization 
+            landmarks={result.blazePoseResults.results[0].landmarks[0]}
+            confidence={result.blazePoseResults.results[0].confidence[0] || 0}
+          />
+        </ExpandableSection>
+      )}
+
+      {/* 분석 통계 */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          분석 통계
+        </h3>
+        <StatisticsGrid items={generalStatistics} />
       </div>
-      
-      <BottomBar />
+
+      {/* 액션 버튼 */}
+      <ActionButtonGroup 
+        onSave={onSaveResult}
+        onPrint={handlePrint}
+      />
     </div>
   );
 };
+
+export default AnalysisResultDisplay;

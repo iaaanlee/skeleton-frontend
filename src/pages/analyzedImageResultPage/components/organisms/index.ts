@@ -1,2 +1,2 @@
 export { AnalysisResultContent } from './AnalysisResultContent';
-export { AnalysisResultDisplay } from './AnalysisResultDisplay';
+export { default as AnalysisResultDisplay } from './AnalysisResultDisplay';

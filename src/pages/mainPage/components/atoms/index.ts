@@ -1,1 +1,2 @@
-export { MainButton } from './MainButton';
+// MainButton is now available from common components
+export {};

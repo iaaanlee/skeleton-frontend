@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useMediaSetList } from '../../../services/mediaSetService'
 import { useAccountAuth } from '../../../contexts/AccountAuthContext'
 import { useFileSelection, useFileActions } from '../../../hooks'
@@ -7,7 +6,7 @@ import { extractAccountIdFromToken } from '../../../utils/auth'
 import { FileListHeader } from './FileListHeader'
 import FileGrid from './FileGrid'
 // import { SelectedFilesActionBar } from './SelectedFilesActionBar'
-import { UploadModal } from './UploadModal'
+import { UploadModal } from '../templates/UploadModal'
 
 type FileListProps = {
   className?: string
@@ -20,7 +19,6 @@ const FileList: React.FC<FileListProps> = ({
   showAddButton = false,
   onSelectionChange
 }) => {
-  const navigate = useNavigate()
   const { token } = useAccountAuth()
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 

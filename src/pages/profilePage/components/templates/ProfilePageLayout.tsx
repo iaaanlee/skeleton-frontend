@@ -4,7 +4,7 @@ import { useProfile } from '../../../../contexts/ProfileContext';
 import { useNavigate } from 'react-router-dom';
 import { ProfileHeader } from '../organisms/ProfileHeader';
 import { ProfileContent } from '../organisms/ProfileContent';
-import { BottomBar } from '../../../../components/common/templates/BottomBar';
+import { PageLayout } from '../../../../components/common/templates';
 import { ROUTES } from '../../../../constants/routes';
 
 const ProfilePageLayout: React.FC = () => {
@@ -27,7 +27,7 @@ const ProfilePageLayout: React.FC = () => {
     }, [navigate]);
 
     return (
-        <div className="min-h-screen flex flex-col bg-gray-50">
+        <PageLayout showHeader={false}>
             <ProfileHeader />
             <ProfileContent 
                 profileName={currentProfile!.profileName}
@@ -35,8 +35,7 @@ const ProfilePageLayout: React.FC = () => {
                 onSelectOtherProfile={handleSelectOtherProfile}
                 onEditProfile={handleEditProfile}
             />
-            <BottomBar />
-        </div>
+        </PageLayout>
     );
 };
 

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { secureSetItem, secureGetItem, secureRemoveItem, initializeNewSession, cleanupExpiredData } from '../utils/secureStorage';
 
 interface AccountAuthContextType {
@@ -23,6 +24,7 @@ interface AccountAuthProviderProps {
 }
 
 export const AccountAuthProvider: React.FC<AccountAuthProviderProps> = ({ children }) => {
+    const queryClient = useQueryClient();
     const [token, setToken] = useState<string | null>(() => {
         return secureGetItem('token');
     });
@@ -36,6 +38,9 @@ export const AccountAuthProvider: React.FC<AccountAuthProviderProps> = ({ childr
         // 새 로그인 시 기존 세션 완전 초기화
         initializeNewSession();
         
+        // 모든 React Query 캐시 정리
+        queryClient.clear();
+        
         setToken(newToken);
         setIsAuthenticated(true);
         secureSetItem('token', newToken, 1); // 1시간 만료
@@ -45,12 +50,15 @@ export const AccountAuthProvider: React.FC<AccountAuthProviderProps> = ({ childr
         }
     };
 
-    const logout = () => {
+    const logout = useCallback(() => {
         setToken(null);
         setIsAuthenticated(false);
         secureRemoveItem('token');
         secureRemoveItem('refreshToken');
-    };
+        
+        // 로그아웃 시 모든 React Query 캐시 정리
+        queryClient.clear();
+    }, [queryClient]);
 
     // 앱 시작 시 만료된 데이터 정리
     useEffect(() => {
@@ -74,7 +82,7 @@ export const AccountAuthProvider: React.FC<AccountAuthProviderProps> = ({ childr
                 logout();
             }
         }
-    }, [token]);
+    }, [token, logout]);
 
     const value = {
         isAuthenticated,

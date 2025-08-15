@@ -1,5 +1,4 @@
-export { default as ErrorState } from './ErrorState';
-export { default as LoadingState } from './LoadingState';
+// ErrorState and LoadingState are now available from common components
 export { BodyStatusInfoSection } from './BodyStatusInfoSection';
 export { ContactInfoSection } from './ContactInfoSection';
 export { ExerciseCard } from './ExerciseCard';

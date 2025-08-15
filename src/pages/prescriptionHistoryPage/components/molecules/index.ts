@@ -1,6 +1,4 @@
-// State components
-export { default as LoadingState } from './LoadingState';
-export { default as ErrorState } from './ErrorState';
+// State components - LoadingState and ErrorState are now available from common components
 export { default as EmptyState } from './EmptyState';
 export { default as PrescriptionListContent } from './PrescriptionListContent';
 

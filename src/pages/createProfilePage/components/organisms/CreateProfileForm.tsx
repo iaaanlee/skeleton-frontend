@@ -5,7 +5,8 @@ import { useCreateProfile, createProfileDefaultValues } from "../../../../hooks/
 import { CreateProfileRequest } from "../../../../types/profile/request";
 import { useAccountAuth } from "../../../../contexts/AccountAuthContext";
 import { ROUTES } from '../../../../constants/routes';
-import { ProfileNameSection, BodyStatusInfoSection, ErrorState } from "../molecules";
+import { ProfileNameSection, BodyStatusInfoSection } from "../molecules";
+import { ErrorState } from '../../../../components/common/molecules';
 import { ExerciseInfoSection, PreferencesSection, CautionsSection } from "../organisms";
 
 const CreateProfileForm: React.FC = () => {

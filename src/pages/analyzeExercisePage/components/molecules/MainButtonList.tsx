@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MainButton } from '../atoms/MainButton';
+import { MainButton } from '../../../../components/common/atoms';
 import { ROUTES } from '../../../../constants/routes';
 
 export const MainButtonList = () => {
@@ -21,10 +21,12 @@ export const MainButtonList = () => {
             <MainButton 
                 title="신규 운동 처방 받기" 
                 onClick={handleNewPrescription}
+                variant="compact"
             />
             <MainButton 
                 title="처방 기록 보기" 
                 onClick={handlePastRecords}
+                variant="compact"
             />
         </div>
     );

@@ -1,6 +1,5 @@
 import React from 'react';
-import LoadingState from './LoadingState';
-import ErrorState from './ErrorState';
+import { LoadingState, ErrorState } from '../../../../components/common/molecules';
 import EmptyState from './EmptyState';
 import PrescriptionListContent from './PrescriptionListContent';
 
@@ -18,11 +17,11 @@ export const PrescriptionList: React.FC<PrescriptionListProps> = ({
   onPrescriptionClick
 }) => {
   if (isLoading) {
-    return <LoadingState />;
+    return <LoadingState variant="spinner" message="처방 기록을 불러오는 중..." />;
   }
 
   if (error) {
-    return <ErrorState error={error} />;
+    return <ErrorState variant="detailed" title="처방 기록을 불러올 수 없습니다" error={error} />;
   }
 
   if (prescriptions.length === 0) {

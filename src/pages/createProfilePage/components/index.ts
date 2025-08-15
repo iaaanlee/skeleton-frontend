@@ -4,8 +4,7 @@ export { CreateProfileLayout } from './templates';
 // Organisms
 export { CreateProfileForm } from './organisms';
 
-// Molecules
-export { ErrorState, LoadingState } from './molecules';
+// Molecules - ErrorState and LoadingState are now available from common components
 
 // Legacy exports (keeping for backward compatibility)
 export { FormInput } from './atoms/FormInput';

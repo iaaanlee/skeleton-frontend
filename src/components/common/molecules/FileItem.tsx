@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { FileItemProps } from '../../../types/files/components'
 import ImagePreview from './ImagePreview'
-import { DeleteConfirmModal } from './DeleteConfirmModal'
+import { DeleteConfirmModal } from '../templates/DeleteConfirmModal'
 
 const FileItem: React.FC<FileItemProps> = ({
   file,

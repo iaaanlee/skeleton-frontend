@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useCreateAccount, createAccountDefaultValues } from "../../../../hooks/useCreateAccountHandler";
 import { CreateAccountRequest } from "../../../../types/account/request";
 import { ROUTES } from '../../../../constants/routes';
-import { AccountNameSection, ContactInfoSection, LoginIdSection, PasswordSection, ErrorState } from "../molecules";
+import { AccountNameSection, ContactInfoSection, LoginIdSection, PasswordSection } from "../molecules";
+import { ErrorState } from '../../../../components/common/molecules';
 import { PaymentInfoSection } from "../organisms";
 
 const CreateAccountForm: React.FC = () => {
@@ -64,7 +65,7 @@ const CreateAccountForm: React.FC = () => {
                 </button>
             </form>
 
-            {isErrorCreateAccount && <ErrorState />}
+            {isErrorCreateAccount && <ErrorState variant="simple" message="Error creating account. Please try again." />}
         </>
     );
 };

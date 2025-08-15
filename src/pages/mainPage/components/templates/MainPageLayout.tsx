@@ -1,6 +1,6 @@
 import React from 'react';
+import { PageLayout } from '../../../../components/common/templates';
 import { Header } from '../../../../components/common/templates/Header';
-import { BottomBar } from '../../../../components/common/templates/BottomBar';
 import { MainContent } from '../organisms/MainContent';
 
 type MainPageLayoutProps = {
@@ -9,11 +9,10 @@ type MainPageLayoutProps = {
 
 const MainPageLayout: React.FC<MainPageLayoutProps> = ({ profileName }) => {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <PageLayout showHeader={false}>
       <Header profileName={profileName} />
       <MainContent />
-      <BottomBar />
-    </div>
+    </PageLayout>
   );
 };
 

@@ -1,5 +1,5 @@
 import { NotificationButton } from '../atoms/NotificationButton';
-import { BackButton } from './BackButton';
+import { BackButton } from '../organisms/BackButton';
 import { RouteValue } from '../../../constants/routes'
 
 interface HeaderContentProps {

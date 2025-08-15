@@ -90,16 +90,38 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
     staleTime: 5 * 60 * 1000, // 5분
   });
 
+  // 프로필 관련 모든 캐시 정리 함수
+  const clearAllProfileCaches = () => {
+    // 프로필 관련 모든 쿼리 제거
+    queryClient.removeQueries({ queryKey: ['currentProfile'] });
+    queryClient.removeQueries({ queryKey: ['currentProfileDetails'] });
+    queryClient.removeQueries({ queryKey: ['profile'] });
+    queryClient.removeQueries({ queryKey: ['profiles'] });
+    
+    // 프로필 관련 데이터가 포함될 수 있는 다른 쿼리들도 제거
+    queryClient.removeQueries({ queryKey: ['prescription'] });
+    queryClient.removeQueries({ queryKey: ['prescriptions'] });
+    queryClient.removeQueries({ queryKey: ['exercise'] });
+    queryClient.removeQueries({ queryKey: ['analysis'] });
+    queryClient.removeQueries({ queryKey: ['media'] });
+  };
+
   // 프로필 선택
   const selectProfile = async (profileId: string) => {
+    // 먼저 기존 캐시 모두 정리
+    clearAllProfileCaches();
+    
+    // 새 프로필 선택
     await profileService.selectProfile(profileId);
+    
+    // 새로운 프로필 정보 가져오기
     await refetchProfile();
   };
 
   // 프로필 선택 해제
   const clearProfile = async () => {
     await profileService.clearProfile();
-    queryClient.removeQueries({ queryKey: QUERY_KEYS.profile.current() });
+    clearAllProfileCaches();
     setShouldFetchProfile(false);
   };
 

@@ -3,7 +3,7 @@ import { useMediaSetList } from '../../../../services/mediaSetService'
 import { useAccountAuth } from '../../../../contexts/AccountAuthContext'
 import { useSingleFileSelection, useFileActions } from '../../../../hooks'
 import { extractAccountIdFromToken } from '../../../../utils/auth'
-import { UploadModal } from '../../../../components/common/molecules/UploadModal'
+import { UploadModal } from '../../../../components/common/templates/UploadModal'
 
 type PrescriptionFileListProps = {
   profileId: string

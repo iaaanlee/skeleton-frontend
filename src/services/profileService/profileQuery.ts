@@ -59,5 +59,9 @@ export const useGetCurrentProfileDetails = (enabled: boolean = true) => {
       }
       return failureCount < 3;
     },
+    staleTime: 0, // 항상 stale로 간주
+    gcTime: 0, // 캐시하지 않음 (v5에서는 cacheTime이 gcTime으로 변경)
+    refetchOnMount: true, // 마운트 시 항상 다시 가져오기
+    refetchOnWindowFocus: true, // 윈도우 포커스 시 다시 가져오기
   });
 }; 
