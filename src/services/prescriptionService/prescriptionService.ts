@@ -62,6 +62,7 @@ export type CreatePrescriptionResponse = {
   analysisJobId: string;
   status: string;
   message: string;
+  redirectTo?: string; // 리다이렉트 경로 (예: 'prescription-history')
 }
 
 export type UpdatePrescriptionStatusRequest = {
@@ -145,6 +146,7 @@ class PrescriptionService implements IPrescriptionService {
       url: '/prescription/completed',
       params: { accountId, profileId, limit, offset }
     })
+    
     return data.data
   }
 

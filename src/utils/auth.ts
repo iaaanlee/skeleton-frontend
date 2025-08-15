@@ -1,5 +1,6 @@
 import { ROUTES } from '../constants/routes';
-import { clearAllSecureData } from './secureStorage';
+import { clearAllSecureData, secureGetItem, secureSetItem, secureRemoveItem } from './secureStorage';
+import { axiosHttpClient } from '../services/common/axiosHttpClient';
 
 // JWT 토큰에서 payload 추출
 export const extractTokenPayload = (token: string) => {
@@ -46,6 +47,45 @@ export const handleLogout = (navigate: any) => {
   
   // 로그인 페이지로 리다이렉트
   navigate(ROUTES.LOGIN);
+};
+
+// 토큰 갱신
+export const refreshAccessToken = async (): Promise<string | null> => {
+  try {
+    const refreshToken = secureGetItem('refreshToken');
+    
+    if (!refreshToken) {
+      return null;
+    }
+
+    const response = await axiosHttpClient.post<{
+      success: boolean;
+      data: {
+        accessToken: string;
+        refreshToken: string;
+      };
+    }>('/account/refresh', {
+      refreshToken
+    });
+
+    if (response.success) {
+      const { accessToken, refreshToken: newRefreshToken } = response.data;
+      
+      // 새로운 토큰들을 저장
+      secureSetItem('token', accessToken, 1); // 1시간
+      secureSetItem('refreshToken', newRefreshToken, 1); // 1시간
+      
+      return accessToken;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Token refresh failed:', error);
+    // 갱신 실패 시 토큰들 삭제
+    secureRemoveItem('token');
+    secureRemoveItem('refreshToken');
+    return null;
+  }
 };
 
 // 인증 상태 확인 및 처리

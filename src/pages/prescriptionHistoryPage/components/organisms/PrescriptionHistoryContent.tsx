@@ -30,7 +30,7 @@ export const PrescriptionHistoryContent: React.FC<PrescriptionHistoryContentProp
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">처방 기록</h1>
             <p className="text-gray-600">
-              지금까지 받은 모든 처방 기록을 확인할 수 있습니다.
+              완료된 처방 기록을 확인할 수 있습니다.
             </p>
           </div>
 

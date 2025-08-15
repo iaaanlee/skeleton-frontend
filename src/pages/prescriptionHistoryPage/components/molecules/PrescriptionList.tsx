@@ -45,7 +45,7 @@ export const PrescriptionList: React.FC<PrescriptionListProps> = ({
           처방 기록이 없습니다
         </h3>
         <p className="text-gray-500">
-          아직 받은 처방이 없습니다. 운동 분석을 시작해보세요.
+          완료된 처방이 없습니다. 운동 분석을 시작해보세요.
         </p>
       </div>
     );
@@ -53,11 +53,11 @@ export const PrescriptionList: React.FC<PrescriptionListProps> = ({
 
   return (
     <div className="space-y-4">
-      {prescriptions.map((prescription) => (
+      {prescriptions.map((prescription, index) => (
         <PrescriptionItem
-          key={prescription.id}
+          key={prescription.id || prescription._id || index}
           prescription={prescription}
-          onClick={() => onPrescriptionClick(prescription.analysisId)}
+          onClick={() => onPrescriptionClick(prescription.analysisId || prescription.analysisJobId)}
         />
       ))}
     </div>

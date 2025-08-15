@@ -18,9 +18,9 @@ export const LoginPage = () => {
         isError: isErrorLogin 
     } = useLogin({
         onSuccess: (data) => {
-            // 토큰 저장
-            if (data.token) {
-                login(data.token);
+            // 토큰 저장 (accessToken과 refreshToken)
+            if (data.accessToken && data.refreshToken) {
+                login(data.accessToken, data.refreshToken);
             }
             // 로그인 성공 후 select-profile 페이지로 리다이렉트
             navigate(ROUTES.SELECT_PROFILE);

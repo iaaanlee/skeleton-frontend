@@ -49,8 +49,12 @@ export const usePrescriptionActions = (profileId: string, accountId: string) => 
       
       console.log('Prescription created:', response)
       
-      // 분석 진행 페이지로 이동
-      if (response && response.analysisJobId) {
+      // 이미 완료된 분석인지 확인
+      if (response && response.redirectTo === 'prescription-history') {
+        alert(response.message || '이미 완료된 분석입니다. 처방 기록에서 확인하세요.')
+        navigate(ROUTES.PRESCRIPTION_HISTORY)
+      } else if (response && response.analysisJobId) {
+        // 새로운 분석 또는 재시도 - 분석 진행 페이지로 이동
         navigate(ROUTES.ANALYSIS_PROGRESS.replace(':analysisJobId', response.analysisJobId))
       } else {
         alert('처방이 생성되었습니다!')

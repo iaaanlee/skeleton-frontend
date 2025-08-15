@@ -17,7 +17,8 @@ export type ICreateAccountResponse = {
 export type ILoginResponse = {
   success: boolean;
   data: {
-    token: string;
+    accessToken: string;
+    refreshToken: string;
     account: AccountInfo;
   };
 }; 

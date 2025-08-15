@@ -95,6 +95,7 @@ export const secureRemoveItemsByPattern = (pattern: string): void => {
 export const clearAllSecureData = (): void => {
   // 토큰 관련
   secureRemoveItem('token');
+  secureRemoveItem('refreshToken');
   
   // 프로필 관련 (selectedProfile_로 시작하는 모든 키)
   secureRemoveItemsByPattern('selectedProfile_');

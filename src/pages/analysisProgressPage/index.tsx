@@ -274,7 +274,7 @@ export const AnalysisProgressPage = () => {
               </h2>
               <p className="text-gray-600">
                 {displayStatus === 'blazepose_server_failed'
-                  ? 'BlazePose 서버 연결에 실패했습니다. 잠시 후 운동 처방 페이지로 돌아갑니다.'
+                  ? '자세 분석 서버 연결에 실패했습니다. 잠시 후 운동 처방 페이지로 돌아갑니다.'
                   : displayStatus === 'blazepose_pose_failed'
                   ? '업로드하신 이미지에서 포즈를 감지할 수 없습니다. 다른 이미지로 다시 시도해주세요.'
                   : status?.message || '분석이 진행 중입니다. 잠시만 기다려주세요.'}

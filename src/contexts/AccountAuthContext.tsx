@@ -4,7 +4,7 @@ import { secureSetItem, secureGetItem, secureRemoveItem, initializeNewSession, c
 interface AccountAuthContextType {
     isAuthenticated: boolean;
     token: string | null;
-    login: (token: string) => void;
+    login: (token: string, refreshToken?: string) => void;
     logout: () => void;
 }
 
@@ -32,19 +32,24 @@ export const AccountAuthProvider: React.FC<AccountAuthProviderProps> = ({ childr
         return !!storedToken;
     });
 
-    const login = (newToken: string) => {
+    const login = (newToken: string, refreshToken?: string) => {
         // 새 로그인 시 기존 세션 완전 초기화
         initializeNewSession();
         
         setToken(newToken);
         setIsAuthenticated(true);
-        secureSetItem('token', newToken, 3); // 3시간 만료
+        secureSetItem('token', newToken, 1); // 1시간 만료
+        
+        if (refreshToken) {
+            secureSetItem('refreshToken', refreshToken, 1); // 1시간 만료
+        }
     };
 
     const logout = () => {
         setToken(null);
         setIsAuthenticated(false);
         secureRemoveItem('token');
+        secureRemoveItem('refreshToken');
     };
 
     // 앱 시작 시 만료된 데이터 정리

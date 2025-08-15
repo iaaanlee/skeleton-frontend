@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
-import { usePrescriptionHistory } from '../../services/prescriptionService';
+import { useCompletedPrescriptions } from '../../services/prescriptionService';
 import { useAccountAuth } from '../../contexts/AccountAuthContext';
 import { useProfile } from '../../contexts/ProfileAuthContext';
 import { extractAccountIdFromToken } from '../../utils/auth';
@@ -15,12 +15,12 @@ export const PrescriptionHistoryPage = () => {
   const accountId = token ? extractAccountIdFromToken(token) : '';
   const profileId = selectedProfile?._id || '';
 
-  // 처방 기록 조회
+  // 완료된 처방 기록 조회
   const { 
     data: prescriptionData, 
     isLoading, 
     error 
-  } = usePrescriptionHistory(accountId || '', profileId || '');
+  } = useCompletedPrescriptions(accountId || '', profileId || '');
 
   const handleBack = () => {
     navigate(ROUTES.ANALYZE_EXERCISE);

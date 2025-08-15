@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { secureGetItem, secureRemoveItem } from '../../utils/secureStorage';
+import { refreshAccessToken } from '../../utils/auth';
 
 export class AxiosHttpClient {
   private client: AxiosInstance;
@@ -33,14 +34,40 @@ export class AxiosHttpClient {
       (response: AxiosResponse) => {
         return response;
       },
-      (error) => {
+      async (error) => {
+        const originalRequest = error.config;
+        
         // Handle common errors
-        if (error.response?.status === 401 || error.response?.status === 403) {
-          // Handle unauthorized/forbidden (token expired or invalid)
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          
+          try {
+            // 토큰 갱신 시도
+            const newToken = await refreshAccessToken();
+            
+            if (newToken) {
+              // 새로운 토큰으로 원래 요청 재시도
+              originalRequest.headers.Authorization = `Bearer ${newToken}`;
+              return this.client.request(originalRequest);
+            } else {
+              // 토큰 갱신 실패 시 로그인 페이지로 이동
+              secureRemoveItem('token');
+              secureRemoveItem('refreshToken');
+              window.location.href = '/login';
+            }
+          } catch (refreshError) {
+            // 토큰 갱신 중 오류 발생 시 로그인 페이지로 이동
+            secureRemoveItem('token');
+            secureRemoveItem('refreshToken');
+            window.location.href = '/login';
+          }
+        } else if (error.response?.status === 403) {
+          // Forbidden - 토큰 갱신으로도 해결되지 않는 경우
           secureRemoveItem('token');
-          // 페이지 새로고침하여 로그인 페이지로 리다이렉트
+          secureRemoveItem('refreshToken');
           window.location.href = '/login';
         }
+        
         return Promise.reject(error);
       }
     );
