@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { router } from './router';
 import { AccountAuthProvider } from './contexts/AccountAuthContext'
 import { ProfileAuthProvider } from './contexts/ProfileAuthContext'
+import { ToastProvider } from './contexts/ToastContext'
 
 const queryClient = new QueryClient();
 
@@ -11,7 +12,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AccountAuthProvider>
         <ProfileAuthProvider>
-          <RouterProvider router={router} />
+          <ToastProvider>
+            <RouterProvider router={router} />
+          </ToastProvider>
         </ProfileAuthProvider>
       </AccountAuthProvider>
     </QueryClientProvider>

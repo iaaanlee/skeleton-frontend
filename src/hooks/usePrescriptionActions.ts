@@ -4,11 +4,13 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useCreatePrescription } from '../services/prescriptionService'
 import { QUERY_KEYS } from '../services/common/queryKey'
 import { ROUTES } from '../constants/routes'
+import { useToast } from '../contexts/ToastContext'
 
 export const usePrescriptionActions = (profileId: string, accountId: string) => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const createPrescriptionMutation = useCreatePrescription()
+  const { showError, showSuccess, showInfo } = useToast()
   
   const [isCreating, setIsCreating] = useState(false)
 
@@ -21,22 +23,22 @@ export const usePrescriptionActions = (profileId: string, accountId: string) => 
     promptId: string;
   }) => {
     if (!accountId) {
-      alert('로그인이 필요합니다.')
+      showError('로그인이 필요합니다.')
       return false
     }
 
     if (!inputs.mediaSetId) {
-      alert('미디어 세트를 선택해주세요.')
+      showError('미디어 세트를 선택해주세요.')
       return false
     }
 
     // if (!inputs.description.ans1 || !inputs.description.ans2) {
-    //   alert('운동 분석 요청사항을 모두 입력해주세요.')
+    //   showError('운동 분석 요청사항을 모두 입력해주세요.')
     //   return false
     // }
 
     if (!inputs.promptId) {
-      alert('분석 프롬프트를 선택해주세요.')
+      showError('분석 프롬프트를 선택해주세요.')
       return false
     }
 
@@ -51,13 +53,13 @@ export const usePrescriptionActions = (profileId: string, accountId: string) => 
       
       // 이미 완료된 분석인지 확인
       if (response && response.redirectTo === 'prescription-history') {
-        alert(response.message || '이미 완료된 분석입니다. 처방 기록에서 확인하세요.')
+        showInfo(response.message || '이미 완료된 분석입니다. 처방 기록에서 확인하세요.')
         navigate(ROUTES.PRESCRIPTION_HISTORY)
       } else if (response && response.analysisJobId) {
         // 새로운 분석 또는 재시도 - 분석 진행 페이지로 이동
         navigate(ROUTES.ANALYSIS_PROGRESS.replace(':analysisJobId', response.analysisJobId))
       } else {
-        alert('처방이 생성되었습니다!')
+        showSuccess('처방이 생성되었습니다!')
       }
       
       // 미디어 세트 목록 쿼리 무효화
@@ -68,7 +70,7 @@ export const usePrescriptionActions = (profileId: string, accountId: string) => 
       return true
     } catch (error) {
       console.error('Create prescription error:', error)
-      alert('처방 생성 중 오류가 발생했습니다.')
+      showError('처방 생성 중 오류가 발생했습니다.')
       return false
     } finally {
       setIsCreating(false)

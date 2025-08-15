@@ -1,59 +1,16 @@
 // Analysis 관련 API service 정의
 import { AxiosHttpClient } from "../common/axiosHttpClient";
 import { backendHttpClient } from "../common/httpClient";
-import { BlazePoseResultsFromBackend } from "../../types/blazePose";
-
-export type AnalysisJob = {
-  _id: string;
-  accountId: string;
-  profileId: string;
-  mediaSetId: string;
-  description: {
-    ans1: string;
-    ans2: string;
-  };
-  promptId: string;
-  status: 'pending' | 'blazepose_processing' | 'blazepose_completed' | 'llm_processing' | 'llm_completed' | 'failed';
-  blazePoseResults?: BlazePoseResultsFromBackend;
-  llmResults?: {
-    analysisText: string;
-  };
-  errorMessage?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type AnalysisStatus = {
-  analysisJobId: string;
-  status: 'pending' | 'blazepose_processing' | 'blazepose_completed' | 'llm_processing' | 'llm_completed' | 'failed';
-  message: string;
-  completedSteps: Array<{
-    step: string;
-    completedAt: string;
-    description: string;
-  }>;
-  error: string | null;
-  startedAt: string | null;
-  completedAt: string | null;
-  createdAt: string;
-}
-
-export type StartAnalysisRequest = {
-  mediaSetId: string;
-  description: {
-    ans1: string;
-    ans2: string;
-  };
-  promptId: string;
-}
-
-export type StartAnalysisResponse = {
-  analysisJob: AnalysisJob;
-}
+import { 
+  AnalysisJob, 
+  AnalysisStatusInfo, 
+  StartAnalysisRequest, 
+  StartAnalysisResponse 
+} from "../../types/analysis/analysis";
 
 type IAnalysisService = {
   startAnalysis: (request: StartAnalysisRequest) => Promise<StartAnalysisResponse>;
-  getAnalysisStatus: (analysisJobId: string, profileId?: string) => Promise<AnalysisStatus>;
+  getAnalysisStatus: (analysisJobId: string, profileId?: string) => Promise<AnalysisStatusInfo>;
   getAnalysisJob: (analysisJobId: string, profileId?: string) => Promise<AnalysisJob>;
   cancelAnalysis: (analysisJobId: string) => Promise<void>;
 };
@@ -65,7 +22,7 @@ class AnalysisService implements IAnalysisService {
   async startAnalysis(request: StartAnalysisRequest) {
     const { data } = await this.httpClient.request<{ success: boolean; data: StartAnalysisResponse }>({
       method: 'POST',
-      url: '/analysis/start',
+      url: '/exerciseAnalysis/start',
       data: request,
     })
     return data.data
@@ -73,9 +30,9 @@ class AnalysisService implements IAnalysisService {
 
   // 분석 상태 조회
   async getAnalysisStatus(analysisJobId: string, profileId?: string) {
-    const { data } = await this.httpClient.request<{ success: boolean; data: AnalysisStatus }>({
+    const { data } = await this.httpClient.request<{ success: boolean; data: AnalysisStatusInfo }>({
       method: 'GET',
-      url: `/analysis/status/${analysisJobId}`,
+      url: `/analysisJob/status/${analysisJobId}`,
       params: profileId ? { profileId } : undefined
     })
     return data.data
@@ -85,7 +42,7 @@ class AnalysisService implements IAnalysisService {
   async getAnalysisJob(analysisJobId: string, profileId?: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: AnalysisJob }>({
       method: 'GET',
-      url: `/analysis/analysisJobById/${analysisJobId}`,
+      url: `/analysisJob/analysisJobById/${analysisJobId}`,
       params: profileId ? { profileId } : undefined
     })
     return data.data
@@ -95,7 +52,7 @@ class AnalysisService implements IAnalysisService {
   async cancelAnalysis(analysisJobId: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'POST',
-      url: `/analysis/cancel/${analysisJobId}`,
+      url: `/analysisJob/cancel/${analysisJobId}`,
     })
     return data
   }

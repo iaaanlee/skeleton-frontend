@@ -5,7 +5,7 @@ export const ANALYSIS_STAGE_MIN_DURATION = {
   BLAZEPOSE_COMPLETED: 1000, // 1초
   LLM_PROCESSING: 1000, // 1초
   LLM_COMPLETED: 2000, // 2초
-  BLAZEPOSE_FAILED: 50000, // 0.5초 - 자세 분석 실패 시 대기 시간
+  BLAZEPOSE_FAILED: 5000, // 5초 - 자세 분석 실패 시 대기 시간
 } as const;
 
 // 분석 단계별 텍스트

@@ -26,7 +26,7 @@ class BlazePoseService implements IBlazePoseService {
   async startAnalysis(request: BlazePoseAnalysisRequest) {
     const { data } = await this.httpClient.request<{ success: boolean; data: BlazePoseAnalysisResponse['data'] }>({
       method: 'POST',
-      url: '/blazePose/analyze',
+      url: '/blazepose/analyze',
       data: request,
     })
     return data.data
@@ -36,7 +36,7 @@ class BlazePoseService implements IBlazePoseService {
   async getAnalysisStatus(analysisId: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: BlazePoseStatus['data'] }>({
       method: 'GET',
-      url: `/blazePose/status/${analysisId}`,
+      url: `/blazepose/status/${analysisId}`,
     })
     return data.data
   }
@@ -45,7 +45,7 @@ class BlazePoseService implements IBlazePoseService {
   async getAnalysisResult(analysisId: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: BlazePoseResult['data'] }>({
       method: 'GET',
-      url: `/blazePose/result/${analysisId}`,
+      url: `/blazepose/result/${analysisId}`,
     })
     return data.data
   }
@@ -61,7 +61,7 @@ class BlazePoseService implements IBlazePoseService {
       }
     }>({
       method: 'POST',
-      url: '/blazePose/check-duplicate',
+      url: '/blazepose/check-duplicate',
       data: request,
     })
     return data.data
