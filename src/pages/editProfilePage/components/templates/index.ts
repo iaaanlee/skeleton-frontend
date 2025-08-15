@@ -1,0 +1,1 @@
+export { default as EditProfileLayout } from './EditProfileLayout';

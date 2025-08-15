@@ -29,7 +29,7 @@ export const AnalysisResultPage = () => {
   }, [status?.status, analysisId]);
 
   const handleBack = () => {
-    navigate(ROUTES.CREATE_PRESCRIPTION);
+    navigate(ROUTES.PRESCRIPTION_HISTORY);
   };
 
   const handleAnalyzedImageClick = () => {

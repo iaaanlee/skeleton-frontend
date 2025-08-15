@@ -13,11 +13,13 @@ export const usePrescriptionById = (prescriptionId: string) => {
 
 export const useCompletedPrescriptions = (
   limit: number = 20,
-  offset: number = 0
+  offset: number = 0,
+  enabled: boolean = true
 ) => {
   return useQuery({
     queryKey: [...QUERY_KEYS.prescriptions, 'completed', limit, offset],
     queryFn: () => prescriptionService.getCompletedPrescriptions(limit, offset),
+    enabled,
   })
 }
 
