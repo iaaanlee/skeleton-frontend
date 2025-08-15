@@ -1,5 +1,6 @@
-import { UploadInitResponse, ServerFile, FileListResponse, DownloadUrlResponse, BlazePoseResult } from './index'
+import { UploadInitResponse, ServerFile, FileListResponse, DownloadUrlResponse } from './index'
 import { ApiResponse } from './request'
+import { BlazePoseResult } from '../blazePose'
 
 // 파일 업로드 관련 응답
 export type UploadInitApiResponse = ApiResponse<UploadInitResponse>

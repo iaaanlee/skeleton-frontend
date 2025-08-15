@@ -2,6 +2,7 @@
 import { backendHttpClient } from '../common/httpClient';
 import { CreateProfileRequest, UpdateProfileRequest } from '../../types/profile/request';
 import { ICreateProfileResponse, IGetProfileResponse, IGetProfilesResponse } from '../../types/profile/response';
+import { SelectProfileResponse, GetCurrentProfileResponse, ClearProfileResponse } from '../../types/services/profile';
 
 export const profileService = {
   // GET
@@ -42,8 +43,8 @@ export const profileService = {
   },
 
   // 프로필 선택/관리 API (새로 추가)
-  selectProfile: async (profileId: string): Promise<{ success: boolean; data: { profileId: string; profileName: string; message: string } }> => {
-    const response = await backendHttpClient.request<{ success: boolean; data: { profileId: string; profileName: string; message: string } }>({
+  selectProfile: async (profileId: string): Promise<SelectProfileResponse> => {
+    const response = await backendHttpClient.request<SelectProfileResponse>({
       method: 'POST',
       url: '/auth/select-profile',
       data: { profileId }
@@ -51,8 +52,8 @@ export const profileService = {
     return response.data;
   },
 
-  getCurrentProfile: async (): Promise<{ success: boolean; data: { profileId: string; profileName: string; accountId: string } }> => {
-    const response = await backendHttpClient.request<{ success: boolean; data: { profileId: string; profileName: string; accountId: string } }>({
+  getCurrentProfile: async (): Promise<GetCurrentProfileResponse> => {
+    const response = await backendHttpClient.request<GetCurrentProfileResponse>({
       method: 'GET',
       url: '/auth/current-profile'
     });
@@ -61,7 +62,7 @@ export const profileService = {
 
   getCurrentProfileDetails: async (): Promise<IGetProfileResponse> => {
     // 먼저 현재 선택된 프로필 ID를 가져온 후, 상세 정보를 조회
-    const currentProfile = await backendHttpClient.request<{ success: boolean; data: { profileId: string; profileName: string; accountId: string } }>({
+    const currentProfile = await backendHttpClient.request<GetCurrentProfileResponse>({
       method: 'GET',
       url: '/auth/current-profile'
     });
@@ -74,8 +75,8 @@ export const profileService = {
     return response.data as IGetProfileResponse;
   },
 
-  clearProfile: async (): Promise<{ success: boolean; message: string }> => {
-    const response = await backendHttpClient.request<{ success: boolean; message: string }>({
+  clearProfile: async (): Promise<ClearProfileResponse> => {
+    const response = await backendHttpClient.request<ClearProfileResponse>({
       method: 'POST',
       url: '/auth/clear-profile'
     });

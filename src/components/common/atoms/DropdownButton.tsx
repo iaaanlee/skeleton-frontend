@@ -1,10 +1,5 @@
 import React from 'react';
-
-interface DropdownButtonProps {
-    label: string;
-    onClick: () => void;
-    isDanger?: boolean;
-}
+import { DropdownButtonProps } from '../../../types/components/common';
 
 export const DropdownButton = ({ label, onClick, isDanger = false }: DropdownButtonProps) => {
     return (

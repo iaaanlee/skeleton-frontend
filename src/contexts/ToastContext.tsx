@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Toast, ToastType } from '../components/common/atoms/Toast';
 
-interface ToastItem {
+type ToastItem = {
   id: string;
   type: ToastType;
   message: string;
   duration?: number;
 }
 
-interface ToastContextType {
+type ToastContextType = {
   showToast: (type: ToastType, message: string, duration?: number) => void;
   showSuccess: (message: string, duration?: number) => void;
   showError: (message: string, duration?: number) => void;
@@ -26,7 +26,7 @@ export const useToast = () => {
   return context;
 };
 
-interface ToastProviderProps {
+type ToastProviderProps = {
   children: React.ReactNode;
 }
 

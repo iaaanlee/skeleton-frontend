@@ -72,13 +72,7 @@ export type DownloadUrlResponse = {
   expiresIn: number
 }
 
-// BlazePose 분석 결과
-export type BlazePoseResult = {
-  success: boolean
-  landmarks?: any[]
-  totalLandmarks?: number
-  error?: string
-}
+// BlazePose Result는 blazePose/index.ts에서 import
 
 // 이미지 가공 결과
 export type ProcessedImage = {

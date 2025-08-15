@@ -11,7 +11,7 @@ export type CurrentProfileInfo = {
   accountId: string;
 } | null;
 
-interface ProfileContextType {
+type ProfileContextType = {
   currentProfile: CurrentProfileInfo;
   isLoading: boolean;
   error: any;

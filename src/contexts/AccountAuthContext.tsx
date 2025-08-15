@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { useQueryClient } from '@tanstack/react-query';
 import { secureSetItem, secureGetItem, secureRemoveItem, initializeNewSession, cleanupExpiredData } from '../utils/secureStorage';
 
-interface AccountAuthContextType {
+type AccountAuthContextType = {
     isAuthenticated: boolean;
     token: string | null;
     login: (token: string, refreshToken?: string) => void;
@@ -19,7 +19,7 @@ export const useAccountAuth = () => {
     return context;
 };
 
-interface AccountAuthProviderProps {
+type AccountAuthProviderProps = {
     children: ReactNode;
 }
 

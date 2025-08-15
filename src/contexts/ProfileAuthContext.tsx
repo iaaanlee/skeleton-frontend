@@ -4,7 +4,7 @@ import { ProfileInfo } from '../types/profile/profile';
 import { useAccountAuth } from './AccountAuthContext';
 import { secureSetItem, secureGetItem, secureRemoveItem } from '../utils/secureStorage';
 
-interface ProfileAuthContextType {
+type ProfileAuthContextType = {
   currentProfile: ProfileInfo | null;
   setSelectedProfile: (profile: ProfileInfo | null) => void;
   isProfileSelected: boolean;
