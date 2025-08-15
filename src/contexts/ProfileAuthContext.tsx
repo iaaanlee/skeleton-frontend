@@ -5,7 +5,7 @@ import { useAccountAuth } from './AccountAuthContext';
 import { secureSetItem, secureGetItem, secureRemoveItem } from '../utils/secureStorage';
 
 interface ProfileAuthContextType {
-  selectedProfile: ProfileInfo | null;
+  currentProfile: ProfileInfo | null;
   setSelectedProfile: (profile: ProfileInfo | null) => void;
   isProfileSelected: boolean;
   clearSelectedProfile: () => void;
@@ -27,7 +27,7 @@ type ProfileProviderProps = {
 }
 
 export const ProfileAuthProvider: React.FC<ProfileProviderProps> = ({ children }) => {
-  const [selectedProfile, setSelectedProfile] = useState<ProfileInfo | null>(null);
+  const [currentProfile, setSelectedProfile] = useState<ProfileInfo | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const { isAuthenticated, token } = useAccountAuth();
   const queryClient = useQueryClient();
@@ -38,7 +38,7 @@ export const ProfileAuthProvider: React.FC<ProfileProviderProps> = ({ children }
       // 토큰에서 accountId 추출 (JWT payload의 sub 또는 id 필드 사용)
       const payload = JSON.parse(atob(accountToken.split('.')[1]));
       const accountId = payload.sub || payload.id || payload.accountId;
-      return `selectedProfile_${accountId}`;
+      return `currentProfile_${accountId}`;
     } catch (error) {
       console.error('Error parsing token for profile storage key:', error);
       return null;
@@ -87,7 +87,7 @@ export const ProfileAuthProvider: React.FC<ProfileProviderProps> = ({ children }
     }
   }, [isAuthenticated]);
 
-  const isProfileSelected = selectedProfile !== null;
+  const isProfileSelected = currentProfile !== null;
 
   const clearSelectedProfile = () => {
     setSelectedProfile(null);
@@ -103,9 +103,9 @@ export const ProfileAuthProvider: React.FC<ProfileProviderProps> = ({ children }
 
   // 모든 프로필 데이터 정리 (계정 로그아웃 시)
   const clearAllProfileData = () => {
-    // selectedProfile_로 시작하는 모든 키 삭제
+    // currentProfile_로 시작하는 모든 키 삭제
     Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('selectedProfile_')) {
+      if (key.startsWith('currentProfile_')) {
         secureRemoveItem(key);
       }
     });
@@ -135,7 +135,7 @@ export const ProfileAuthProvider: React.FC<ProfileProviderProps> = ({ children }
   };
 
   const value = {
-    selectedProfile,
+    currentProfile,
     setSelectedProfile: handleSetSelectedProfile,
     isProfileSelected,
     clearSelectedProfile,

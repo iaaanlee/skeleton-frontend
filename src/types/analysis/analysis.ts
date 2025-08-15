@@ -51,7 +51,6 @@ export type AnalysisStatusInfo = {
 // 분석 시작 요청
 export type StartAnalysisRequest = {
   fileIds: string[];
-  profileId: string;
 }
 
 // 분석 시작 응답

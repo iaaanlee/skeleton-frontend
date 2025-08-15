@@ -1,11 +1,11 @@
-import { useProfile } from "../../../../contexts/ProfileAuthContext";
+import { useProfile } from '../../../../contexts/ProfileContext';
 
 interface HeaderProps {
     onLogout: () => void;
 }
 
 export const Header = ({ onLogout }: HeaderProps) => {
-    const { selectedProfile, isProfileSelected } = useProfile();
+    const { currentProfile } = useProfile();
     
     return (
         <header className="bg-white shadow-sm border-b">
@@ -15,9 +15,9 @@ export const Header = ({ onLogout }: HeaderProps) => {
                         <h1 className="text-xl font-semibold text-gray-900">
                             프로필 선택
                         </h1>
-                        {isProfileSelected && (
+                        {currentProfile && (
                             <div className="ml-4 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                                선택됨: {selectedProfile?.profileName}
+                                선택됨: {currentProfile?.profileName}
                             </div>
                         )}
                     </div>

@@ -22,4 +22,42 @@ export const useGetProfilesByAccountId = (enabled: boolean = true) => {
     },
     enabled: enabled, // 인증된 상태에서만 API 호출
   });
+};
+
+// 현재 선택된 프로필 조회 (새로 추가)
+export const useGetCurrentProfile = (enabled: boolean = true) => {
+  return useQuery({
+    queryKey: ['currentProfile'],
+    queryFn: () => profileService.getCurrentProfile(),
+    select: (data) => {
+      return data.data; // { profileId, profileName, accountId }
+    },
+    enabled: enabled,
+    retry: (failureCount, error: any) => {
+      // PROFILE_NOT_SELECTED 에러는 재시도하지 않음
+      if (error?.response?.data?.error === 'PROFILE_NOT_SELECTED') {
+        return false;
+      }
+      return failureCount < 3;
+    },
+  });
+};
+
+// 현재 선택된 프로필의 상세 정보 조회
+export const useGetCurrentProfileDetails = (enabled: boolean = true) => {
+  return useQuery({
+    queryKey: ['currentProfileDetails'],
+    queryFn: () => profileService.getCurrentProfileDetails(),
+    select: (data) => {
+      return data;
+    },
+    enabled: enabled,
+    retry: (failureCount, error: any) => {
+      // PROFILE_NOT_SELECTED 에러는 재시도하지 않음
+      if (error?.response?.data?.error === 'PROFILE_NOT_SELECTED') {
+        return false;
+      }
+      return failureCount < 3;
+    },
+  });
 }; 

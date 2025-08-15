@@ -16,18 +16,18 @@ import { ProtectedRoute } from './routes';
 import { ROUTES } from './constants/routes';
 import { Navigate } from 'react-router-dom';
 import { useAccountAuth } from './contexts/AccountAuthContext';
-import { useProfile } from './contexts/ProfileAuthContext';
+import { useProfile } from './contexts/ProfileContext';
 
 // Catch-all 라우트를 위한 컴포넌트
 const NotFoundRedirect = () => {
   const { isAuthenticated } = useAccountAuth();
-  const { isProfileSelected } = useProfile();
+  const { currentProfile } = useProfile();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!isProfileSelected) {
+  if (!currentProfile) {
     return <Navigate to="/select-profile" replace />;
   }
 

@@ -18,4 +18,39 @@ export const useCreateProfileMutation = ({ onSuccess, onError }: {
             onError?.(error);
         },
     });
+};
+
+// 프로필 선택 관련 mutations (새로 추가)
+export const useSelectProfileMutation = ({ onSuccess, onError }: {
+    onSuccess?: (data: any) => void;
+    onError?: (error: Error) => void;
+} = {}) => {
+    return useMutation({
+        mutationFn: async (profileId: string) => {
+            return await profileService.selectProfile(profileId);
+        },
+        onSuccess: (data) => {
+            onSuccess?.(data);
+        },
+        onError: (error: Error) => {
+            onError?.(error);
+        },
+    });
+};
+
+export const useClearProfileMutation = ({ onSuccess, onError }: {
+    onSuccess?: () => void;
+    onError?: (error: Error) => void;
+} = {}) => {
+    return useMutation({
+        mutationFn: async () => {
+            return await profileService.clearProfile();
+        },
+        onSuccess: () => {
+            onSuccess?.();
+        },
+        onError: (error: Error) => {
+            onError?.(error);
+        },
+    });
 }; 

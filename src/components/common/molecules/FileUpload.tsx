@@ -5,20 +5,18 @@ import { UploadButton } from '../atoms/UploadButton'
 import { useFileUpload } from '../../../hooks/useFileUpload'
 
 type FileUploadProps = {
-  profileId: string
   multiple?: boolean
   className?: string
   disabled?: boolean
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
-  profileId,
   multiple = false,
   className = '',
   disabled = false
 }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-  const { uploadStatus, progress, error, uploadFiles } = useFileUpload(profileId)
+  const { uploadStatus, progress, error, uploadFiles } = useFileUpload()
 
   const handleFilesSelect = (files: File[]) => {
     setSelectedFiles(files)

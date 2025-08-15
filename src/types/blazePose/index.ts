@@ -1,7 +1,6 @@
 // BlazePose 분석 요청
 export type BlazePoseAnalysisRequest = {
   fileIds: string[]
-  profileId: string
 }
 
 // BlazePose 분석 응답

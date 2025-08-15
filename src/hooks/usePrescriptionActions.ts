@@ -6,7 +6,7 @@ import { QUERY_KEYS } from '../services/common/queryKey'
 import { ROUTES } from '../constants/routes'
 import { useToast } from '../contexts/ToastContext'
 
-export const usePrescriptionActions = (profileId: string, accountId: string) => {
+export const usePrescriptionActions = (accountId: string) => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const createPrescriptionMutation = useCreatePrescription()
@@ -45,7 +45,6 @@ export const usePrescriptionActions = (profileId: string, accountId: string) => 
     setIsCreating(true)
     try {
       const response = await createPrescriptionMutation.mutateAsync({
-        profileId,
         inputs
       })
       
@@ -64,7 +63,7 @@ export const usePrescriptionActions = (profileId: string, accountId: string) => 
       
       // 미디어 세트 목록 쿼리 무효화
       queryClient.invalidateQueries({
-        queryKey: [...QUERY_KEYS.mediaSets, 'list', accountId, profileId]
+        queryKey: [...QUERY_KEYS.mediaSets, 'list']
       })
       
       return true
@@ -75,7 +74,7 @@ export const usePrescriptionActions = (profileId: string, accountId: string) => 
     } finally {
       setIsCreating(false)
     }
-  }, [createPrescriptionMutation, profileId, accountId, navigate, queryClient])
+  }, [createPrescriptionMutation, accountId, navigate, queryClient, showError, showInfo, showSuccess])
 
   return {
     createPrescription,

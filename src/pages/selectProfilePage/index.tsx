@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useGetProfilesByAccountId } from "../../services/profileService";
 import { useAccountAuth } from "../../contexts/AccountAuthContext";
-import { useProfile } from "../../contexts/ProfileAuthContext";
+import { useProfile } from '../../contexts/ProfileContext';
 import { useEffect } from "react";
 import { Header } from "./components/molecules/Header";
 import { ProfileList } from "./components/organisms/ProfileList";
@@ -10,7 +10,7 @@ import { ROUTES } from '../../constants/routes';
 export const SelectProfilePage = () => {
     const navigate = useNavigate();
     const { logout, isAuthenticated } = useAccountAuth();
-    const { setSelectedProfile, clearSelectedProfile, clearAllProfileData } = useProfile();
+    const { selectProfile, clearProfile } = useProfile();
     const { data: profilesData, isLoading } = useGetProfilesByAccountId(isAuthenticated);
     
     // 인증 상태 확인
@@ -27,14 +27,15 @@ export const SelectProfilePage = () => {
     
     const profiles = profilesData?.data || [];
     
-    const handleProfileClick = (profileId: string) => {
-        // 선택된 프로필 찾기
-        const selectedProfile = profiles.find(profile => profile._id === profileId);
-        if (selectedProfile) {
-            // 프로필 상태에 저장
-            setSelectedProfile(selectedProfile);
+    const handleProfileClick = async (profileId: string) => {
+        try {
+            // 백엔드를 통해 프로필 선택
+            await selectProfile(profileId);
             // 메인페이지로 이동
             navigate(ROUTES.MAIN);
+        } catch (error) {
+            console.error('프로필 선택 중 오류:', error);
+            // 오류 처리 (필요시 토스트 메시지 등)
         }
     };
     
@@ -42,11 +43,19 @@ export const SelectProfilePage = () => {
         navigate(ROUTES.CREATE_PROFILE);
     };
     
-    const handleLogout = () => {
-        clearSelectedProfile(); // 현재 프로필 상태 초기화
-        clearAllProfileData(); // 모든 프로필 데이터 정리
-        logout();
-        navigate(ROUTES.LOGIN);
+    const handleLogout = async () => {
+        try {
+            // 현재 선택된 프로필 해제
+            await clearProfile();
+            // 계정 로그아웃
+            logout();
+            navigate(ROUTES.LOGIN);
+        } catch (error) {
+            console.error('로그아웃 중 오류:', error);
+            // 오류가 발생해도 강제로 로그아웃
+            logout();
+            navigate(ROUTES.LOGIN);
+        }
     };
     
     return (

@@ -1,10 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useMediaSetList } from '../../../../services/mediaSetService'
-import { useAccountAuth } from '../../../../contexts/AccountAuthContext'
 import { useSingleFileSelection } from '../../../../hooks'
 import { useDeleteMediaSet } from '../../../../services/mediaSetService'
-import { validateAuthState, extractAccountIdFromToken } from '../../../../utils/auth'
 import { MediaSetUploadModal } from './MediaSetUploadModal'
 import { MediaSet } from '../../../../services/mediaSetService/mediaSetService'
 
@@ -19,15 +16,10 @@ export const MediaSetList: React.FC<MediaSetListProps> = ({
   onSelectionChange,
   className = ''
 }) => {
-  const navigate = useNavigate()
-  const { token } = useAccountAuth()
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
-  // 토큰에서 accountId 추출
-  const accountId = token ? extractAccountIdFromToken(token) : null
-
   // React Query로 미디어 세트 목록 조회
-  const { data: mediaSetListResponse, isLoading, error, refetch } = useMediaSetList(accountId || '', profileId)
+  const { data: mediaSetListResponse, isLoading, error, refetch } = useMediaSetList()
 
   // 단일 선택 훅 사용
   const {
@@ -60,10 +52,7 @@ export const MediaSetList: React.FC<MediaSetListProps> = ({
     }
   }, [mediaSetListResponse?.mediaSets, selectedMediaSetId])
 
-  // 인증 상태 확인
-  if (!validateAuthState(token, navigate)) {
-    return null
-  }
+  // 인증은 상위 컴포넌트에서 처리됨
 
   const handleMediaSetSelect = (mediaSet: MediaSet) => {
     selectMediaSet(mediaSet._id)
@@ -71,7 +60,7 @@ export const MediaSetList: React.FC<MediaSetListProps> = ({
 
   const handleMediaSetDelete = async (mediaSetId: string) => {
     try {
-      await deleteMediaSetMutation.mutateAsync({ mediaSetId, profileId })
+      await deleteMediaSetMutation.mutateAsync(mediaSetId)
       if (selectedMediaSetId === mediaSetId) {
         clearSelectionRef.current()
       }
@@ -246,7 +235,6 @@ export const MediaSetList: React.FC<MediaSetListProps> = ({
         isOpen={isUploadModalOpen}
         onClose={handleModalClose}
         onUploadSuccess={handleUploadSuccess}
-        profileId={profileId}
       />
     </div>
   )

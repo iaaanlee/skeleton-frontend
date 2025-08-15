@@ -11,4 +11,4 @@ export type {
 
 // React Query hooks
 export { useCreatePrescription, useDeletePrescription } from './prescriptionMutation'
-export { usePrescriptionHistory, usePrescriptionHistoryV2, usePrescriptionById, useCompletedPrescriptions, usePrescriptionByAnalysisJob } from './prescriptionQuery'
+export { usePrescriptionById, useCompletedPrescriptions, usePrescriptionByAnalysisJob } from './prescriptionQuery'

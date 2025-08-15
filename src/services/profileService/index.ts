@@ -1,3 +1,3 @@
 export { profileService } from './profileService';
 export { useCreateProfileMutation } from './profileMutation';
-export { useGetProfileByProfileId, useGetProfilesByAccountId } from './profileQuery'; 
+export { useGetProfileByProfileId, useGetProfilesByAccountId, useGetCurrentProfile, useGetCurrentProfileDetails } from './profileQuery'; 

@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react'
 import { usePrescriptionActions } from '../../../../hooks/usePrescriptionActions'
 import { useAccountAuth } from '../../../../contexts/AccountAuthContext'
+import { useProfile } from '../../../../contexts/ProfileContext'
 import { extractAccountIdFromToken } from '../../../../utils/auth'
 import { MediaSetList } from '../molecules/MediaSetList'
 import { DescriptionSection } from '../molecules/DescriptionSection'
@@ -8,14 +9,13 @@ import { PromptSelector } from '../molecules/PromptSelector'
 import { AnalysisStartButton } from '../molecules/AnalysisStartButton'
 
 type PrescriptionUploadSectionProps = {
-  profileId: string
   className?: string
 }
 
 export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps> = ({
-  profileId,
   className = ''
 }) => {
+  const { currentProfile } = useProfile()
   const { token } = useAccountAuth()
   const accountId = token ? extractAccountIdFromToken(token) : null
   
@@ -26,7 +26,7 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
   })
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null)
 
-  const { createPrescription, isCreating } = usePrescriptionActions(profileId, accountId || '')
+  const { createPrescription, isCreating } = usePrescriptionActions(accountId || '')
 
   const handleMediaSetSelectionChange = useCallback((mediaSetId: string | null) => {
     setSelectedMediaSetId(mediaSetId)
@@ -55,7 +55,7 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
     <div className={`space-y-6 ${className}`}>
       {/* 미디어 세트 선택 섹션 */}
       <MediaSetList 
-        profileId={profileId}
+        profileId={currentProfile?.profileId || ''}
         onSelectionChange={handleMediaSetSelectionChange}
       />
 

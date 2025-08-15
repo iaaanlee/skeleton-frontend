@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAccountAuth } from '../contexts/AccountAuthContext';
-import { useProfile } from '../contexts/ProfileAuthContext';
+import { useProfile } from '../contexts/ProfileContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,13 +10,13 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireProfile = false }) => {
   const { isAuthenticated } = useAccountAuth();
-  const { isProfileSelected } = useProfile();
+  const { currentProfile } = useProfile();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  if (requireProfile && !isProfileSelected) {
+  if (requireProfile && !currentProfile) {
     return <Navigate to="/select-profile" replace />;
   }
 

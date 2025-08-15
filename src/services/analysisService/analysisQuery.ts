@@ -1,21 +1,22 @@
+// 레거시 지원을 위한 query hooks - 새로운 서비스들로 위임
 import { useQuery } from '@tanstack/react-query'
 import { analysisService } from './analysisService'
 import { QUERY_KEYS } from '../common/queryKey'
 
-export const useAnalysisStatus = (analysisJobId: string, profileId?: string) => {
+export const useAnalysisStatus = (analysisJobId: string) => {
   return useQuery({
-    queryKey: [...QUERY_KEYS.analysis, 'status', analysisJobId, profileId],
-    queryFn: () => analysisService.getAnalysisStatus(analysisJobId, profileId),
+    queryKey: [...QUERY_KEYS.analysis, 'status', analysisJobId],
+    queryFn: () => analysisService.getAnalysisStatus(analysisJobId),
     enabled: !!analysisJobId,
     refetchInterval: 2000, // 고정 2초마다 폴링
     refetchIntervalInBackground: true,
   })
 }
 
-export const useAnalysisJob = (analysisJobId: string, profileId?: string) => {
+export const useAnalysisJob = (analysisJobId: string) => {
   return useQuery({
-    queryKey: [...QUERY_KEYS.analysis, 'job', analysisJobId, profileId],
-    queryFn: () => analysisService.getAnalysisJob(analysisJobId, profileId),
+    queryKey: [...QUERY_KEYS.analysis, 'job', analysisJobId],
+    queryFn: () => analysisService.getAnalysisJob(analysisJobId),
     enabled: !!analysisJobId,
   })
 }

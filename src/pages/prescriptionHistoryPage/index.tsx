@@ -2,18 +2,10 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { useCompletedPrescriptions } from '../../services/prescriptionService';
-import { useAccountAuth } from '../../contexts/AccountAuthContext';
-import { useProfile } from '../../contexts/ProfileAuthContext';
-import { extractAccountIdFromToken } from '../../utils/auth';
 import { PrescriptionHistoryLayout } from './components';
 
 export const PrescriptionHistoryPage = () => {
   const navigate = useNavigate();
-  const { token } = useAccountAuth();
-  const { selectedProfile } = useProfile();
-  
-  const accountId = token ? extractAccountIdFromToken(token) : '';
-  const profileId = selectedProfile?._id || '';
 
   const handlePrescriptionClick = (prescriptionId: string) => {
     navigate(ROUTES.ANALYSIS_RESULT.replace(':analysisId', prescriptionId));
@@ -24,7 +16,7 @@ export const PrescriptionHistoryPage = () => {
     data: prescriptionData, 
     isLoading, 
     error 
-  } = useCompletedPrescriptions(accountId || '', profileId || '');
+  } = useCompletedPrescriptions();
 
   return (
     <PrescriptionHistoryLayout

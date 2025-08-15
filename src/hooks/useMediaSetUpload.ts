@@ -1,20 +1,19 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { useInitUpload, useCompleteUpload, useUploadToS3 } from '../services/mediaSetService'
+import { useInitUpload, useUploadToS3 } from '../services/mediaSetService'
 import { mediaSetService } from '../services/mediaSetService/mediaSetService'
 import { useAccountAuth } from '../contexts/AccountAuthContext'
 import { QUERY_KEYS } from '../services/common/queryKey'
-import { validateAuthState, extractAccountIdFromToken } from '../utils/auth'
+import { extractAccountIdFromToken } from '../utils/auth'
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error'
 
-export const useMediaSetUpload = (profileId: string) => {
+export const useMediaSetUpload = () => {
   const navigate = useNavigate()
   const { token } = useAccountAuth()
   const queryClient = useQueryClient()
   const initUploadMutation = useInitUpload()
-  const completeUploadMutation = useCompleteUpload()
   const uploadToS3Mutation = useUploadToS3()
   
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle')
@@ -29,7 +28,9 @@ export const useMediaSetUpload = (profileId: string) => {
     if (files.length === 0) return
 
     // 인증 상태 확인
-    if (!validateAuthState(token, navigate)) {
+    if (!token) {
+      console.error('No authentication token found')
+      navigate('/login')
       return
     }
 
@@ -60,7 +61,6 @@ export const useMediaSetUpload = (profileId: string) => {
 
         // 업로드 초기화
         const uploadInitResponse = await initUploadMutation.mutateAsync({
-          profileId,
           fileName: file.name,
           contentType: file.type,
           fileSize: file.size
@@ -98,7 +98,6 @@ export const useMediaSetUpload = (profileId: string) => {
       }))
 
       await mediaSetService.completeUploadMultiple({
-        profileId,
         files: filesData
       })
 
@@ -108,7 +107,7 @@ export const useMediaSetUpload = (profileId: string) => {
       
       // 미디어 세트 목록 쿼리 무효화하여 자동 갱신
       queryClient.invalidateQueries({
-        queryKey: [...QUERY_KEYS.mediaSets, 'list', accountId, profileId]
+        queryKey: [...QUERY_KEYS.mediaSets, 'list']
       })
 
       // 3초 후 idle 상태로 복귀
@@ -123,7 +122,7 @@ export const useMediaSetUpload = (profileId: string) => {
       setUploadStatus('error')
       setError(error instanceof Error ? error.message : '업로드 중 오류가 발생했습니다.')
     }
-  }, [token, accountId, profileId, navigate, initUploadMutation, uploadToS3Mutation, queryClient])
+  }, [token, accountId, navigate, initUploadMutation, uploadToS3Mutation, queryClient])
 
   return {
     uploadStatus,

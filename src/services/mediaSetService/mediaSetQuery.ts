@@ -3,15 +3,12 @@ import { mediaSetService } from './mediaSetService'
 import { QUERY_KEYS } from '../common/queryKey'
 
 export const useMediaSetList = (
-  accountId: string,
-  profileId: string,
   limit: number = 20,
   offset: number = 0
 ) => {
   return useQuery({
-    queryKey: [...QUERY_KEYS.mediaSets, 'list', accountId, profileId, limit, offset],
-    queryFn: () => mediaSetService.getMediaSetList(accountId, profileId, limit, offset),
-    enabled: !!accountId && !!profileId,
+    queryKey: [...QUERY_KEYS.mediaSets, 'list', limit, offset],
+    queryFn: () => mediaSetService.getMediaSetList(limit, offset),
   })
 }
 

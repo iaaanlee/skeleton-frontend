@@ -1,6 +1,6 @@
-// Analysis 관련 API service 정의
-import { AxiosHttpClient } from "../common/axiosHttpClient";
-import { backendHttpClient } from "../common/httpClient";
+// Analysis 관련 API service 정의 (레거시 지원 - 새로운 분리된 서비스들을 사용)
+import { exerciseAnalysisService } from "../exerciseAnalysisService";
+import { analysisJobService } from "../analysisJobService";
 import { 
   AnalysisJob, 
   AnalysisStatusInfo, 
@@ -10,52 +10,31 @@ import {
 
 type IAnalysisService = {
   startAnalysis: (request: StartAnalysisRequest) => Promise<StartAnalysisResponse>;
-  getAnalysisStatus: (analysisJobId: string, profileId?: string) => Promise<AnalysisStatusInfo>;
-  getAnalysisJob: (analysisJobId: string, profileId?: string) => Promise<AnalysisJob>;
+  getAnalysisStatus: (analysisJobId: string) => Promise<AnalysisStatusInfo>;
+  getAnalysisJob: (analysisJobId: string) => Promise<AnalysisJob>;
   cancelAnalysis: (analysisJobId: string) => Promise<void>;
 };
 
 class AnalysisService implements IAnalysisService { 
-  constructor(private httpClient: AxiosHttpClient) {}
-
-  // 분석 시작
+  // 분석 시작 (exerciseAnalysisService로 위임)
   async startAnalysis(request: StartAnalysisRequest) {
-    const { data } = await this.httpClient.request<{ success: boolean; data: StartAnalysisResponse }>({
-      method: 'POST',
-      url: '/exerciseAnalysis/start',
-      data: request,
-    })
-    return data.data
+    return exerciseAnalysisService.startAnalysis(request);
   }
 
-  // 분석 상태 조회
-  async getAnalysisStatus(analysisJobId: string, profileId?: string) {
-    const { data } = await this.httpClient.request<{ success: boolean; data: AnalysisStatusInfo }>({
-      method: 'GET',
-      url: `/analysisJob/status/${analysisJobId}`,
-      params: profileId ? { profileId } : undefined
-    })
-    return data.data
+  // 분석 상태 조회 (analysisJobService로 위임)
+  async getAnalysisStatus(analysisJobId: string) {
+    return analysisJobService.getAnalysisStatus(analysisJobId);
   }
 
-  // 분석 작업 조회
-  async getAnalysisJob(analysisJobId: string, profileId?: string) {
-    const { data } = await this.httpClient.request<{ success: boolean; data: AnalysisJob }>({
-      method: 'GET',
-      url: `/analysisJob/analysisJobById/${analysisJobId}`,
-      params: profileId ? { profileId } : undefined
-    })
-    return data.data
+  // 분석 작업 조회 (analysisJobService로 위임)
+  async getAnalysisJob(analysisJobId: string) {
+    return analysisJobService.getAnalysisJob(analysisJobId);
   }
 
-  // 분석 취소
+  // 분석 취소 (analysisJobService로 위임)
   async cancelAnalysis(analysisJobId: string) {
-    const { data } = await this.httpClient.request<void>({
-      method: 'POST',
-      url: `/analysisJob/cancel/${analysisJobId}`,
-    })
-    return data
+    return analysisJobService.cancelAnalysis(analysisJobId);
   }
 }
 
-export const analysisService = new AnalysisService(backendHttpClient);
+export const analysisService = new AnalysisService();

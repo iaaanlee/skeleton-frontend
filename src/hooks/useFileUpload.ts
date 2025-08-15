@@ -4,11 +4,11 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useInitUpload, useCompleteUpload, useUploadToS3 } from '../services/fileService'
 import { useAccountAuth } from '../contexts/AccountAuthContext'
 import { QUERY_KEYS } from '../services/common/queryKey'
-import { validateAuthState, extractAccountIdFromToken } from '../utils/auth'
+import { extractAccountIdFromToken } from '../utils/auth'
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error'
 
-export const useFileUpload = (profileId: string) => {
+export const useFileUpload = () => {
   const navigate = useNavigate()
   const { token } = useAccountAuth()
   const queryClient = useQueryClient()
@@ -28,7 +28,9 @@ export const useFileUpload = (profileId: string) => {
     if (files.length === 0) return
 
     // 인증 상태 확인
-    if (!validateAuthState(token, navigate)) {
+    if (!token) {
+      console.error('No authentication token found')
+      navigate('/login')
       return
     }
 
@@ -51,7 +53,6 @@ export const useFileUpload = (profileId: string) => {
 
         // 1. 업로드 초기화 (Pre-signed URL 발급)
         const uploadInitResponse = await initUploadMutation.mutateAsync({
-          profileId,
           fileName: file.name,
           contentType: file.type,
           fileSize: file.size
@@ -65,7 +66,6 @@ export const useFileUpload = (profileId: string) => {
 
         // 3. 업로드 완료 알림
         await completeUploadMutation.mutateAsync({
-          profileId,
           objectKey: uploadInitResponse.objectKey,
           fileName: file.name,
           fileSize: file.size
@@ -77,7 +77,7 @@ export const useFileUpload = (profileId: string) => {
       
       // 파일 목록 쿼리 무효화하여 자동 갱신
       queryClient.invalidateQueries({
-        queryKey: [...QUERY_KEYS.files, 'list', accountId, profileId]
+        queryKey: [...QUERY_KEYS.files, 'list']
       })
 
       // 3초 후 idle 상태로 복귀
@@ -92,7 +92,7 @@ export const useFileUpload = (profileId: string) => {
       setUploadStatus('error')
       setError(error instanceof Error ? error.message : '업로드 중 오류가 발생했습니다.')
     }
-  }, [token, accountId, profileId, navigate, initUploadMutation, uploadToS3Mutation, completeUploadMutation, queryClient])
+  }, [token, accountId, navigate, initUploadMutation, uploadToS3Mutation, completeUploadMutation, queryClient])
 
   return {
     uploadStatus,

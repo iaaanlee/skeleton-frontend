@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useMediaSetList } from '../../../../services/mediaSetService'
 import { useAccountAuth } from '../../../../contexts/AccountAuthContext'
 import { useSingleFileSelection, useFileActions } from '../../../../hooks'
-import { validateAuthState, extractAccountIdFromToken } from '../../../../utils/auth'
+import { extractAccountIdFromToken } from '../../../../utils/auth'
 import { UploadModal } from '../../../../components/common/molecules/UploadModal'
 
 type PrescriptionFileListProps = {
@@ -17,7 +16,6 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
   onSelectionChange,
   className = ''
 }) => {
-  const navigate = useNavigate()
   const { token } = useAccountAuth()
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
@@ -25,7 +23,7 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
   const accountId = token ? extractAccountIdFromToken(token) : null
 
   // React Query로 미디어 세트 목록 조회
-  const { data: mediaSetListResponse, isLoading, error, refetch } = useMediaSetList(accountId || '', profileId)
+  const { data: mediaSetListResponse, isLoading, error, refetch } = useMediaSetList()
 
   // 단일 선택 훅 사용
   const {
@@ -43,7 +41,7 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
 
   const {
     deleteFile
-  } = useFileActions(profileId, accountId || '')
+  } = useFileActions(accountId || '')
 
   // 선택된 파일 변경 시 부모 컴포넌트에 알림
   useEffect(() => {
@@ -65,7 +63,7 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
   }, [mediaSetListResponse?.mediaSets, selectedFile])
 
   // 인증 상태 확인
-  if (!validateAuthState(token, navigate)) {
+  if (!token) {
     return null
   }
 
@@ -246,7 +244,6 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
         isOpen={isUploadModalOpen}
         onClose={handleModalClose}
         onUploadSuccess={handleUploadSuccess}
-        profileId={profileId}
       />
     </div>
   )

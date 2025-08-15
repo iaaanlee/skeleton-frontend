@@ -46,7 +46,6 @@ export type PrescriptionListResponse = {
 }
 
 export type CreatePrescriptionRequest = {
-  profileId: string;
   inputs: {
     mediaSetId: string;
     description: {
@@ -80,14 +79,13 @@ export type SaveLLMResultsRequest = {
   analysisText: string;
 }
 
+
 type IPrescriptionService = {
   createPrescription: (request: CreatePrescriptionRequest) => Promise<CreatePrescriptionResponse>;
-  getPrescriptionById: (prescriptionId: string, profileId: string) => Promise<Prescription>;
-  getPrescriptionHistory: (accountId: string, profileId: string, limit?: number, offset?: number) => Promise<PrescriptionListResponse>;
-  getPrescriptionHistoryV2: (accountId: string, profileId: string, limit?: number, offset?: number) => Promise<PrescriptionListResponse>;
-  getCompletedPrescriptions: (accountId: string, profileId: string, limit?: number, offset?: number) => Promise<PrescriptionListResponse>;
+  getPrescriptionById: (prescriptionId: string) => Promise<Prescription>;
+  getCompletedPrescriptions: (limit?: number, offset?: number) => Promise<PrescriptionListResponse>;
   getPrescriptionsByMediaSet: (mediaSetId: string) => Promise<PrescriptionListResponse>;
-  getPrescriptionByAnalysisJob: (analysisJobId: string, profileId: string) => Promise<Prescription>;
+  getPrescriptionByAnalysisJob: (analysisJobId: string) => Promise<Prescription>;
   updatePrescriptionStatus: (prescriptionId: string, request: UpdatePrescriptionStatusRequest) => Promise<void>;
   saveBlazePoseResults: (prescriptionId: string, request: SaveBlazePoseResultsRequest) => Promise<void>;
   saveLLMResults: (prescriptionId: string, request: SaveLLMResultsRequest) => Promise<void>;
@@ -110,41 +108,21 @@ class PrescriptionService implements IPrescriptionService {
   }
 
   // 처방 상세 조회
-  async getPrescriptionById(prescriptionId: string, profileId: string) {
+  async getPrescriptionById(prescriptionId: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: Prescription }>({
       method: 'GET',
-      url: `/prescription/prescriptionById/${prescriptionId}`,
-      params: { profileId }
+      url: `/prescription/${prescriptionId}`
     })
     return data.data
   }
 
-  // 처방 기록 조회 (기존 호환성)
-  async getPrescriptionHistory(accountId: string, profileId: string, limit: number = 20, offset: number = 0) {
-    const { data } = await this.httpClient.request<{ success: boolean; data: PrescriptionListResponse }>({
-      method: 'GET',
-      url: '/prescription/history',
-      params: { accountId, profileId, limit, offset }
-    })
-    return data.data
-  }
-
-  // 처방 기록 조회 (새로운 버전)
-  async getPrescriptionHistoryV2(accountId: string, profileId: string, limit: number = 20, offset: number = 0) {
-    const { data } = await this.httpClient.request<{ success: boolean; data: PrescriptionListResponse }>({
-      method: 'GET',
-      url: '/prescription/history/v2',
-      params: { accountId, profileId, limit, offset }
-    })
-    return data.data
-  }
 
   // 완료된 처방 조회
-  async getCompletedPrescriptions(accountId: string, profileId: string, limit: number = 20, offset: number = 0) {
+  async getCompletedPrescriptions(limit: number = 20, offset: number = 0) {
     const { data } = await this.httpClient.request<{ success: boolean; data: PrescriptionListResponse }>({
       method: 'GET',
       url: '/prescription/completed',
-      params: { accountId, profileId, limit, offset }
+      params: { limit, offset }
     })
     
     return data.data
@@ -163,7 +141,7 @@ class PrescriptionService implements IPrescriptionService {
   async getPrescriptionByAnalysisJob(analysisJobId: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: Prescription }>({
       method: 'GET',
-      url: `/prescription/by-analysis/${analysisJobId}`,
+      url: `/prescription/by-analysis/${analysisJobId}`
     })
     return data.data
   }
@@ -172,7 +150,7 @@ class PrescriptionService implements IPrescriptionService {
   async updatePrescriptionStatus(prescriptionId: string, request: UpdatePrescriptionStatusRequest) {
     const { data } = await this.httpClient.request<void>({
       method: 'PATCH',
-      url: `/prescription/prescriptionById/${prescriptionId}/status`,
+      url: `/prescription/${prescriptionId}/status`,
       data: request,
     })
     return data
@@ -182,7 +160,7 @@ class PrescriptionService implements IPrescriptionService {
   async saveBlazePoseResults(prescriptionId: string, request: SaveBlazePoseResultsRequest) {
     const { data } = await this.httpClient.request<void>({
       method: 'POST',
-      url: `/prescription/prescriptionById/${prescriptionId}/blazepose-results`,
+      url: `/prescription/${prescriptionId}/blazepose-results`,
       data: request,
     })
     return data
@@ -192,7 +170,7 @@ class PrescriptionService implements IPrescriptionService {
   async saveLLMResults(prescriptionId: string, request: SaveLLMResultsRequest) {
     const { data } = await this.httpClient.request<void>({
       method: 'POST',
-      url: `/prescription/prescriptionById/${prescriptionId}/llm-results`,
+      url: `/prescription/${prescriptionId}/llm-results`,
       data: request,
     })
     return data
@@ -202,7 +180,7 @@ class PrescriptionService implements IPrescriptionService {
   async completePrescription(prescriptionId: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'POST',
-      url: `/prescription/prescriptionById/${prescriptionId}/complete`,
+      url: `/prescription/${prescriptionId}/complete`,
     })
     return data
   }
@@ -211,17 +189,18 @@ class PrescriptionService implements IPrescriptionService {
   async failPrescription(prescriptionId: string, error?: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'POST',
-      url: `/prescription/prescriptionById/${prescriptionId}/fail`,
+      url: `/prescription/${prescriptionId}/fail`,
       data: { error },
     })
     return data
   }
 
+
   // 처방 삭제
   async deletePrescription(prescriptionId: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'DELETE',
-      url: `/prescription/prescriptionById/${prescriptionId}`,
+      url: `/prescription/${prescriptionId}`,
     })
     return data
   }

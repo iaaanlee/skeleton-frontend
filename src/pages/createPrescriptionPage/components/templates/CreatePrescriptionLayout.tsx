@@ -4,13 +4,7 @@ import { BottomBar } from '../../../../components/common/templates/BottomBar';
 import { PrescriptionUploadSection } from '../organisms/PrescriptionUploadSection';
 import { ROUTES } from '../../../../constants/routes';
 
-type CreatePrescriptionLayoutProps = {
-  profileId: string;
-};
-
-const CreatePrescriptionLayout: React.FC<CreatePrescriptionLayoutProps> = ({
-  profileId
-}) => {
+const CreatePrescriptionLayout: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header backRoute={ROUTES.ANALYZE_EXERCISE} />
@@ -22,7 +16,7 @@ const CreatePrescriptionLayout: React.FC<CreatePrescriptionLayoutProps> = ({
             <p className="text-gray-600">분석하고 싶은 운동 이미지를 업로드하고 분석을 시작하세요.</p>
           </div>
           
-          <PrescriptionUploadSection profileId={profileId} />
+          <PrescriptionUploadSection />
         </div>
       </div>
       

@@ -1,11 +1,11 @@
 import React from 'react';
-import { useProfile } from '../../contexts/ProfileAuthContext';
+import { useProfile } from '../../contexts/ProfileContext';
 import { MainPageLayout } from './components';
 
 export const MainPage = () => {
-    const { selectedProfile } = useProfile();
+    const { currentProfile } = useProfile();
 
     return (
-        <MainPageLayout profileName={selectedProfile?.profileName} />
+        <MainPageLayout profileName={currentProfile?.profileName} />
     );
 };

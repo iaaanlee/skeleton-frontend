@@ -7,7 +7,7 @@ import { ExerciseInfoSection } from "./components/organisms/ExerciseInfoSection"
 import { PreferencesSection } from "./components/organisms/PreferencesSection";
 import { CautionsSection } from "./components/organisms/CautionsSection";
 import { useAccountAuth } from "../../contexts/AccountAuthContext";
-// import { useProfile } from "../../contexts/ProfileAuthContext";
+// import { useProfile } from '../../contexts/ProfileContext';
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from '../../constants/routes';
 

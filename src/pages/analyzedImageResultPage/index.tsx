@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { useAnalysisStatus } from '../../services/analysisService';
 import { usePrescriptionByAnalysisJob } from '../../services/prescriptionService';
-import { useProfile } from '../../contexts/ProfileAuthContext';
 import {
   LoadingState,
   ErrorState,
@@ -18,7 +17,6 @@ export const AnalyzedImageResultPage = () => {
   const { analysisId } = useParams<{ analysisId: string }>();
   const { showSuccess } = useToast();
   const navigate = useNavigate();
-  const { selectedProfile } = useProfile();
 
   const handleBack = () => {
     navigate(ROUTES.CREATE_PRESCRIPTION);
@@ -34,7 +32,7 @@ export const AnalyzedImageResultPage = () => {
     data: status, 
     isLoading: statusLoading, 
     error: statusError 
-  } = useAnalysisStatus(analysisId || '', selectedProfile?._id || '');
+  } = useAnalysisStatus(analysisId || '');
 
   // 분석이 완료된 경우에만 prescription 결과 요청
   const isCompleted = status?.status === 'llm_completed';
@@ -42,7 +40,7 @@ export const AnalyzedImageResultPage = () => {
     data: prescription, 
     isLoading: prescriptionLoading, 
     error: prescriptionError 
-  } = usePrescriptionByAnalysisJob(analysisId || '', selectedProfile?._id);
+  } = usePrescriptionByAnalysisJob(analysisId || '');
 
   // 조건부 렌더링
   if (!analysisId) {

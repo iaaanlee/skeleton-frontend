@@ -6,7 +6,7 @@ import { useStartAnalysis, useCheckDuplicateAnalysis } from '../services/blazePo
 import { QUERY_KEYS } from '../services/common/queryKey'
 import { ROUTES } from '../constants/routes'
 
-export const useFileActions = (profileId: string, accountId: string) => {
+export const useFileActions = (accountId: string) => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const deleteFileMutation = useDeleteFile()
@@ -18,11 +18,11 @@ export const useFileActions = (profileId: string, accountId: string) => {
 
   const deleteFile = useCallback(async (fileId: string) => {
     try {
-      await deleteFileMutation.mutateAsync({ fileId, profileId })
+      await deleteFileMutation.mutateAsync(fileId)
       
       // 파일 목록 쿼리 무효화하여 자동 갱신
       queryClient.invalidateQueries({
-        queryKey: [...QUERY_KEYS.files, 'list', accountId, profileId]
+        queryKey: [...QUERY_KEYS.files, 'list']
       })
       
       return true
@@ -30,15 +30,12 @@ export const useFileActions = (profileId: string, accountId: string) => {
       console.error('Delete file error:', error)
       return false
     }
-  }, [deleteFileMutation, queryClient, accountId, profileId])
+  }, [deleteFileMutation, queryClient])
 
   const downloadFile = useCallback(async (file: any) => {
     try {
       // 다운로드 URL 생성
-      const downloadUrlResponse = await downloadUrlMutation.mutateAsync({ 
-        fileId: file._id, 
-        profileId 
-      })
+      const downloadUrlResponse = await downloadUrlMutation.mutateAsync(file._id)
       
       // 새 창에서 다운로드
       const link = document.createElement('a')
@@ -52,7 +49,7 @@ export const useFileActions = (profileId: string, accountId: string) => {
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류'
       alert(`파일 다운로드 중 오류가 발생했습니다: ${errorMessage}`)
     }
-  }, [downloadUrlMutation, profileId])
+  }, [downloadUrlMutation])
 
   const startAnalysis = useCallback(async (fileIds: string[]) => {
     if (fileIds.length === 0) {
@@ -64,7 +61,6 @@ export const useFileActions = (profileId: string, accountId: string) => {
     try {
       // 1. 중복 체크 수행
       const duplicateCheck = await checkDuplicateMutation.mutateAsync({
-        profileId,
         fileIds
       })
 
@@ -85,8 +81,7 @@ export const useFileActions = (profileId: string, accountId: string) => {
 
       // 3. 중복이 없으면 새로운 분석 시작
       const response = await startAnalysisMutation.mutateAsync({
-        fileIds,
-        profileId
+        fileIds
       })
       
       console.log('Analysis started:', response)
@@ -106,7 +101,7 @@ export const useFileActions = (profileId: string, accountId: string) => {
     } finally {
       setIsAnalyzing(false)
     }
-  }, [startAnalysisMutation, checkDuplicateMutation, profileId, navigate])
+  }, [startAnalysisMutation, checkDuplicateMutation, navigate])
 
   const deleteMultipleFiles = useCallback(async (fileIds: string[]) => {
     const results = await Promise.all(

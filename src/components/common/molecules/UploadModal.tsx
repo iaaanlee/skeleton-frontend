@@ -5,14 +5,12 @@ type UploadModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onUploadSuccess?: () => void;
-  profileId: string;
 };
 
 export const UploadModal: React.FC<UploadModalProps> = ({
   isOpen,
   onClose,
-  onUploadSuccess,
-  profileId
+  onUploadSuccess
 }) => {
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
 
@@ -54,7 +52,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           </div>
 
           <FileUpload
-            profileId={profileId}
             multiple={true}
           />
 

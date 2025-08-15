@@ -33,7 +33,6 @@ export type MediaSetListResponse = {
 }
 
 export type CreateMediaSetRequest = {
-  profileId: string;
   objectKey: string;
   fileName: string;
   fileSize: number;
@@ -47,7 +46,6 @@ export type UploadInitRequest = {
   fileName: string;
   fileSize: number;
   contentType: string;
-  profileId: string;
 }
 
 export type UploadInitResponse = {
@@ -57,7 +55,6 @@ export type UploadInitResponse = {
 
 export type UploadCompleteRequest = {
   objectKey: string;
-  profileId: string;
   fileName: string;
   fileSize: number;
 }
@@ -67,7 +64,6 @@ export type UploadCompleteResponse = {
 }
 
 export type UploadCompleteMultipleRequest = {
-  profileId: string;
   files: Array<{
     objectKey: string;
     fileName: string;
@@ -84,9 +80,9 @@ type IMediaSetService = {
   createMediaSet: (request: CreateMediaSetRequest) => Promise<CreateMediaSetResponse>;
   completeUpload: (request: UploadCompleteRequest) => Promise<UploadCompleteResponse>;
   completeUploadMultiple: (request: UploadCompleteMultipleRequest) => Promise<UploadCompleteMultipleResponse>;
-  getMediaSetList: (accountId: string, profileId: string, limit?: number, offset?: number) => Promise<MediaSetListResponse>;
+  getMediaSetList: (limit?: number, offset?: number) => Promise<MediaSetListResponse>;
   getMediaSetById: (mediaSetId: string) => Promise<MediaSet>;
-  deleteMediaSet: (mediaSetId: string, profileId: string) => Promise<void>;
+  deleteMediaSet: (mediaSetId: string) => Promise<void>;
   uploadToS3: (uploadUrl: string, file: File) => Promise<void>;
 };
 
@@ -134,11 +130,11 @@ class MediaSetService implements IMediaSetService {
   }
 
   // 미디어 세트 목록 조회
-  async getMediaSetList(accountId: string, profileId: string, limit: number = 20, offset: number = 0) {
+  async getMediaSetList(limit: number = 20, offset: number = 0) {
     const { data } = await this.httpClient.request<{ success: boolean; data: MediaSetListResponse }>({
       method: 'GET',
       url: '/mediaSet/list',
-      params: { profileId, limit, offset }
+      params: { limit, offset }
     })
     return data.data
   }
@@ -153,11 +149,10 @@ class MediaSetService implements IMediaSetService {
   }
 
   // 미디어 세트 삭제
-  async deleteMediaSet(mediaSetId: string, profileId: string) {
+  async deleteMediaSet(mediaSetId: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'DELETE',
-      url: `/mediaSet/mediaSetById/${mediaSetId}`,
-      params: { profileId }
+      url: `/mediaSet/mediaSetById/${mediaSetId}`
     })
     return data
   }

@@ -8,17 +8,15 @@ type MediaSetUploadModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onUploadSuccess?: () => void;
-  profileId: string;
 };
 
 export const MediaSetUploadModal: React.FC<MediaSetUploadModalProps> = ({
   isOpen,
   onClose,
-  onUploadSuccess,
-  profileId
+  onUploadSuccess
 }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const { uploadStatus, progress, error, uploadFiles } = useMediaSetUpload(profileId);
+  const { uploadStatus, progress, error, uploadFiles } = useMediaSetUpload();
 
   const handleFilesSelect = (files: File[]) => {
     setSelectedFiles(files);

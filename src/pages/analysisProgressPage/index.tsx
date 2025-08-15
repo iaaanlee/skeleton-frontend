@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { useAnalysisStatus } from '../../services/analysisService/analysisQuery';
-import { useProfile } from '../../contexts/ProfileAuthContext';
 import { useAnalysisNavigation } from '../../hooks';
 import { 
   LoadingState, 
@@ -14,7 +13,6 @@ import { AnalysisStatus } from '../../types/analysis/analysis';
 export const AnalysisProgressPage = () => {
   const { analysisJobId } = useParams<{ analysisJobId: string }>();
   const navigate = useNavigate();
-  const { selectedProfile } = useProfile();
   
   // 현재 표시 상태 관리
   const [displayStatus, setDisplayStatus] = useState<AnalysisStatus>('pending');
@@ -24,7 +22,7 @@ export const AnalysisProgressPage = () => {
     data: status, 
     isLoading, 
     error 
-  } = useAnalysisStatus(analysisJobId || '', selectedProfile?._id);
+  } = useAnalysisStatus(analysisJobId || '');
 
   // 상태에 따른 네비게이션 처리
   useAnalysisNavigation(displayStatus);

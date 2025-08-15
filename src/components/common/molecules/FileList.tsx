@@ -3,21 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import { useMediaSetList } from '../../../services/mediaSetService'
 import { useAccountAuth } from '../../../contexts/AccountAuthContext'
 import { useFileSelection, useFileActions } from '../../../hooks'
-import { validateAuthState, extractAccountIdFromToken } from '../../../utils/auth'
+import { extractAccountIdFromToken } from '../../../utils/auth'
 import { FileListHeader } from './FileListHeader'
 import FileGrid from './FileGrid'
 // import { SelectedFilesActionBar } from './SelectedFilesActionBar'
 import { UploadModal } from './UploadModal'
 
 type FileListProps = {
-  profileId: string
   className?: string
   showAddButton?: boolean
   onSelectionChange?: (selectedFiles: string[]) => void
 }
 
 const FileList: React.FC<FileListProps> = ({
-  profileId,
   className = '',
   showAddButton = false,
   onSelectionChange
@@ -30,7 +28,7 @@ const FileList: React.FC<FileListProps> = ({
   const accountId = token ? extractAccountIdFromToken(token) : null
 
   // React Query로 미디어 세트 목록 조회 (Hook은 항상 호출되어야 함)
-  const { data: mediaSetListResponse, isLoading, error, refetch } = useMediaSetList(accountId || '', profileId)
+  const { data: mediaSetListResponse, isLoading, error, refetch } = useMediaSetList()
 
   // 커스텀 훅들 (Hook은 항상 호출되어야 함)
   const {
@@ -47,7 +45,7 @@ const FileList: React.FC<FileListProps> = ({
     downloadFile,
     // deleteMultipleFiles,
     // downloadMultipleFiles
-  } = useFileActions(profileId, accountId || '')
+  } = useFileActions(accountId || '')
 
   // 선택된 파일 변경 시 부모 컴포넌트에 알림 (Hook은 조건문 이전에 호출)
   React.useEffect(() => {
@@ -70,7 +68,7 @@ const FileList: React.FC<FileListProps> = ({
   }, [mediaSetListResponse?.mediaSets, selectedFiles, selectMultiple])
 
   // 인증 상태 확인 (Hook 호출 후에 처리)
-  if (!validateAuthState(token, navigate)) {
+  if (!token) {
     return null // 로그아웃 처리 중이므로 아무것도 렌더링하지 않음
   }
 
@@ -178,7 +176,6 @@ const FileList: React.FC<FileListProps> = ({
         isOpen={isUploadModalOpen}
         onClose={handleModalClose}
         onUploadSuccess={handleUploadSuccess}
-        profileId={profileId}
       />
     </div>
   )

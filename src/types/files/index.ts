@@ -9,7 +9,6 @@ export type FileInfo = {
 
 // 업로드 요청 데이터
 export type UploadInitRequest = {
-  profileId: string
   fileName: string
   contentType: string
   fileSize: number
@@ -24,7 +23,6 @@ export type UploadInitResponse = {
 
 // 업로드 완료 요청
 export type UploadCompleteRequest = {
-  profileId: string
   objectKey: string
   fileName: string
   fileSize: number
