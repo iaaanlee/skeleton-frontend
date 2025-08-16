@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ProfileInfo } from '../types/profile/profile';
 import { useAccountAuth } from './AccountAuthContext';
 import { secureSetItem, secureGetItem, secureRemoveItem } from '../utils/secureStorage';
+import { QUERY_KEYS } from '../services/common/queryKey';
 
 type ProfileAuthContextType = {
   currentProfile: ProfileInfo | null;
@@ -98,7 +99,7 @@ export const ProfileAuthProvider: React.FC<ProfileProviderProps> = ({ children }
       }
     }
     // 프로필 관련 쿼리 무효화
-    queryClient.invalidateQueries({ queryKey: ['profiles'] });
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.profiles });
   };
 
   // 모든 프로필 데이터 정리 (계정 로그아웃 시)

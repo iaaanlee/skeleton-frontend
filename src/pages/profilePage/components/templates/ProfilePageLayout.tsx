@@ -6,6 +6,7 @@ import { ProfileHeader } from '../organisms/ProfileHeader';
 import { ProfileContent } from '../organisms/ProfileContent';
 import { PageLayout } from '../../../../components/common/templates';
 import { ROUTES } from '../../../../constants/routes';
+import { QUERY_KEYS } from '../../../../services/common/queryKey';
 
 const ProfilePageLayout: React.FC = () => {
     const navigate = useNavigate();
@@ -17,7 +18,7 @@ const ProfilePageLayout: React.FC = () => {
     }, [navigate]);
 
     const handleSelectOtherProfile = useCallback(async () => {
-        queryClient.invalidateQueries({ queryKey: ['profiles'] });
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.profiles });
         await clearProfile();
         navigate(ROUTES.SELECT_PROFILE);
     }, [queryClient, clearProfile, navigate]);

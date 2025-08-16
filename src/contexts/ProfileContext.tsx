@@ -95,17 +95,17 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
   // 프로필 관련 모든 캐시 정리 함수
   const clearAllProfileCaches = () => {
     // 프로필 관련 모든 쿼리 제거
-    queryClient.removeQueries({ queryKey: ['currentProfile'] });
-    queryClient.removeQueries({ queryKey: ['currentProfileDetails'] });
-    queryClient.removeQueries({ queryKey: ['profile'] });
-    queryClient.removeQueries({ queryKey: ['profiles'] });
+    queryClient.removeQueries({ queryKey: QUERY_KEYS.currentProfile });
+    queryClient.removeQueries({ queryKey: QUERY_KEYS.currentProfileDetails });
+    queryClient.removeQueries({ queryKey: QUERY_KEYS.profile.all() });
+    queryClient.removeQueries({ queryKey: QUERY_KEYS.profiles });
     
     // 프로필 관련 데이터가 포함될 수 있는 다른 쿼리들도 제거
-    queryClient.removeQueries({ queryKey: ['prescription'] });
-    queryClient.removeQueries({ queryKey: ['prescriptions'] });
-    queryClient.removeQueries({ queryKey: ['exercise'] });
-    queryClient.removeQueries({ queryKey: ['analysis'] });
-    queryClient.removeQueries({ queryKey: ['media'] });
+    queryClient.removeQueries({ queryKey: QUERY_KEYS.prescription });
+    queryClient.removeQueries({ queryKey: QUERY_KEYS.prescriptions });
+    queryClient.removeQueries({ queryKey: QUERY_KEYS.exercise });
+    queryClient.removeQueries({ queryKey: QUERY_KEYS.analysis });
+    queryClient.removeQueries({ queryKey: QUERY_KEYS.media });
   };
 
   // 프로필 선택

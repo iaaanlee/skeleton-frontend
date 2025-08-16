@@ -1,6 +1,7 @@
 // Profile 관련 queries
 import { useQuery } from "@tanstack/react-query";
 import { profileService } from "./profileService";
+import { QUERY_KEYS } from "../common/queryKey";
 import { queryKeys } from "../common/queryKey";
 
 export const useGetProfileByProfileId = ({profileId}: {profileId: string}) => {
@@ -27,7 +28,7 @@ export const useGetProfilesByAccountId = (enabled: boolean = true) => {
 // 현재 선택된 프로필 조회 (새로 추가)
 export const useGetCurrentProfile = (enabled: boolean = true) => {
   return useQuery({
-    queryKey: ['currentProfile'],
+    queryKey: QUERY_KEYS.profile.current(),
     queryFn: () => profileService.getCurrentProfile(),
     select: (data) => {
       return data.data; // { profileId, profileName, accountId }
@@ -50,7 +51,7 @@ export const useGetCurrentProfile = (enabled: boolean = true) => {
 // 현재 선택된 프로필의 상세 정보 조회
 export const useGetCurrentProfileDetails = (enabled: boolean = true) => {
   return useQuery({
-    queryKey: ['currentProfileDetails'],
+    queryKey: QUERY_KEYS.profile.currentDetails(),
     queryFn: () => profileService.getCurrentProfileDetails(),
     select: (data) => {
       return data;

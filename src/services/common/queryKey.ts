@@ -3,14 +3,19 @@ export const queryKeys = {
   account: () => ['account'],
   profile: (profileId: string) => ['profile', profileId],
   profiles: () => ['profiles'],
+  currentProfile: () => ['currentProfile'],
+  currentProfileDetails: () => ['currentProfileDetails'],
   files: () => ['files'],
   mediaSets: () => ['mediaSets'],
   prompts: () => ['prompts'],
   blazePose: () => ['blazePose'],
   prescriptions: () => ['prescriptions'],
-  analysis: () => ['analysis'], // 레거시 지원
+  prescription: () => ['prescription'],
+  analysis: () => ['analysis'],
   analysisJob: () => ['analysisJob'],
   exerciseAnalysis: () => ['exerciseAnalysis'],
+  exercise: () => ['exercise'],
+  media: () => ['media'],
 };
 
 export const QUERY_KEYS = {
@@ -18,16 +23,22 @@ export const QUERY_KEYS = {
   account: queryKeys.account(),
   profile: {
     all: () => ['profile'],
-    current: () => ['profile', 'current'],
+    current: () => ['currentProfile'],
+    currentDetails: () => ['currentProfileDetails'],
     byId: (profileId: string) => ['profile', profileId],
   },
   profiles: queryKeys.profiles(),
+  currentProfile: queryKeys.currentProfile(),
+  currentProfileDetails: queryKeys.currentProfileDetails(),
   files: queryKeys.files(),
   mediaSets: queryKeys.mediaSets(),
   prompts: queryKeys.prompts(),
   blazePose: queryKeys.blazePose(),
   prescriptions: queryKeys.prescriptions(),
-  analysis: queryKeys.analysis(), // 레거시 지원
+  prescription: queryKeys.prescription(),
+  analysis: queryKeys.analysis(),
   analysisJob: queryKeys.analysisJob(),
   exerciseAnalysis: queryKeys.exerciseAnalysis(),
+  exercise: queryKeys.exercise(),
+  media: queryKeys.media(),
 };
