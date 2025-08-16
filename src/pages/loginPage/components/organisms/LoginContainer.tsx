@@ -21,8 +21,8 @@ const LoginContainer: React.FC = () => {
         isError: isErrorLogin 
     } = useLogin({
         onSuccess: (data) => {
-            if (data.accessToken && data.refreshToken) {
-                login(data.accessToken, data.refreshToken);
+            if (data.data.accessToken && data.data.refreshToken) {
+                login(data.data.accessToken, data.data.refreshToken);
             }
             navigate(ROUTES.SELECT_PROFILE);
         },

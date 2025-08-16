@@ -1,16 +1,16 @@
-import { UseFormRegister, FieldError } from "react-hook-form";
+import { UseFormRegister, FieldError, RegisterOptions, FieldPath, FieldValues, Path } from "react-hook-form";
 
-interface FormSelectProps {
-    register: UseFormRegister<any>;
-    name: string;
+interface FormSelectProps<T extends FieldValues> {
+    register: UseFormRegister<T>;
+    name: FieldPath<T>;
     error?: FieldError;
-    validation?: any;
+    validation?: RegisterOptions<T, Path<T>>;
     label?: string;
     options: { value: string; label: string }[];
     placeholder?: string;
 }
 
-export const FormSelect = ({ 
+export const FormSelect = <T extends FieldValues>({ 
     register, 
     name, 
     error, 
@@ -18,7 +18,7 @@ export const FormSelect = ({
     label, 
     options, 
     placeholder 
-}: FormSelectProps) => {
+}: FormSelectProps<T>) => {
     return (
         <div>
             {label && (

@@ -1,5 +1,6 @@
 import { useLoginMutation } from "../services/accountService";
 import { LoginRequest } from "../types/account/request";
+import { ILoginResponse } from "../types/account/response";
 
 // Default values for the login form
 export const loginDefaultValues: LoginRequest = {
@@ -8,7 +9,7 @@ export const loginDefaultValues: LoginRequest = {
 };
 
 type LoginProps = {
-    onSuccess?: (data: any) => void;
+    onSuccess?: (data: ILoginResponse) => void;
     onError?: (error: Error) => void;
 };
 

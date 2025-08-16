@@ -2,9 +2,10 @@
 import { useMutation } from "@tanstack/react-query";
 import { accountService } from "./accountService";
 import { CreateAccountRequest, LoginRequest } from "../../types/account/request";
+import { ILoginResponse } from "../../types/account/response";
 
 export const useLoginMutation = ({ onSuccess, onError }: {
-    onSuccess?: (data: unknown) => void;
+    onSuccess?: (data: ILoginResponse) => void;
     onError?: (error: Error) => void;
 } = {}) => {
     return useMutation({

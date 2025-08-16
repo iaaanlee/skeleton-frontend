@@ -1,16 +1,16 @@
-import { UseFormRegister, FieldError } from "react-hook-form";
+import { UseFormRegister, FieldError, RegisterOptions, FieldPath, FieldValues, Path } from "react-hook-form";
 
-interface FormInputProps {
+interface FormInputProps<T extends FieldValues> {
     type: "text" | "email" | "number" | "password";
     placeholder: string;
-    register: UseFormRegister<any>;
-    name: string;
+    register: UseFormRegister<T>;
+    name: FieldPath<T>;
     error?: FieldError;
-    validation?: any;
+    validation?: RegisterOptions<T, Path<T>>;
     label?: string;
 }
 
-export const FormInput = ({ 
+export const FormInput = <T extends FieldValues>({ 
     type, 
     placeholder, 
     register, 
@@ -18,7 +18,7 @@ export const FormInput = ({
     error, 
     validation = {}, 
     label 
-}: FormInputProps) => {
+}: FormInputProps<T>) => {
     return (
         <div>
             {label && (
