@@ -24,7 +24,10 @@ export const useAnalysisStatus = (analysisId: string, enabled: boolean = true) =
 type AxiosError = Error & {
   response?: {
     status: number;
-    data?: any;
+    data?: {
+      error?: string;
+      message?: string;
+    };
   };
 }
 

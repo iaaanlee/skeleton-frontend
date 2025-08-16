@@ -21,12 +21,12 @@ const LoginContainer: React.FC = () => {
         isError: isErrorLogin 
     } = useLogin({
         onSuccess: (data) => {
-            if (data.data.accessToken && data.data.refreshToken) {
-                login(data.data.accessToken, data.data.refreshToken);
+            if (data.accessToken && data.refreshToken) {
+                login(data.accessToken, data.refreshToken);
             }
             navigate(ROUTES.SELECT_PROFILE);
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             console.error('Login failed:', error.message);
         }
     });

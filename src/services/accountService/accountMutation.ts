@@ -5,7 +5,7 @@ import { CreateAccountRequest, LoginRequest } from "../../types/account/request"
 import { ILoginResponse } from "../../types/account/response";
 
 export const useLoginMutation = ({ onSuccess, onError }: {
-    onSuccess?: (data: ILoginResponse) => void;
+    onSuccess?: (data: ILoginResponse['data']) => void;
     onError?: (error: Error) => void;
 } = {}) => {
     return useMutation({

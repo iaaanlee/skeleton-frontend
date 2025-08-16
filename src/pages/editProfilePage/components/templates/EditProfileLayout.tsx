@@ -7,6 +7,7 @@ import { EditProfileContent } from '../organisms/EditProfileContent';
 import LoadingState from '../molecules/LoadingState';
 import ErrorState from '../molecules/ErrorState';
 import { ROUTES } from '../../../../constants/routes';
+import { ProfileInfo } from '../../../../types/profile/profile';
 
 const EditProfileLayout: React.FC = () => {
     const navigate = useNavigate();
@@ -14,7 +15,7 @@ const EditProfileLayout: React.FC = () => {
     
     const { data: fullProfile, isLoading, error } = useGetCurrentProfileDetails();
 
-    const handleUpdateSuccess = (updatedProfile: any) => {
+    const handleUpdateSuccess = (updatedProfile: ProfileInfo) => {
         alert('프로필이 성공적으로 수정되었습니다!');
         navigate(ROUTES.PROFILE);
     };

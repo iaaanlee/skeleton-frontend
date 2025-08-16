@@ -9,7 +9,7 @@ export const loginDefaultValues: LoginRequest = {
 };
 
 type LoginProps = {
-    onSuccess?: (data: ILoginResponse) => void;
+    onSuccess?: (data: ILoginResponse['data']) => void;
     onError?: (error: Error) => void;
 };
 

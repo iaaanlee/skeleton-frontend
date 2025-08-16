@@ -79,7 +79,9 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
       } catch (error: unknown) {
         // 프로필이 선택되지 않은 경우는 정상적인 상황
         // 404 에러는 예상된 에러이므로 콘솔에 출력하지 않음
-        if ((error as any)?.response?.status !== 404) {
+        const isAxiosError = error && typeof error === 'object' && 'response' in error;
+        const status = isAxiosError ? (error as { response?: { status?: number } }).response?.status : undefined;
+        if (status !== 404) {
           console.error('Failed to fetch current profile:', error);
         }
         return null;

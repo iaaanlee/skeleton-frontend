@@ -20,7 +20,7 @@ const CreateAccountForm: React.FC = () => {
             alert('계정이 성공적으로 생성되었습니다!');
             navigate(ROUTES.LOGIN);
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             console.error('Error creating account:', error.message);
         }
     });

@@ -6,7 +6,7 @@ import { profileService } from '../../../../services/profileService/profileServi
 
 interface EditProfileContentProps {
     profile: ProfileInfo;
-    onUpdateSuccess: (updatedProfile: any) => void;
+    onUpdateSuccess: (updatedProfile: ProfileInfo) => void;
     onUpdateError: (error: string) => void;
 }
 
@@ -24,7 +24,11 @@ export const EditProfileContent = ({ profile, onUpdateSuccess, onUpdateError }: 
             
             // 업데이트된 프로필 정보 반환
             const updatedProfile = response.data.profile;
-            onUpdateSuccess(updatedProfile);
+            if (updatedProfile) {
+                onUpdateSuccess(updatedProfile);
+            } else {
+                throw new Error('프로필 업데이트에 실패했습니다.');
+            }
         } catch (error) {
             onUpdateError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
         } finally {

@@ -6,7 +6,7 @@ import { CreateAccountRequest, LoginRequest } from "../../types/account/request"
 
 type IAccountService = {
   getAccount: () => Promise<IGetAccountResponse>;
-  login: (input: LoginRequest) => Promise<ILoginResponse>;
+  login: (input: LoginRequest) => Promise<ILoginResponse['data']>;
   createAccount: (input: CreateAccountRequest) => Promise<ICreateAccountResponse>;
 };
 
@@ -15,16 +15,16 @@ class AccountService implements IAccountService {
 
   // GET 요청
   async getAccount() {
-    const { data } = await this.httpClient.request<{ success: boolean; data: IGetAccountResponse }>({
+    const { data } = await this.httpClient.request<IGetAccountResponse>({
       method: 'GET',
       url: '/account/account',
     })
-    return data.data
+    return data
   }
 
   // POST 요청
   async login(input: LoginRequest) {
-    const { data } = await this.httpClient.request<{ success: boolean; data: ILoginResponse }>({
+    const { data } = await this.httpClient.request<ILoginResponse>({
       method: 'POST',
       url: '/account/login',
       data: input,
@@ -33,12 +33,12 @@ class AccountService implements IAccountService {
   }
 
   async createAccount(input: CreateAccountRequest) {
-    const { data } = await this.httpClient.request<{ success: boolean; data: ICreateAccountResponse }>({
+    const { data } = await this.httpClient.request<ICreateAccountResponse>({
       method: 'POST',
       url: '/account/create-account',
       data: input,
     })
-    return data.data
+    return data
   }
 }
 

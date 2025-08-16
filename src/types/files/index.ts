@@ -87,17 +87,26 @@ export type ProcessedImage = {
 }
 
 // 타입 가드 헬퍼 함수들
-export const isServerFile = (file: ServerFile | any): file is ServerFile => {
-  return file && typeof file === 'object' && '_id' in file && 'accountId' in file;
+export const isServerFile = (file: unknown): file is ServerFile => {
+  return file !== null && 
+    typeof file === 'object' && 
+    '_id' in file && 
+    'accountId' in file;
 }
 
-export const isMediaFile = (file: any): file is MediaFile => {
-  return file && typeof file === 'object' && 'originalKey' in file && !('_id' in file);
+export const isMediaFile = (file: unknown): file is MediaFile => {
+  return file !== null && 
+    typeof file === 'object' && 
+    'originalKey' in file && 
+    !('_id' in file);
 }
 
 // 파일 ID 추출 헬퍼 함수
-export const getFileId = (file: ServerFile | MediaFile | any): string => {
+export const getFileId = (file: unknown): string => {
   if (isServerFile(file)) return file._id;
   if (isMediaFile(file)) return file.originalKey;
-  return (file as any)?.fileName || '';
+  if (file && typeof file === 'object' && 'fileName' in file) {
+    return (file as { fileName: string }).fileName;
+  }
+  return '';
 }

@@ -35,8 +35,12 @@ export const useGetCurrentProfile = (enabled: boolean = true) => {
     enabled: enabled,
     retry: (failureCount, error: Error) => {
       // PROFILE_NOT_SELECTED 에러는 재시도하지 않음
-      if ((error as any)?.response?.data?.error === 'PROFILE_NOT_SELECTED') {
-        return false;
+      const isAxiosError = error && typeof error === 'object' && 'response' in error;
+      if (isAxiosError) {
+        const axiosError = error as { response?: { data?: { error?: string } } };
+        if (axiosError.response?.data?.error === 'PROFILE_NOT_SELECTED') {
+          return false;
+        }
       }
       return failureCount < 3;
     },
@@ -54,8 +58,12 @@ export const useGetCurrentProfileDetails = (enabled: boolean = true) => {
     enabled: enabled,
     retry: (failureCount, error: Error) => {
       // PROFILE_NOT_SELECTED 에러는 재시도하지 않음
-      if ((error as any)?.response?.data?.error === 'PROFILE_NOT_SELECTED') {
-        return false;
+      const isAxiosError = error && typeof error === 'object' && 'response' in error;
+      if (isAxiosError) {
+        const axiosError = error as { response?: { data?: { error?: string } } };
+        if (axiosError.response?.data?.error === 'PROFILE_NOT_SELECTED') {
+          return false;
+        }
       }
       return failureCount < 3;
     },
