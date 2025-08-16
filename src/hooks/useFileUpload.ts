@@ -1,47 +1,25 @@
-import { useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
+import { useCallback } from 'react'
 import { useInitUpload, useCompleteUpload, useUploadToS3 } from '../services/fileService'
-import { useAccountAuth } from '../contexts/AccountAuthContext'
 import { QUERY_KEYS } from '../services/common/queryKey'
-import { extractAccountIdFromToken } from '../utils/auth'
+import { useUploadBase } from './useUploadBase'
 
-type UploadStatus = 'idle' | 'uploading' | 'success' | 'error'
+type UseFileUploadConfig = {
+  onSuccess?: () => void
+  onError?: (error: string) => void
+}
 
-export const useFileUpload = () => {
-  const navigate = useNavigate()
-  const { token } = useAccountAuth()
-  const queryClient = useQueryClient()
+export const useFileUpload = (config: UseFileUploadConfig = {}) => {
+  const uploadBase = useUploadBase(config)
   const initUploadMutation = useInitUpload()
   const completeUploadMutation = useCompleteUpload()
   const uploadToS3Mutation = useUploadToS3()
-  
-  const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle')
-  const [progress, setProgress] = useState(0)
-  const [error, setError] = useState<string>('')
 
-  // 토큰에서 accountId 추출 (토큰이 없거나 유효하지 않으면 null 반환)
-  const accountId = token ? extractAccountIdFromToken(token) : null
-
-  // 파일 업로드
+  // 개별 파일 업로드
   const uploadFiles = useCallback(async (files: File[]) => {
     if (files.length === 0) return
 
-    // 인증 상태 확인
-    if (!token) {
-      console.error('No authentication token found')
-      navigate('/login')
-      return
-    }
-
-    if (!accountId) {
-      console.error('Account ID not found in token')
-      return
-    }
-
-    setUploadStatus('uploading')
-    setProgress(0)
-    setError('')
+    // 업로드 시작 체크
+    if (!uploadBase.startUpload()) return
 
     try {
       for (let i = 0; i < files.length; i++) {
@@ -49,7 +27,7 @@ export const useFileUpload = () => {
         
         // 진행률 업데이트
         const fileProgress = ((i + 1) / files.length) * 100
-        setProgress(fileProgress)
+        uploadBase.updateProgress(fileProgress)
 
         // 1. 업로드 초기화 (Pre-signed URL 발급)
         const uploadInitResponse = await initUploadMutation.mutateAsync({
@@ -72,35 +50,17 @@ export const useFileUpload = () => {
         })
       }
 
-      // 업로드 성공 후 상태 초기화
-      setUploadStatus('success')
-      
-      // 파일 목록 쿼리 무효화하여 자동 갱신
-      queryClient.invalidateQueries({
-        queryKey: [...QUERY_KEYS.files, 'list']
-      })
-
-      // 3초 후 idle 상태로 복귀
-      setTimeout(() => {
-        setUploadStatus('idle')
-        setProgress(0)
-        setError('')
-      }, 3000)
+      // 업로드 성공 처리
+      uploadBase.handleSuccess([[...QUERY_KEYS.files, 'list']])
 
     } catch (error) {
-      console.error('Upload error:', error)
-      setUploadStatus('error')
-      setError(error instanceof Error ? error.message : '업로드 중 오류가 발생했습니다.')
+      const errorMessage = error instanceof Error ? error.message : '업로드 중 오류가 발생했습니다.'
+      uploadBase.handleError(errorMessage)
     }
-  }, [token, accountId, navigate, initUploadMutation, uploadToS3Mutation, completeUploadMutation, queryClient])
+  }, [uploadBase, initUploadMutation, uploadToS3Mutation, completeUploadMutation])
 
   return {
-    uploadStatus,
-    progress,
-    error,
-    uploadFiles,
-    isUploading: uploadStatus === 'uploading',
-    isSuccess: uploadStatus === 'success',
-    isError: uploadStatus === 'error'
+    ...uploadBase,
+    uploadFiles
   }
 }

@@ -5,6 +5,7 @@ import { useDeleteFile, useDownloadUrl } from '../services/fileService'
 import { useStartAnalysis, useCheckDuplicateAnalysis } from '../services/blazePoseService'
 import { QUERY_KEYS } from '../services/common/queryKey'
 import { ROUTES } from '../constants/routes'
+import { ServerFile } from '../types/files'
 
 export const useFileActions = (accountId: string) => {
   const navigate = useNavigate()
@@ -32,7 +33,7 @@ export const useFileActions = (accountId: string) => {
     }
   }, [deleteFileMutation, queryClient])
 
-  const downloadFile = useCallback(async (file: any) => {
+  const downloadFile = useCallback(async (file: ServerFile) => {
     try {
       // 다운로드 URL 생성
       const downloadUrlResponse = await downloadUrlMutation.mutateAsync(file._id)
@@ -84,7 +85,6 @@ export const useFileActions = (accountId: string) => {
         fileIds
       })
       
-      console.log('Analysis started:', response)
       
       // 분석 결과 페이지로 이동
       if (response && response.analysisId) {
@@ -110,7 +110,7 @@ export const useFileActions = (accountId: string) => {
     return results.every(result => result)
   }, [deleteFile])
 
-  const downloadMultipleFiles = useCallback(async (files: any[]) => {
+  const downloadMultipleFiles = useCallback(async (files: ServerFile[]) => {
     for (const file of files) {
       await downloadFile(file)
     }

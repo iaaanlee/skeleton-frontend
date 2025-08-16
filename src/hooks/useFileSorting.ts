@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react'
+import { ServerFile } from '../types/files'
 
 type SortOption = 'date' | 'name' | 'size'
 
-export const useFileSorting = (files: any[]) => {
+export const useFileSorting = (files: ServerFile[]) => {
   const [sortBy, setSortBy] = useState<SortOption>('date')
 
   const sortedFiles = useMemo(() => {

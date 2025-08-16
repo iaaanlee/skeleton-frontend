@@ -1,47 +1,25 @@
-import { useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
+import { useCallback } from 'react'
 import { useInitUpload, useUploadToS3 } from '../services/mediaSetService'
 import { mediaSetService } from '../services/mediaSetService/mediaSetService'
-import { useAccountAuth } from '../contexts/AccountAuthContext'
 import { QUERY_KEYS } from '../services/common/queryKey'
-import { extractAccountIdFromToken } from '../utils/auth'
+import { useUploadBase } from './useUploadBase'
 
-type UploadStatus = 'idle' | 'uploading' | 'success' | 'error'
+type UseMediaSetUploadConfig = {
+  onSuccess?: () => void
+  onError?: (error: string) => void
+}
 
-export const useMediaSetUpload = () => {
-  const navigate = useNavigate()
-  const { token } = useAccountAuth()
-  const queryClient = useQueryClient()
+export const useMediaSetUpload = (config: UseMediaSetUploadConfig = {}) => {
+  const uploadBase = useUploadBase(config)
   const initUploadMutation = useInitUpload()
   const uploadToS3Mutation = useUploadToS3()
-  
-  const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle')
-  const [progress, setProgress] = useState(0)
-  const [error, setError] = useState<string>('')
 
-  // 토큰에서 accountId 추출 (토큰이 없거나 유효하지 않으면 null 반환)
-  const accountId = token ? extractAccountIdFromToken(token) : null
-
-  // 파일 업로드
+  // 미디어 세트 업로드 (여러 파일을 하나의 세트로)
   const uploadFiles = useCallback(async (files: File[]) => {
     if (files.length === 0) return
 
-    // 인증 상태 확인
-    if (!token) {
-      console.error('No authentication token found')
-      navigate('/login')
-      return
-    }
-
-    if (!accountId) {
-      console.error('Account ID not found in token')
-      return
-    }
-
-    setUploadStatus('uploading')
-    setProgress(0)
-    setError('')
+    // 업로드 시작 체크
+    if (!uploadBase.startUpload()) return
 
     try {
       // 모든 파일의 업로드 정보를 저장할 배열
@@ -57,7 +35,7 @@ export const useMediaSetUpload = () => {
         
         // 진행률 업데이트 (초기화 단계: 30%)
         const initProgress = (i / files.length) * 30
-        setProgress(initProgress)
+        uploadBase.updateProgress(initProgress)
 
         // 업로드 초기화
         const uploadInitResponse = await initUploadMutation.mutateAsync({
@@ -79,7 +57,7 @@ export const useMediaSetUpload = () => {
         
         // 진행률 업데이트 (S3 업로드 단계: 30% ~ 80%)
         const uploadProgress = 30 + (i / uploadInfos.length) * 50
-        setProgress(uploadProgress)
+        uploadBase.updateProgress(uploadProgress)
 
         await uploadToS3Mutation.mutateAsync({
           uploadUrl: uploadInfo.uploadUrl,
@@ -88,7 +66,7 @@ export const useMediaSetUpload = () => {
       }
 
       // 3단계: 모든 파일을 하나의 미디어 세트로 생성
-      setProgress(80)
+      uploadBase.updateProgress(80)
       
       // 여러 파일을 한 번에 미디어 세트로 생성
       const filesData = uploadInfos.map(uploadInfo => ({
@@ -101,33 +79,17 @@ export const useMediaSetUpload = () => {
         files: filesData
       })
 
-      // 업로드 성공 후 상태 초기화
-      setProgress(100)
-      setUploadStatus('success')
-      
-      // 미디어 세트 목록 쿼리 무효화하여 자동 갱신
-      queryClient.invalidateQueries({
-        queryKey: [...QUERY_KEYS.mediaSets, 'list']
-      })
-
-      // 3초 후 idle 상태로 복귀
-      setTimeout(() => {
-        setUploadStatus('idle')
-        setProgress(0)
-        setError('')
-      }, 3000)
+      // 업로드 성공 처리
+      uploadBase.handleSuccess([[...QUERY_KEYS.mediaSets, 'list']])
 
     } catch (error) {
-      console.error('Upload error:', error)
-      setUploadStatus('error')
-      setError(error instanceof Error ? error.message : '업로드 중 오류가 발생했습니다.')
+      const errorMessage = error instanceof Error ? error.message : '업로드 중 오류가 발생했습니다.'
+      uploadBase.handleError(errorMessage)
     }
-  }, [token, accountId, navigate, initUploadMutation, uploadToS3Mutation, queryClient])
+  }, [uploadBase, initUploadMutation, uploadToS3Mutation])
 
   return {
-    uploadStatus,
-    progress,
-    error,
+    ...uploadBase,
     uploadFiles
   }
 }

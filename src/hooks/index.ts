@@ -1,4 +1,6 @@
 export { useFileUpload } from './useFileUpload'
+export { useMediaSetUpload } from './useMediaSetUpload'
+export { useUploadBase } from './useUploadBase'
 export { useFileSelection, useSingleFileSelection } from './useFileSelection'
 export { useFileSorting } from './useFileSorting'
 export { useFileActions } from './useFileActions'
