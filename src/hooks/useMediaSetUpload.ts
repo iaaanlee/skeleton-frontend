@@ -61,7 +61,7 @@ export const useMediaSetUpload = (config: UseMediaSetUploadConfig = {}) => {
 
         await uploadToS3Mutation.mutateAsync({
           uploadUrl: uploadInfo.uploadUrl,
-          file: uploadInfo.file as any
+          file: uploadInfo.file
         })
       }
 

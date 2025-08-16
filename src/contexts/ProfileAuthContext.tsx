@@ -62,7 +62,7 @@ export const ProfileAuthProvider: React.FC<ProfileProviderProps> = ({ children }
           return;
         }
 
-        const storedProfile = secureGetItem(storageKey);
+        const storedProfile = secureGetItem(storageKey) as ProfileInfo | null;
         if (storedProfile) {
           setSelectedProfile(storedProfile);
         } else {

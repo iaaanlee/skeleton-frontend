@@ -1,11 +1,12 @@
 import React from 'react';
 import { PrescriptionList } from './PrescriptionList';
 import { PageHeader, ContentContainer } from '../../../../components/common/molecules';
+import { Prescription } from '../../../../services/prescriptionService/prescriptionService';
 
 type ContentAreaProps = {
-  prescriptions: any[];
+  prescriptions: Prescription[];
   isLoading: boolean;
-  error: any;
+  error: Error | string | null;
   onPrescriptionClick: (prescriptionId: string) => void;
 };
 

@@ -1,11 +1,12 @@
 import React from 'react';
 import { PrescriptionHistoryContent } from '../organisms/PrescriptionHistoryContent';
 import { ROUTES } from '../../../../constants/routes';
+import { Prescription } from '../../../../services/prescriptionService/prescriptionService';
 
 type PrescriptionHistoryLayoutProps = {
-  prescriptions: any[];
+  prescriptions: Prescription[];
   isLoading: boolean;
-  error: any;
+  error: Error | string | null;
   onPrescriptionClick: (prescriptionId: string) => void;
 };
 

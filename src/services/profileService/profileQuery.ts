@@ -33,9 +33,9 @@ export const useGetCurrentProfile = (enabled: boolean = true) => {
       return data.data; // { profileId, profileName, accountId }
     },
     enabled: enabled,
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: Error) => {
       // PROFILE_NOT_SELECTED 에러는 재시도하지 않음
-      if (error?.response?.data?.error === 'PROFILE_NOT_SELECTED') {
+      if ((error as any)?.response?.data?.error === 'PROFILE_NOT_SELECTED') {
         return false;
       }
       return failureCount < 3;
@@ -52,9 +52,9 @@ export const useGetCurrentProfileDetails = (enabled: boolean = true) => {
       return data;
     },
     enabled: enabled,
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: Error) => {
       // PROFILE_NOT_SELECTED 에러는 재시도하지 않음
-      if (error?.response?.data?.error === 'PROFILE_NOT_SELECTED') {
+      if ((error as any)?.response?.data?.error === 'PROFILE_NOT_SELECTED') {
         return false;
       }
       return failureCount < 3;

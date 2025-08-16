@@ -7,16 +7,13 @@ import {
   BlazePoseResult,
   BlazePoseStatus
 } from "../../types/blazePose";
+import { DuplicateAnalysisCheckResponse } from "../../types/mediaSet";
 
 type IBlazePoseService = {
   startAnalysis: (request: BlazePoseAnalysisRequest) => Promise<BlazePoseAnalysisResponse['data']>;
   getAnalysisStatus: (analysisId: string) => Promise<BlazePoseStatus['data']>;
   getAnalysisResult: (analysisId: string) => Promise<BlazePoseResult['data']>;
-  checkDuplicateAnalysis: (request: { fileIds: string[] }) => Promise<{
-    hasDuplicate: boolean;
-    duplicateAnalysis: any | null;
-    duplicateFiles: any[];
-  }>;
+  checkDuplicateAnalysis: (request: { fileIds: string[] }) => Promise<DuplicateAnalysisCheckResponse>;
 };
 
 class BlazePoseService implements IBlazePoseService { 
@@ -54,11 +51,7 @@ class BlazePoseService implements IBlazePoseService {
   async checkDuplicateAnalysis(request: { fileIds: string[] }) {
     const { data } = await this.httpClient.request<{ 
       success: boolean; 
-      data: {
-        hasDuplicate: boolean;
-        duplicateAnalysis: any | null;
-        duplicateFiles: any[];
-      }
+      data: DuplicateAnalysisCheckResponse
     }>({
       method: 'POST',
       url: '/blazepose/check-duplicate',

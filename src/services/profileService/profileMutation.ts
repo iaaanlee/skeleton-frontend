@@ -22,7 +22,7 @@ export const useCreateProfileMutation = ({ onSuccess, onError }: {
 
 // 프로필 선택 관련 mutations (새로 추가)
 export const useSelectProfileMutation = ({ onSuccess, onError }: {
-    onSuccess?: (data: any) => void;
+    onSuccess?: (data: unknown) => void;
     onError?: (error: Error) => void;
 } = {}) => {
     return useMutation({

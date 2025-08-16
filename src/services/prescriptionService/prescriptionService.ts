@@ -1,6 +1,7 @@
 // Prescription 관련 API service 정의
 import { AxiosHttpClient } from "../common/axiosHttpClient";
 import { backendHttpClient } from "../common/httpClient";
+import { BlazePoseLandmark } from "../../types/blazePose";
 
 export type Prescription = {
   _id: string;
@@ -38,6 +39,13 @@ export type Prescription = {
   status: 'processing' | 'completed' | 'failed';
   createdAt: string;
   updatedAt: string;
+  // PrescriptionHistory용 추가 필드들 (getCompletedPrescriptions에서 생성)
+  id?: string;
+  title?: string;
+  description?: string;
+  fileCount?: number;
+  analysisId?: string;
+  thumbnailUrl?: string;
 }
 
 export type PrescriptionListResponse = {
@@ -71,7 +79,7 @@ export type UpdatePrescriptionStatusRequest = {
 
 export type SaveBlazePoseResultsRequest = {
   estimatedImageKeys: string[];
-  jointPositions: any[];
+  jointPositions: BlazePoseLandmark[][];
   confidence: number;
 }
 

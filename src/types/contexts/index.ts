@@ -39,7 +39,7 @@ export type CurrentProfileInfo = {
 export type ProfileContextType = {
   currentProfile: CurrentProfileInfo;
   isLoading: boolean;
-  error: any;
+  error: Error | string | null;
   selectProfile: (profileId: string) => Promise<void>;
   clearProfile: () => Promise<void>;
   refetchProfile: () => void;

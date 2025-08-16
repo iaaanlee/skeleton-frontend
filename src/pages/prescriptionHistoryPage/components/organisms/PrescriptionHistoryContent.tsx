@@ -1,12 +1,13 @@
 import React from 'react';
 import { PageLayout } from '../../../../components/common/templates';
 import { ROUTES, RouteValue } from '../../../../constants/routes';
+import { Prescription } from '../../../../services/prescriptionService/prescriptionService';
 import ContentArea from '../molecules/ContentArea';
 
 type PrescriptionHistoryContentProps = {
-  prescriptions: any[];
+  prescriptions: Prescription[];
   isLoading: boolean;
-  error: any;
+  error: Error | string | null;
   onPrescriptionClick: (prescriptionId: string) => void;
   onBack: () => void;
   backRoute?: RouteValue;

@@ -22,7 +22,7 @@ const CreateProfileForm: React.FC = () => {
             alert('프로필이 성공적으로 생성되었습니다!');
             navigate(ROUTES.SELECT_PROFILE);
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             console.error('Error creating profile:', error.message);
         }
     });

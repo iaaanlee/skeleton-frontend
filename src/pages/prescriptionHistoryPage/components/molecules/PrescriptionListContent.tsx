@@ -1,8 +1,9 @@
 import React from 'react';
 import { PrescriptionItem } from './PrescriptionItem';
+import { Prescription } from '../../../../services/prescriptionService/prescriptionService';
 
 type PrescriptionListContentProps = {
-  prescriptions: any[];
+  prescriptions: Prescription[];
   onPrescriptionClick: (prescriptionId: string) => void;
 };
 

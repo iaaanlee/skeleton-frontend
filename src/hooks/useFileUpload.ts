@@ -39,7 +39,7 @@ export const useFileUpload = (config: UseFileUploadConfig = {}) => {
         // 2. S3에 직접 업로드
         await uploadToS3Mutation.mutateAsync({
           uploadUrl: uploadInitResponse.uploadUrl,
-          file: file as any
+          file: file
         })
 
         // 3. 업로드 완료 알림

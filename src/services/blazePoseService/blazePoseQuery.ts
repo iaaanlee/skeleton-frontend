@@ -20,12 +20,20 @@ export const useAnalysisStatus = (analysisId: string, enabled: boolean = true) =
   })
 }
 
+// Axios 에러 타입 정의
+type AxiosError = Error & {
+  response?: {
+    status: number;
+    data?: any;
+  };
+}
+
 export const useAnalysisResult = (analysisId: string, enabled: boolean = true) => {
   return useQuery({
     queryKey: [...QUERY_KEYS.blazePose, 'result', analysisId],
     queryFn: () => blazePoseService.getAnalysisResult(analysisId),
     enabled: enabled && !!analysisId,
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: AxiosError) => {
       // 400 에러(분석 미완료)는 재시도하지 않음
       if (error?.response?.status === 400) {
         return false

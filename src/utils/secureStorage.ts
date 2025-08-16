@@ -1,6 +1,6 @@
 // 보안 스토리지 유틸리티
 interface StoredData {
-  data: any;
+  data: unknown;
   expiresAt: number;
   encrypted: boolean;
 }
@@ -9,7 +9,7 @@ interface StoredData {
 // const ENCRYPTION_KEY = 'skeleton-app-secure-key-2024';
 
 // 데이터 암호화
-const encryptData = (data: any): string => {
+const encryptData = (data: unknown): string => {
   try {
     const jsonString = JSON.stringify(data);
     // UTF-8 문자를 안전하게 Base64로 인코딩
@@ -21,7 +21,7 @@ const encryptData = (data: any): string => {
 };
 
 // 데이터 복호화
-const decryptData = (encryptedData: string): any => {
+const decryptData = (encryptedData: string): unknown => {
   try {
     const jsonString = decodeURIComponent(escape(atob(encryptedData)));
     return JSON.parse(jsonString);
@@ -37,7 +37,7 @@ const isExpired = (expiresAt: number): boolean => {
 };
 
 // 보안 스토리지에 데이터 저장
-export const secureSetItem = (key: string, data: any, expiresInHours: number = 3): void => {
+export const secureSetItem = (key: string, data: unknown, expiresInHours: number = 3): void => {
   try {
     const storedData: StoredData = {
       data: encryptData(data),
@@ -52,7 +52,7 @@ export const secureSetItem = (key: string, data: any, expiresInHours: number = 3
 };
 
 // 보안 스토리지에서 데이터 가져오기
-export const secureGetItem = (key: string): any => {
+export const secureGetItem = (key: string): unknown => {
   try {
     const stored = localStorage.getItem(key);
     if (!stored) {
@@ -68,7 +68,7 @@ export const secureGetItem = (key: string): any => {
     }
     
     // 복호화
-    return decryptData(storedData.data);
+    return decryptData(storedData.data as string);
   } catch (error) {
     console.error('Secure storage get error:', error);
     // 오류 발생 시 해당 키 삭제

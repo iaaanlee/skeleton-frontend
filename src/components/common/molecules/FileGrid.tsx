@@ -28,18 +28,26 @@ const FileGrid: React.FC<FileGridProps> = ({
     )
   }
 
+  // 파일 ID 추출 헬퍼 함수
+  const getFileId = (file: any) => {
+    return file._id || file.originalKey || file.fileName;
+  };
+
   return (
     <div className={`grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 ${className}`}>
-      {files.map((file) => (
-        <FileItem
-          key={file._id}
-          file={file}
-          onSelect={onFileSelect}
-          onDelete={onFileDelete}
-          onDownload={onFileDownload}
-          isSelected={selectedFiles.includes(file._id)}
-        />
-      ))}
+      {files.map((file, index) => {
+        const fileId = getFileId(file);
+        return (
+          <FileItem
+            key={fileId || index}
+            file={file}
+            onSelect={onFileSelect}
+            onDelete={onFileDelete}
+            onDownload={onFileDownload}
+            isSelected={selectedFiles.includes(fileId)}
+          />
+        );
+      })}
     </div>
   )
 }

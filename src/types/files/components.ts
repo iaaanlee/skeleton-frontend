@@ -1,3 +1,6 @@
+import { ServerFile } from './index';
+import { MediaFile } from '../../services/mediaSetService/mediaSetService';
+
 // 파일 업로드 컴포넌트 Props
 export type FileUploadProps = {
   profileId: string
@@ -51,27 +54,27 @@ export type SelectedFilesActionBarProps = {
 // 파일 목록 상태 컴포넌트 Props
 export type FileListStatusProps = {
   isLoading?: boolean
-  error?: any
+  error?: Error | string | null
   className?: string
 }
 
 // 파일 그리드 컴포넌트 Props
 export type FileGridProps = {
-  files: any[]
-  onFileSelect: (file: any) => void
+  files: (ServerFile | MediaFile)[]
+  onFileSelect: (file: ServerFile | MediaFile) => void
   onFileDelete: (fileId: string) => void
-  onFileDownload: (file: any) => void
+  onFileDownload: (file: ServerFile | MediaFile) => void
   selectedFiles: string[]
   className?: string
 }
 
 // 파일 아이템 컴포넌트 Props
 export type FileItemProps = {
-  file: any
+  file: ServerFile | MediaFile
   isSelected?: boolean
-  onSelect?: (file: any) => void
+  onSelect?: (file: ServerFile | MediaFile) => void
   onDelete?: (fileId: string) => void
-  onDownload?: (file: any) => void
+  onDownload?: (file: ServerFile | MediaFile) => void
   showThumbnail?: boolean
   showInfo?: boolean
   className?: string

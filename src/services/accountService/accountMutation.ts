@@ -4,7 +4,7 @@ import { accountService } from "./accountService";
 import { CreateAccountRequest, LoginRequest } from "../../types/account/request";
 
 export const useLoginMutation = ({ onSuccess, onError }: {
-    onSuccess?: (data: any) => void;
+    onSuccess?: (data: unknown) => void;
     onError?: (error: Error) => void;
 } = {}) => {
     return useMutation({

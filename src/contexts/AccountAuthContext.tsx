@@ -26,11 +26,11 @@ type AccountAuthProviderProps = {
 export const AccountAuthProvider: React.FC<AccountAuthProviderProps> = ({ children }) => {
     const queryClient = useQueryClient();
     const [token, setToken] = useState<string | null>(() => {
-        return secureGetItem('token');
+        return secureGetItem('token') as string | null;
     });
 
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-        const storedToken = secureGetItem('token');
+        const storedToken = secureGetItem('token') as string | null;
         return !!storedToken;
     });
 

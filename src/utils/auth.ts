@@ -1,3 +1,4 @@
+import { NavigateFunction } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
 import { clearAllSecureData, secureGetItem, secureSetItem, secureRemoveItem } from './secureStorage';
 import { axiosHttpClient } from '../services/common/axiosHttpClient';
@@ -35,7 +36,7 @@ export const isTokenValid = (token: string): boolean => {
 }
 
 // 로그아웃 처리
-export const handleLogout = (navigate: any) => {
+export const handleLogout = (navigate: NavigateFunction) => {
   // 모든 보안 데이터 정리
   clearAllSecureData();
   
@@ -89,7 +90,7 @@ export const refreshAccessToken = async (): Promise<string | null> => {
 };
 
 // 인증 상태 확인 및 처리
-export const validateAuthState = (token: string | null, navigate: any): boolean => {
+export const validateAuthState = (token: string | null, navigate: NavigateFunction): boolean => {
   if (!token) {
     handleLogout(navigate)
     return false

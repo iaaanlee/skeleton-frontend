@@ -1,12 +1,13 @@
 import React from 'react';
 import { LoadingState, ErrorState } from '../../../../components/common/molecules';
+import { Prescription } from '../../../../services/prescriptionService/prescriptionService';
 import EmptyState from './EmptyState';
 import PrescriptionListContent from './PrescriptionListContent';
 
 type PrescriptionListProps = {
-  prescriptions: any[];
+  prescriptions: Prescription[];
   isLoading: boolean;
-  error: any;
+  error: Error | string | null;
   onPrescriptionClick: (prescriptionId: string) => void;
 };
 

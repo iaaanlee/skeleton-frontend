@@ -72,7 +72,7 @@ export const useFileActions = (accountId: string) => {
         )
         
         if (confirmed) {
-          navigate(ROUTES.ANALYSIS_RESULT.replace(':analysisId', duplicateCheck.duplicateAnalysis.analysisId))
+          navigate(ROUTES.ANALYSIS_RESULT.replace(':analysisId', duplicateCheck.duplicateAnalysis._id))
           return true
         } else {
           setIsAnalyzing(false)

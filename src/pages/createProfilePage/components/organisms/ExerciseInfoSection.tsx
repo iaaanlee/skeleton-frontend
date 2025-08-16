@@ -1,4 +1,4 @@
-import { UseFormRegister, UseFormWatch, UseFormReset } from "react-hook-form";
+import { UseFormRegister, UseFormWatch, UseFormReset, Control } from "react-hook-form";
 import { useFieldArray } from "react-hook-form";
 import { AddButton } from "../atoms/AddButton";
 import { ExerciseCard } from "../molecules/ExerciseCard";
@@ -8,7 +8,7 @@ interface ExerciseInfoSectionProps {
     register: UseFormRegister<CreateProfileRequest>;
     watch: UseFormWatch<CreateProfileRequest>;
     reset: UseFormReset<CreateProfileRequest>;
-    control: any;
+    control: Control<CreateProfileRequest>;
 }
 
 export const ExerciseInfoSection = ({

@@ -1,7 +1,8 @@
 import React from 'react';
+import { Prescription } from '../../../../services/prescriptionService/prescriptionService';
 
 type PrescriptionItemProps = {
-  prescription: any;
+  prescription: Prescription;
   onClick: () => void;
 };
 

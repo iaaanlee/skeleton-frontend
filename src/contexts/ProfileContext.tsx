@@ -14,7 +14,7 @@ export type CurrentProfileInfo = {
 type ProfileContextType = {
   currentProfile: CurrentProfileInfo;
   isLoading: boolean;
-  error: any;
+  error: Error | string | null;
   selectProfile: (profileId: string) => Promise<void>;
   clearProfile: () => Promise<void>;
   refetchProfile: () => void;
@@ -76,10 +76,10 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
       try {
         const response = await profileService.getCurrentProfile();
         return response.data;
-      } catch (error: any) {
+      } catch (error: unknown) {
         // 프로필이 선택되지 않은 경우는 정상적인 상황
         // 404 에러는 예상된 에러이므로 콘솔에 출력하지 않음
-        if (error?.response?.status !== 404) {
+        if ((error as any)?.response?.status !== 404) {
           console.error('Failed to fetch current profile:', error);
         }
         return null;

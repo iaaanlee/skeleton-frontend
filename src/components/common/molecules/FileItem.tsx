@@ -12,6 +12,16 @@ const FileItem: React.FC<FileItemProps> = ({
   className = ''
 }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  
+  // 파일 ID 추출 헬퍼 함수
+  const getFileId = (file: any) => {
+    return file._id || file.originalKey || file.fileName;
+  };
+  
+  // 썸네일 URL 추출 헬퍼 함수
+  const getThumbnailUrl = (file: any) => {
+    return file.thumbnailUrl || file.downloadUrl || file.thumbnailKey || '';
+  };
 
   const handleSelect = () => {
     onSelect?.(file)
@@ -23,7 +33,7 @@ const FileItem: React.FC<FileItemProps> = ({
   }
 
   const handleDeleteConfirm = () => {
-    onDelete?.(file._id)
+    onDelete?.(getFileId(file))
     setShowDeleteModal(false)
   }
 
@@ -58,7 +68,7 @@ const FileItem: React.FC<FileItemProps> = ({
         {/* 상단: 정사각형 썸네일 컨테이너 - 고정 크기 */}
         <div className="relative w-full h-32">
           <ImagePreview
-            file={file.thumbnailUrl || file.downloadUrl || ''}
+            file={getThumbnailUrl(file)}
             className="w-full h-full object-cover object-center"
             width={128}
             height={128}
@@ -88,7 +98,7 @@ const FileItem: React.FC<FileItemProps> = ({
           </div>
 
           {/* BlazePose 가공 표시 */}
-          {file.processedForBlazePose && (
+          {(file as any).processedForBlazePose && (
             <div className="absolute top-1 left-1">
               <span className="bg-purple-500 text-white text-xs px-1 py-0.5 rounded-full">
                 BP
@@ -115,7 +125,7 @@ const FileItem: React.FC<FileItemProps> = ({
             </h3>
 
             {/* 압축 비율 */}
-            {file.compressionRatio && (
+            {'compressionRatio' in file && file.compressionRatio && (
               <p className="text-xs text-green-600">
                 압축: {file.compressionRatio}%
               </p>
