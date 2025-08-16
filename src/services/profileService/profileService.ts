@@ -9,7 +9,7 @@ export const profileService = {
   getProfileByProfileId: async ({ profileId }: { profileId: string }): Promise<IGetProfileResponse> => {
     const response = await backendHttpClient.request({
       method: 'GET',
-      url: `/profile/profile/${profileId}`,
+      url: `/profile/by-id/${profileId}`,
     });
     return response.data as IGetProfileResponse;
   },
@@ -36,7 +36,7 @@ export const profileService = {
   updateProfile: async ({ profileId, ...data }: UpdateProfileRequest & { profileId: string }): Promise<IGetProfileResponse> => {
     const response = await backendHttpClient.request({
       method: 'PUT',
-      url: `/profile/update-profile/${profileId}`,
+      url: `/profile/by-id/${profileId}`,
       data,
     });
     return response.data as IGetProfileResponse;
@@ -70,7 +70,7 @@ export const profileService = {
     const profileId = currentProfile.data.data.profileId;
     const response = await backendHttpClient.request({
       method: 'GET',
-      url: `/profile/profile/${profileId}`
+      url: `/profile/by-id/${profileId}`
     });
     return response.data as IGetProfileResponse;
   },

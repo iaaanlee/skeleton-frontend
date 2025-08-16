@@ -19,7 +19,7 @@ class AnalysisJobService implements IAnalysisJobService {
   async getAnalysisStatus(analysisJobId: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: AnalysisStatusInfo }>({
       method: 'GET',
-      url: `/analysisJob/status/${analysisJobId}`
+      url: `/analysisJob/status/by-id/${analysisJobId}`
     })
     return data.data
   }
@@ -28,7 +28,7 @@ class AnalysisJobService implements IAnalysisJobService {
   async getAnalysisJob(analysisJobId: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: AnalysisJob }>({
       method: 'GET',
-      url: `/analysisJob/${analysisJobId}`
+      url: `/analysisJob/by-id/${analysisJobId}`
     })
     return data.data
   }
@@ -37,7 +37,7 @@ class AnalysisJobService implements IAnalysisJobService {
   async cancelAnalysis(analysisJobId: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'POST',
-      url: `/analysisJob/cancel/${analysisJobId}`
+      url: `/analysisJob/cancel/by-id/${analysisJobId}`
     })
     return data
   }

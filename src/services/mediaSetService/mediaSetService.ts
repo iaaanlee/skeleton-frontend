@@ -143,7 +143,7 @@ class MediaSetService implements IMediaSetService {
   async getMediaSetById(mediaSetId: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: MediaSet }>({
       method: 'GET',
-      url: `/mediaSet/mediaSetById/${mediaSetId}`,
+      url: `/mediaSet/by-id/${mediaSetId}`,
     })
     return data.data
   }
@@ -152,7 +152,7 @@ class MediaSetService implements IMediaSetService {
   async deleteMediaSet(mediaSetId: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'DELETE',
-      url: `/mediaSet/mediaSetById/${mediaSetId}`
+      url: `/mediaSet/by-id/${mediaSetId}`
     })
     return data
   }

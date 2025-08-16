@@ -111,7 +111,7 @@ class PrescriptionService implements IPrescriptionService {
   async getPrescriptionById(prescriptionId: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: Prescription }>({
       method: 'GET',
-      url: `/prescription/${prescriptionId}`
+      url: `/prescription/by-id/${prescriptionId}`
     })
     return data.data
   }
@@ -150,7 +150,7 @@ class PrescriptionService implements IPrescriptionService {
   async updatePrescriptionStatus(prescriptionId: string, request: UpdatePrescriptionStatusRequest) {
     const { data } = await this.httpClient.request<void>({
       method: 'PATCH',
-      url: `/prescription/${prescriptionId}/status`,
+      url: `/prescription/by-id/${prescriptionId}/status`,
       data: request,
     })
     return data
@@ -160,7 +160,7 @@ class PrescriptionService implements IPrescriptionService {
   async saveBlazePoseResults(prescriptionId: string, request: SaveBlazePoseResultsRequest) {
     const { data } = await this.httpClient.request<void>({
       method: 'POST',
-      url: `/prescription/${prescriptionId}/blazepose-results`,
+      url: `/prescription/by-id/${prescriptionId}/blazepose-results`,
       data: request,
     })
     return data
@@ -170,7 +170,7 @@ class PrescriptionService implements IPrescriptionService {
   async saveLLMResults(prescriptionId: string, request: SaveLLMResultsRequest) {
     const { data } = await this.httpClient.request<void>({
       method: 'POST',
-      url: `/prescription/${prescriptionId}/llm-results`,
+      url: `/prescription/by-id/${prescriptionId}/llm-results`,
       data: request,
     })
     return data
@@ -180,7 +180,7 @@ class PrescriptionService implements IPrescriptionService {
   async completePrescription(prescriptionId: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'POST',
-      url: `/prescription/${prescriptionId}/complete`,
+      url: `/prescription/by-id/${prescriptionId}/complete`,
     })
     return data
   }
@@ -189,7 +189,7 @@ class PrescriptionService implements IPrescriptionService {
   async failPrescription(prescriptionId: string, error?: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'POST',
-      url: `/prescription/${prescriptionId}/fail`,
+      url: `/prescription/by-id/${prescriptionId}/fail`,
       data: { error },
     })
     return data
@@ -200,7 +200,7 @@ class PrescriptionService implements IPrescriptionService {
   async deletePrescription(prescriptionId: string) {
     const { data } = await this.httpClient.request<void>({
       method: 'DELETE',
-      url: `/prescription/${prescriptionId}`,
+      url: `/prescription/by-id/${prescriptionId}`,
     })
     return data
   }

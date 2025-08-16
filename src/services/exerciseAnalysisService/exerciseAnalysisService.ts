@@ -28,7 +28,7 @@ class ExerciseAnalysisService implements IExerciseAnalysisService {
   async restartAnalysis(analysisJobId: string) {
     const { data } = await this.httpClient.request<{ success: boolean; data: StartAnalysisResponse }>({
       method: 'POST',
-      url: `/exerciseAnalysis/restart/${analysisJobId}`
+      url: `/exerciseAnalysis/restart/by-analysis-job/${analysisJobId}`
     })
     return data.data
   }
