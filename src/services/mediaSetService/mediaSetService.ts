@@ -16,15 +16,23 @@ export type MediaSet = {
 }
 
 export type MediaFile = {
-  _id: string;
-  fileName: string;
-  fileSize: number;
-  contentType: string;
   originalKey: string;
   thumbnailKey?: string;
-  preProcessedKey?: string;
-  estimatedKey?: string;
-  hash: string;
+  preProcessedKeys: string[];
+  estimatedKeys: string[];
+  fileName: string;
+  fileSize: number;
+  originalSize: number;
+  contentType: string;
+  processedForBlazePose: boolean;
+  compressionRatio: string;
+  fileHash: string;
+  s3Path: {
+    bucket: string;
+    key: string;
+    region: string;
+  };
+  fileType: 'media_set_file';
   uploadedAt: string;
 }
 

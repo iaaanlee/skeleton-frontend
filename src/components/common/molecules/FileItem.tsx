@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 import { FileItemProps } from '../../../types/files/components'
+import { ServerFile, getFileId, isServerFile, isMediaFile } from '../../../types/files'
+import { MediaFile } from '../../../services/mediaSetService/mediaSetService'
 import ImagePreview from './ImagePreview'
 import { DeleteConfirmModal } from '../templates/DeleteConfirmModal'
 
@@ -13,14 +15,15 @@ const FileItem: React.FC<FileItemProps> = ({
 }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   
-  // 파일 ID 추출 헬퍼 함수
-  const getFileId = (file: any) => {
-    return file._id || file.originalKey || file.fileName;
-  };
-  
   // 썸네일 URL 추출 헬퍼 함수
-  const getThumbnailUrl = (file: any) => {
-    return file.thumbnailUrl || file.downloadUrl || file.thumbnailKey || '';
+  const getThumbnailUrl = (file: ServerFile | MediaFile) => {
+    if (isServerFile(file)) {
+      return file.thumbnailUrl || file.downloadUrl || '';
+    }
+    if (isMediaFile(file)) {
+      return file.thumbnailKey || '';
+    }
+    return '';
   };
 
   const handleSelect = () => {
@@ -98,7 +101,8 @@ const FileItem: React.FC<FileItemProps> = ({
           </div>
 
           {/* BlazePose 가공 표시 */}
-          {(file as any).processedForBlazePose && (
+          {((isServerFile(file) && file.processedForBlazePose) || 
+            (isMediaFile(file) && file.processedForBlazePose)) && (
             <div className="absolute top-1 left-1">
               <span className="bg-purple-500 text-white text-xs px-1 py-0.5 rounded-full">
                 BP
@@ -125,7 +129,7 @@ const FileItem: React.FC<FileItemProps> = ({
             </h3>
 
             {/* 압축 비율 */}
-            {'compressionRatio' in file && file.compressionRatio && (
+            {isMediaFile(file) && file.compressionRatio && (
               <p className="text-xs text-green-600">
                 압축: {file.compressionRatio}%
               </p>

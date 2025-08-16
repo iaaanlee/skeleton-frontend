@@ -1,3 +1,6 @@
+// MediaFile 타입 import
+import type { MediaFile } from '../../services/mediaSetService/mediaSetService';
+
 // 기본 파일 정보
 export type FileInfo = {
   id: string
@@ -81,4 +84,20 @@ export type ProcessedImage = {
   size: number
   width: number
   height: number
+}
+
+// 타입 가드 헬퍼 함수들
+export const isServerFile = (file: ServerFile | any): file is ServerFile => {
+  return file && typeof file === 'object' && '_id' in file && 'accountId' in file;
+}
+
+export const isMediaFile = (file: any): file is MediaFile => {
+  return file && typeof file === 'object' && 'originalKey' in file && !('_id' in file);
+}
+
+// 파일 ID 추출 헬퍼 함수
+export const getFileId = (file: ServerFile | MediaFile | any): string => {
+  if (isServerFile(file)) return file._id;
+  if (isMediaFile(file)) return file.originalKey;
+  return (file as any)?.fileName || '';
 }

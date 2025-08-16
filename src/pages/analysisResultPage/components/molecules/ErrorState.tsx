@@ -1,7 +1,7 @@
 import React from 'react';
 
 export type ErrorStateProps = {
-  error?: any;
+  error?: Error | string | null;
   onBack: () => void;
   className?: string;
 };
@@ -20,7 +20,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
             분석 결과를 불러올 수 없습니다
           </h2>
           <p className="text-gray-600 mb-4">
-            {error?.message || '알 수 없는 오류가 발생했습니다.'}
+            {typeof error === 'string' ? error : error?.message || '알 수 없는 오류가 발생했습니다.'}
           </p>
           <button
             onClick={onBack}

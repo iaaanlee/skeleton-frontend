@@ -9,7 +9,7 @@ type ErrorStateProps = {
   variant?: ErrorStateVariant;
   title?: string;
   message?: string;
-  error?: any;
+  error?: Error | string | null;
   backRoute?: RouteValue;
   className?: string;
 };
@@ -24,7 +24,8 @@ const ErrorState: React.FC<ErrorStateProps> = ({
 }) => {
   const getErrorMessage = () => {
     if (message) return message;
-    if (error?.message) return error.message;
+    if (typeof error === 'string') return error;
+    if (error && typeof error === 'object' && 'message' in error) return error.message;
     return '알 수 없는 오류가 발생했습니다.';
   };
 

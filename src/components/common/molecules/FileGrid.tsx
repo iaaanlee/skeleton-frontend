@@ -1,5 +1,6 @@
 import React from 'react'
 import { FileGridProps } from '../../../types/files/components'
+import { getFileId } from '../../../types/files'
 import FileItem from './FileItem'
 
 const FileGrid: React.FC<FileGridProps> = ({
@@ -28,10 +29,7 @@ const FileGrid: React.FC<FileGridProps> = ({
     )
   }
 
-  // 파일 ID 추출 헬퍼 함수
-  const getFileId = (file: any) => {
-    return file._id || file.originalKey || file.fileName;
-  };
+  // getFileId는 이미 import됨
 
   return (
     <div className={`grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 ${className}`}>

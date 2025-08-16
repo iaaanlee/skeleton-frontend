@@ -3,6 +3,8 @@ import { useMediaSetList } from '../../../services/mediaSetService'
 import { useAccountAuth } from '../../../contexts/AccountAuthContext'
 import { useFileSelection, useFileActions } from '../../../hooks'
 import { extractAccountIdFromToken } from '../../../utils/auth'
+import { ServerFile, getFileId, isServerFile } from '../../../types/files'
+import { MediaFile } from '../../../services/mediaSetService/mediaSetService'
 import { FileListHeader } from './FileListHeader'
 import FileGrid from './FileGrid'
 // import { SelectedFilesActionBar } from './SelectedFilesActionBar'
@@ -54,7 +56,7 @@ const FileList: React.FC<FileListProps> = ({
   React.useEffect(() => {
     if (mediaSetListResponse?.mediaSets) {
       const allFileIds = mediaSetListResponse.mediaSets.flatMap(mediaSet => 
-        mediaSet.files.map(file => file._id)
+        mediaSet.files.map(file => getFileId(file))
       )
       const validSelectedFiles = selectedFiles.filter(fileId => allFileIds.includes(fileId))
       
@@ -71,8 +73,9 @@ const FileList: React.FC<FileListProps> = ({
   }
 
   // 이벤트 핸들러들
-  const handleFileSelect = (file: any) => {
-    selectFile(file._id)
+  const handleFileSelect = (file: ServerFile | MediaFile) => {
+    const fileId = getFileId(file);
+    selectFile(fileId)
   }
 
   const handleFileDelete = async (fileId: string) => {
@@ -83,8 +86,10 @@ const FileList: React.FC<FileListProps> = ({
     }
   }
 
-  const handleFileDownload = (file: any) => {
-    downloadFile(file)
+  const handleFileDownload = (file: ServerFile | MediaFile) => {
+    if (isServerFile(file)) {
+      downloadFile(file)
+    }
   }
 
   // const handleDownloadSelected = () => {

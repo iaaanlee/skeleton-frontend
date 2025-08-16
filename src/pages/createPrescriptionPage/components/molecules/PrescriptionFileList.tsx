@@ -3,6 +3,8 @@ import { useMediaSetList } from '../../../../services/mediaSetService'
 import { useAccountAuth } from '../../../../contexts/AccountAuthContext'
 import { useSingleFileSelection, useFileActions } from '../../../../hooks'
 import { extractAccountIdFromToken } from '../../../../utils/auth'
+import { ServerFile, getFileId } from '../../../../types/files'
+import { MediaFile } from '../../../../services/mediaSetService/mediaSetService'
 import { UploadModal } from '../../../../components/common/templates/UploadModal'
 
 type PrescriptionFileListProps = {
@@ -54,7 +56,7 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
   useEffect(() => {
     if (mediaSetListResponse?.mediaSets && selectedFile) {
       const allFileIds = mediaSetListResponse.mediaSets.flatMap(mediaSet => 
-        mediaSet.files.map(file => file._id)
+        mediaSet.files.map(file => getFileId(file))
       )
       if (!allFileIds.includes(selectedFile)) {
         clearSelectionRef.current()
@@ -67,8 +69,9 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
     return null
   }
 
-  const handleFileSelect = (file: any) => {
-    selectFile(file._id)
+  const handleFileSelect = (file: ServerFile | MediaFile) => {
+    const fileId = getFileId(file);
+    selectFile(fileId)
   }
 
   const handleFileDelete = async (fileId: string) => {
@@ -162,12 +165,14 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {files.map((file) => (
+            {files.map((file) => {
+              const fileId = getFileId(file);
+              return (
               <div
-                key={file._id}
+                key={fileId}
                 className={`
                   relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all duration-200
-                  ${isSelected(file._id)
+                  ${isSelected(fileId)
                     ? 'border-green-500 ring-2 ring-green-200'
                     : 'border-gray-200 hover:border-gray-300'
                   }
@@ -196,7 +201,7 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
                   onClick={(e) => {
                     e.stopPropagation()
                     if (window.confirm('이 파일을 삭제하시겠습니까?')) {
-                      handleFileDelete(file._id)
+                      handleFileDelete(fileId)
                     }
                   }}
                   className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors z-10 opacity-0 group-hover:opacity-100"
@@ -208,7 +213,7 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
                 </button>
 
                 {/* 선택 표시 - 중앙에 체크 표시 */}
-                {isSelected(file._id) && (
+                {isSelected(fileId) && (
                   <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
                     <div className="bg-green-500 text-white rounded-full p-2">
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -225,7 +230,8 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
                   </p>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -233,7 +239,7 @@ export const PrescriptionFileList: React.FC<PrescriptionFileListProps> = ({
         {selectedFile && (
           <div className="mt-4 p-3 bg-green-100 border border-green-300 rounded-lg">
             <p className="text-sm text-green-800">
-              <span className="font-medium">선택된 파일:</span> {files.find(f => f._id === selectedFile)?.fileName}
+              <span className="font-medium">선택된 파일:</span> {files.find(f => getFileId(f) === selectedFile)?.fileName}
             </p>
           </div>
         )}

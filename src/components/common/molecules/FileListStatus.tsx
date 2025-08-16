@@ -2,7 +2,7 @@ import React from 'react'
 
 type FileListStatusProps = {
   isLoading?: boolean
-  error?: any
+  error?: Error | string | null
   className?: string
 }
 
