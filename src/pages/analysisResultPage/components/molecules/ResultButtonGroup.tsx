@@ -3,13 +3,13 @@ import ResultButton from '../atoms/ResultButton';
 
 type ResultButtonGroupProps = {
   onAnalyzedImageClick: () => void;
-  onGptAnalysisClick: () => void;
+  onLLMAnalysisClick: () => void;
   className?: string;
 };
 
 const ResultButtonGroup: React.FC<ResultButtonGroupProps> = ({
   onAnalyzedImageClick,
-  onGptAnalysisClick,
+  onLLMAnalysisClick,
   className = ''
 }) => {
   return (
@@ -25,7 +25,7 @@ const ResultButtonGroup: React.FC<ResultButtonGroupProps> = ({
         type="analysis"
         title="분석 결과 설명"
         description="AI가 분석한 자세에 대한 상세한 설명을 확인하세요."
-        onClick={onGptAnalysisClick}
+        onClick={onLLMAnalysisClick}
       />
     </div>
   );

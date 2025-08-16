@@ -6,14 +6,14 @@ import AnalysisIdInfo from '../atoms/AnalysisIdInfo';
 type ResultSelectionProps = {
   analysisId: string;
   onAnalyzedImageClick: () => void;
-  onGptAnalysisClick: () => void;
+  onLLMAnalysisClick: () => void;
   className?: string;
 };
 
 const ResultSelection: React.FC<ResultSelectionProps> = ({
   analysisId,
   onAnalyzedImageClick,
-  onGptAnalysisClick,
+  onLLMAnalysisClick,
   className = ''
 }) => {
   return (
@@ -22,7 +22,7 @@ const ResultSelection: React.FC<ResultSelectionProps> = ({
       
       <ResultButtonGroup
         onAnalyzedImageClick={onAnalyzedImageClick}
-        onGptAnalysisClick={onGptAnalysisClick}
+        onLLMAnalysisClick={onLLMAnalysisClick}
       />
       
       <AnalysisIdInfo analysisId={analysisId} />

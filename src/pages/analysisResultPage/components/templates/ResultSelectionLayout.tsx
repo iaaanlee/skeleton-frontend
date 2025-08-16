@@ -7,7 +7,7 @@ import { ResultSelection } from '../organisms';
 export type ResultSelectionLayoutProps = {
   analysisId: string;
   onAnalyzedImageClick: () => void;
-  onGptAnalysisClick: () => void;
+  onLLMAnalysisClick: () => void;
   onBack: () => void;
   backRoute?: RouteValue;
   className?: string;
@@ -16,7 +16,7 @@ export type ResultSelectionLayoutProps = {
 const ResultSelectionLayout: React.FC<ResultSelectionLayoutProps> = ({
   analysisId,
   onAnalyzedImageClick,
-  onGptAnalysisClick,
+  onLLMAnalysisClick,
   onBack,
   backRoute = ROUTES.PRESCRIPTION_HISTORY,
   className = ""
@@ -29,7 +29,7 @@ const ResultSelectionLayout: React.FC<ResultSelectionLayoutProps> = ({
         <ResultSelection
           analysisId={analysisId}
           onAnalyzedImageClick={onAnalyzedImageClick}
-          onGptAnalysisClick={onGptAnalysisClick}
+          onLLMAnalysisClick={onLLMAnalysisClick}
         />
       </div>
       

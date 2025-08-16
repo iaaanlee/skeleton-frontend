@@ -1,6 +1,7 @@
 // MediaSet 관련 API service 정의
 import { AxiosHttpClient } from "../common/axiosHttpClient";
 import { backendHttpClient } from "../common/httpClient";
+import { preSignedUrlService } from "../preSignedUrlService";
 
 export type MediaSet = {
   _id: string;
@@ -157,20 +158,9 @@ class MediaSetService implements IMediaSetService {
     return data
   }
 
-  // S3에 직접 파일 업로드 (Pre-signed URL 사용)
+  // S3에 직접 파일 업로드 (Pre-signed URL 사용) - 공용 서비스 사용
   async uploadToS3(uploadUrl: string, file: File): Promise<void> {
-    const response = await fetch(uploadUrl, {
-      method: 'PUT',
-      body: file,
-      headers: {
-        'Content-Type': file.type,
-        'Content-Length': file.size.toString()
-      }
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to upload file to S3: ${response.statusText}`)
-    }
+    return preSignedUrlService.uploadToS3(uploadUrl, file)
   }
 }
 
