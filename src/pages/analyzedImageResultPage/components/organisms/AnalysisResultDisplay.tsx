@@ -57,7 +57,7 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
       color: 'green' as const
     },
     {
-      value: result.blazePoseResults?.results?.[0]?.landmarks?.[0]?.length || 0,
+      value: result.blazePoseResults?.results?.[0]?.landmarks?.length || 0,
       label: '관절 좌표 수',
       color: 'purple' as const
     }
@@ -130,15 +130,15 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
       )}
 
       {/* 관절 좌표 시각화 */}
-      {result.blazePoseResults?.results?.[0]?.landmarks?.[0] && 
-       result.blazePoseResults.results[0].landmarks[0].length > 0 && (
+      {result.blazePoseResults?.results?.[0]?.landmarks && 
+       result.blazePoseResults.results[0].landmarks.length > 0 && (
         <ExpandableSection
           title="관절 좌표 상세 정보"
           isExpanded={expandedSections.landmarks}
           onToggle={() => toggleSection('landmarks')}
         >
           <LandmarksVisualization 
-            landmarks={result.blazePoseResults.results[0].landmarks[0]}
+            landmarks={result.blazePoseResults.results[0].landmarks}
             confidence={result.blazePoseResults.results[0].confidence[0] || 0}
           />
         </ExpandableSection>

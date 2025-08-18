@@ -6,10 +6,14 @@ export const formatConfidence = (confidence: number): string => {
 };
 
 export const calculateAverageConfidence = (result: Prescription): number => {
-  if (!result.blazePoseResults?.results?.[0]?.landmarks?.[0]) return 0;
+  if (!result.blazePoseResults?.results?.[0]?.landmarks) return 0;
   
-  const landmarks = result.blazePoseResults.results[0].landmarks[0];
-  const totalVisibility = landmarks.reduce((sum, landmark) => sum + landmark.visibility, 0);
+  const landmarks = result.blazePoseResults.results[0].landmarks;
+  if (!Array.isArray(landmarks) || landmarks.length === 0) return 0;
+  
+  const totalVisibility = landmarks.reduce((sum, landmark) => {
+    return sum + (landmark.visibility || 0);
+  }, 0);
   return totalVisibility / landmarks.length;
 };
 
@@ -18,9 +22,9 @@ export const convertToFileResults = (result: Prescription) => {
   
   return result.blazePoseResults.results.map((fileResult: BlazePoseFileResultFromBackend, index: number) => {
     // 신뢰도 계산 (해당 파일의 모든 관절 평균 visibility)
-    const landmarks = fileResult.landmarks?.[0] || [];
+    const landmarks = fileResult.landmarks || [];
     const averageConfidence = landmarks.length > 0 
-      ? landmarks.reduce((sum, landmark) => sum + landmark.visibility, 0) / landmarks.length
+      ? landmarks.reduce((sum, landmark) => sum + (landmark.visibility || 0), 0) / landmarks.length
       : 0;
 
     // pre-signed URL 사용 (백엔드에서 생성된 URL)

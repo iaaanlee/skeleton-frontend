@@ -9,7 +9,10 @@ export type AnalysisStatus =
   | 'llm_completed'
   | 'failed'
   | 'blazepose_server_failed'
-  | 'blazepose_pose_failed';
+  | 'blazepose_pose_failed'
+  | 'llm_server_failed'
+  | 'llm_api_failed'
+  | 'llm_failed';
 
 // 분석 작업 정보
 export type AnalysisJob = {

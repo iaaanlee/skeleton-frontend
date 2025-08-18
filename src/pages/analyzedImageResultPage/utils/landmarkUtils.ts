@@ -39,15 +39,16 @@ export const formatCoordinate = (coordinate: number): string => {
   return coordinate.toFixed(COORDINATE_DECIMAL_PLACES);
 };
 
-export const groupLandmarksByCategory = (landmarks: BlazePoseLandmark[]): Record<JointCategory, BlazePoseLandmark[]> => {
-  return landmarks.reduce((acc, landmark) => {
-    const category = getJointCategory(landmark.index);
+export const groupLandmarksByCategory = (landmarks: BlazePoseLandmark[]): Record<JointCategory, {landmarks: BlazePoseLandmark[], indices: number[]}> => {
+  return landmarks.reduce((acc, landmark, index) => {
+    const category = getJointCategory(index);
     if (!acc[category]) {
-      acc[category] = [];
+      acc[category] = {landmarks: [], indices: []};
     }
-    acc[category].push(landmark);
+    acc[category].landmarks.push(landmark);
+    acc[category].indices.push(index);
     return acc;
-  }, {} as Record<JointCategory, BlazePoseLandmark[]>);
+  }, {} as Record<JointCategory, {landmarks: BlazePoseLandmark[], indices: number[]}>);
 };
 
 export const calculateLandmarkStatistics = (landmarks: BlazePoseLandmark[]) => {

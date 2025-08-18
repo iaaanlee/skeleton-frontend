@@ -34,7 +34,8 @@ export const LandmarksVisualization: React.FC<LandmarksVisualizationProps> = ({
           <JointCategorySection
             key={category}
             category={category as any}
-            landmarks={categoryLandmarks}
+            landmarks={categoryLandmarks.landmarks}
+            originalIndices={categoryLandmarks.indices}
           />
         ))}
       </div>

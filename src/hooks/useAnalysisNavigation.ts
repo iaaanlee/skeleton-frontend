@@ -43,6 +43,16 @@ export const useAnalysisNavigation = (status: AnalysisStatus) => {
       return () => clearTimeout(timer);
     }
 
+    // LLM 실패 시 처방 기록 페이지로 이동 (BlazePose는 성공했으므로)
+    if (status === 'llm_server_failed' || status === 'llm_api_failed' || status === 'llm_failed') {
+      console.log('LLM 분석 실패, 처방 기록 페이지로 이동');
+      const timer = setTimeout(() => {
+        navigate(ROUTES.PRESCRIPTION_HISTORY);
+      }, ANALYSIS_STAGE_MIN_DURATION.BLAZEPOSE_FAILED);
+      
+      return () => clearTimeout(timer);
+    }
+
     // 기타 실패 시 처방 기록 페이지로 이동
     if (status === 'failed') {
       console.log('분석 실패, 처방 기록 페이지로 이동');

@@ -21,15 +21,15 @@ export type Prescription = {
     results: Array<{
       fileIndex: number;
       fileName: string;
-      landmarks: Array<Array<{
-        index: number;
-        visibility: number;
+      landmarks: Array<{
         x: number;
         y: number;
         z: number;
-      }>>;
+        visibility: number;
+      }>; // 단일 배열로 수정, index 필드 제거
       confidence: number[];
       estimatedKeys: string[];
+      estimatedImageUrls?: Array<{downloadUrl: string}>; // pre-signed URL 배열 추가
     }>;
     completedAt: string;
   };
@@ -80,7 +80,7 @@ export type UpdatePrescriptionStatusRequest = {
 
 export type SaveBlazePoseResultsRequest = {
   estimatedImageKeys: string[];
-  jointPositions: BlazePoseLandmark[][];
+  jointPositions: BlazePoseLandmark[]; // 단일 배열로 수정
   confidence: number;
 }
 

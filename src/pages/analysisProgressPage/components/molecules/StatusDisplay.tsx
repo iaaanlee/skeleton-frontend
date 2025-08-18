@@ -17,7 +17,12 @@ const StatusDisplay: React.FC<StatusDisplayProps> = ({
 }) => {
   const getIconType = (): StatusIconType => {
     if (status === 'llm_completed') return 'success';
-    if (status === 'failed' || status === 'blazepose_server_failed' || status === 'blazepose_pose_failed') {
+    if (status === 'failed' || 
+        status === 'blazepose_server_failed' || 
+        status === 'blazepose_pose_failed' ||
+        status === 'llm_server_failed' ||
+        status === 'llm_api_failed' ||
+        status === 'llm_failed') {
       return 'error';
     }
     return 'loading';

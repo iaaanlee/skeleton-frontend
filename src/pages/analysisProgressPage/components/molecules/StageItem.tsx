@@ -6,6 +6,7 @@ export type StageItemProps = {
   title: string;
   isCompleted: boolean;
   isActive: boolean;
+  isFailed?: boolean;
   className?: string;
 };
 
@@ -14,9 +15,14 @@ const StageItem: React.FC<StageItemProps> = ({
   title,
   isCompleted,
   isActive,
+  isFailed = false,
   className = ''
 }) => {
   const getStageIcon = () => {
+    if (isFailed) {
+      return '✕';
+    }
+    
     if (isCompleted) {
       return '✓';
     }
@@ -31,6 +37,9 @@ const StageItem: React.FC<StageItemProps> = ({
   };
 
   const getStageClasses = () => {
+    if (isFailed) {
+      return 'bg-red-50 border border-red-200';
+    }
     if (isCompleted) {
       return 'bg-green-50 border border-green-200';
     }
@@ -38,6 +47,9 @@ const StageItem: React.FC<StageItemProps> = ({
   };
 
   const getIconClasses = () => {
+    if (isFailed) {
+      return 'bg-red-500 text-white';
+    }
     if (isCompleted) {
       return 'bg-green-500 text-white';
     }

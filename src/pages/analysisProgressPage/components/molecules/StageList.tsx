@@ -2,7 +2,7 @@ import React from 'react';
 import StageItem from '../molecules/StageItem';
 import { AnalysisStatus } from '../../../../types/analysis/analysis';
 import { ANALYSIS_STAGES, ANALYSIS_STAGE_TEXT } from '../../../../constants/analysis';
-import { isStageCompleted, isStageActive } from '../../utils/progressUtils';
+import { isStageCompleted, isStageActive, isStageFailed } from '../../utils/progressUtils';
 
 type StageListProps = {
   status: AnalysisStatus;
@@ -22,6 +22,7 @@ const StageList: React.FC<StageListProps> = ({
           title={ANALYSIS_STAGE_TEXT[stage.toUpperCase() as keyof typeof ANALYSIS_STAGE_TEXT] || stage}
           isCompleted={isStageCompleted(stage, status)}
           isActive={isStageActive(stage, status)}
+          isFailed={isStageFailed(stage, status)}
         />
       ))}
     </div>

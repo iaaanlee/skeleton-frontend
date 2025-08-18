@@ -30,10 +30,10 @@ export const AnalysisResultContent: React.FC<AnalysisResultContentProps> = ({
 
   // 전체 신뢰도 계산 (모든 관절의 평균 visibility)
   const calculateAverageConfidence = () => {
-    if (!result.blazePoseResults?.results?.[0]?.landmarks?.[0]) return 0;
+    if (!result.blazePoseResults?.results?.[0]?.landmarks) return 0;
     
-    const landmarks = result.blazePoseResults.results[0].landmarks[0];
-    const totalVisibility = landmarks.reduce((sum, landmark) => sum + landmark.visibility, 0);
+    const landmarks = result.blazePoseResults.results[0].landmarks;
+    const totalVisibility = landmarks.reduce((sum, landmark) => sum + (landmark.visibility || 0), 0);
     return totalVisibility / landmarks.length;
   };
 
@@ -50,9 +50,9 @@ export const AnalysisResultContent: React.FC<AnalysisResultContentProps> = ({
     
     return result.blazePoseResults.results.map((fileResult: BlazePoseFileResultFromBackend, index: number) => {
       // 신뢰도 계산 (해당 파일의 모든 관절 평균 visibility)
-      const landmarks = fileResult.landmarks?.[0] || [];
+      const landmarks = fileResult.landmarks || []; // 단일 배열로 직접 사용
       const averageConfidence = landmarks.length > 0 
-        ? landmarks.reduce((sum, landmark) => sum + landmark.visibility, 0) / landmarks.length
+        ? landmarks.reduce((sum, landmark) => sum + (landmark.visibility || 0), 0) / landmarks.length
         : 0;
 
       // pre-signed URL 사용 (백엔드에서 생성된 URL)
@@ -157,7 +157,7 @@ export const AnalysisResultContent: React.FC<AnalysisResultContentProps> = ({
                   </div>
                   <div className="text-center p-4 bg-purple-50 rounded-lg">
                     <div className="text-2xl font-bold text-purple-600">
-                      {result.blazePoseResults.results?.[0]?.landmarks?.[0]?.length || 0}
+                      {result.blazePoseResults.results?.[0]?.landmarks?.length || 0}
                     </div>
                     <div className="text-sm text-gray-600">관절 좌표 수</div>
                   </div>
@@ -179,7 +179,7 @@ export const AnalysisResultContent: React.FC<AnalysisResultContentProps> = ({
       )}
 
       {/* 관절 좌표 시각화 */}
-      {result.blazePoseResults?.results?.[0]?.landmarks?.[0] && result.blazePoseResults.results[0].landmarks[0].length > 0 && (
+      {result.blazePoseResults?.results?.[0]?.landmarks && result.blazePoseResults.results[0].landmarks.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm">
           <button
             onClick={() => toggleSection('landmarks')}
@@ -203,7 +203,7 @@ export const AnalysisResultContent: React.FC<AnalysisResultContentProps> = ({
           {expandedSections.landmarks && (
             <div className="px-6 pb-6">
               <LandmarksVisualization 
-                landmarks={result.blazePoseResults.results[0].landmarks[0]}
+                landmarks={result.blazePoseResults.results[0].landmarks}
                 confidence={result.blazePoseResults.results[0].confidence[0] || 0}
               />
             </div>

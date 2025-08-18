@@ -56,20 +56,19 @@ export type BlazePoseFileResult = {
 
 // 실제 백엔드 데이터 구조에 맞는 타입
 export type BlazePoseLandmark = {
-  index: number
-  visibility: number
   x: number
   y: number
   z: number
+  visibility: number
 }
 
 export type BlazePoseFileResultFromBackend = {
   fileIndex: number
   fileName: string
-  landmarks: BlazePoseLandmark[][]
+  landmarks: BlazePoseLandmark[] // 단일 배열
   confidence: number[]
   estimatedKeys: string[]
-  estimatedImageUrls?: Array<{downloadUrl: string, expiresIn: number}> // pre-signed URL 배열
+  estimatedImageUrls?: Array<{downloadUrl: string}> // pre-signed URL 배열 (expiresIn 제거)
 }
 
 export type BlazePoseResultsFromBackend = {

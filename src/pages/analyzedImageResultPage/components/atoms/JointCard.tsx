@@ -7,19 +7,21 @@ import ConfidenceBadge from './ConfidenceBadge';
 type JointCardProps = {
   landmark: BlazePoseLandmark;
   category: JointCategory;
+  index: number; // 배열 인덱스 추가
   className?: string;
 };
 
 const JointCard: React.FC<JointCardProps> = ({
   landmark,
   category,
+  index,
   className = ''
 }) => {
   return (
     <div className={`p-3 border border-gray-200 rounded-lg ${className}`}>
       <div className="flex items-center justify-between mb-2">
         <span className="font-medium text-sm text-gray-900">
-          {getJointName(landmark.index)}
+          {getJointName(index)}
         </span>
         <ConfidenceBadge 
           confidence={landmark.visibility}
