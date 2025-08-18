@@ -21,6 +21,7 @@ export const usePrescriptionActions = (accountId: string) => {
       ans2: string;
     };
     promptId: string;
+    isTest?: boolean;
   }) => {
     if (!accountId) {
       showError('로그인이 필요합니다.')

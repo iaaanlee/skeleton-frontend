@@ -34,7 +34,7 @@ export const DescriptionSection: React.FC<DescriptionSectionProps> = ({
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-blue-800 mb-2">
-            질문 1
+            질문 1: 현재 운동에 대해 설명해주세요.
           </label>
           <textarea
             value={value.ans1}
@@ -50,7 +50,7 @@ export const DescriptionSection: React.FC<DescriptionSectionProps> = ({
         
         <div>
           <label className="block text-sm font-medium text-blue-800 mb-2">
-            질문 2
+            질문 2: 추가 요구 사항에 대해 알려주세요.
           </label>
           <textarea
             value={value.ans2}

@@ -1,0 +1,1 @@
+export { default as TestCreatePrescriptionLayout } from './TestCreatePrescriptionLayout';

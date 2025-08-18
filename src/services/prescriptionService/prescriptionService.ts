@@ -61,6 +61,7 @@ export type CreatePrescriptionRequest = {
       ans2: string;
     };
     promptId: string;
+    isTest?: boolean;
   };
 }
 

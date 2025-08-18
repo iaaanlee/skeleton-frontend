@@ -3,16 +3,14 @@ import { usePrescriptionActions } from '../../../../hooks/usePrescriptionActions
 import { useAccountAuth } from '../../../../contexts/AccountAuthContext'
 import { useProfile } from '../../../../contexts/ProfileContext'
 import { extractAccountIdFromToken } from '../../../../utils/auth'
-import { MediaSetList } from '../molecules/MediaSetList'
-import { DescriptionSection } from '../molecules/DescriptionSection'
-import { PromptSelector } from '../molecules/PromptSelector'
-import { AnalysisStartButton } from '../molecules/AnalysisStartButton'
+import { MediaSetList, DescriptionSection, PromptSelector } from '../../../createPrescriptionPage/components/molecules'
+import { TestAnalysisStartButton } from '../molecules/TestAnalysisStartButton'
 
-type PrescriptionUploadSectionProps = {
+type TestPrescriptionUploadSectionProps = {
   className?: string
 }
 
-export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps> = ({
+export const TestPrescriptionUploadSection: React.FC<TestPrescriptionUploadSectionProps> = ({
   className = ''
 }) => {
   const { currentProfile } = useProfile()
@@ -49,7 +47,8 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
     promptId: string;
     isTest?: boolean;
   }) => {
-    await createPrescription(inputs)
+    // 테스트 모드는 항상 true로 설정
+    await createPrescription({ ...inputs, isTest: true })
   }
 
   return (
@@ -72,8 +71,8 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
         selectedPromptId={selectedPromptId}
       />
 
-      {/* 분석 시작 버튼 */}
-      <AnalysisStartButton
+      {/* 테스트 분석 시작 버튼만 표시 */}
+      <TestAnalysisStartButton
         selectedMediaSetId={selectedMediaSetId}
         description={description}
         selectedPromptId={selectedPromptId}
