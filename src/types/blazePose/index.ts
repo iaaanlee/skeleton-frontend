@@ -65,7 +65,8 @@ export type BlazePoseLandmark = {
 export type BlazePoseFileResultFromBackend = {
   fileIndex: number
   fileName: string
-  landmarks: BlazePoseLandmark[] // 단일 배열
+  landmarks: BlazePoseLandmark[] // 단일 배열 (정규화된 이미지 좌표)
+  worldLandmarks?: BlazePoseLandmark[] // 실제 3D 좌표 (미터 단위)
   confidence: number[]
   estimatedKeys: string[]
   estimatedImageUrls?: Array<{downloadUrl: string}> // pre-signed URL 배열 (expiresIn 제거)
