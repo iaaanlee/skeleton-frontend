@@ -32,6 +32,7 @@ const JointCard: React.FC<JointCardProps> = ({
       <div className="space-y-1 text-xs text-gray-600">
         <div>X: {formatCoordinate(landmark.x)}</div>
         <div>Y: {formatCoordinate(landmark.y)}</div>
+        <div>Z: {formatCoordinate(landmark.z)}</div>
         <div>신뢰도: {formatConfidence(landmark.visibility)}</div>
       </div>
     </div>
