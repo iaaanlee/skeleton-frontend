@@ -3,7 +3,7 @@ import { usePrescriptionActions } from '../../../../hooks/usePrescriptionActions
 import { useAccountAuth } from '../../../../contexts/AccountAuthContext'
 import { useProfile } from '../../../../contexts/ProfileContext'
 import { extractAccountIdFromToken } from '../../../../utils/auth'
-import { MediaSetList, DescriptionSection, PromptSelector } from '../../../createPrescriptionPage/components/molecules'
+import { MediaSetList, DescriptionSection } from '../../../createPrescriptionPage/components/molecules'
 import { TestAnalysisStartButton } from '../molecules/TestAnalysisStartButton'
 
 type TestPrescriptionUploadSectionProps = {
@@ -22,7 +22,6 @@ export const TestPrescriptionUploadSection: React.FC<TestPrescriptionUploadSecti
     ans1: '',
     ans2: ''
   })
-  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null)
 
   const { createPrescription, isCreating } = usePrescriptionActions(accountId || '')
 
@@ -34,9 +33,6 @@ export const TestPrescriptionUploadSection: React.FC<TestPrescriptionUploadSecti
     setDescription(newDescription)
   }, [])
 
-  const handlePromptSelectionChange = useCallback((promptId: string | null) => {
-    setSelectedPromptId(promptId)
-  }, [])
 
   const handleAnalysisStart = async (inputs: {
     mediaSetId: string;
@@ -44,7 +40,6 @@ export const TestPrescriptionUploadSection: React.FC<TestPrescriptionUploadSecti
       ans1: string;
       ans2: string;
     };
-    promptId: string;
     isTest?: boolean;
   }) => {
     // 테스트 모드는 항상 true로 설정
@@ -65,17 +60,10 @@ export const TestPrescriptionUploadSection: React.FC<TestPrescriptionUploadSecti
         onChange={handleDescriptionChange}
       />
 
-      {/* 프롬프트 선택 섹션 */}
-      <PromptSelector
-        onSelectionChange={handlePromptSelectionChange}
-        selectedPromptId={selectedPromptId}
-      />
-
       {/* 테스트 분석 시작 버튼만 표시 */}
       <TestAnalysisStartButton
         selectedMediaSetId={selectedMediaSetId}
         description={description}
-        selectedPromptId={selectedPromptId}
         onAnalysisStart={handleAnalysisStart}
         isCreating={isCreating}
       />

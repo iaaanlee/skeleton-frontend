@@ -15,8 +15,13 @@ export const useMediaSetUpload = (config: UseMediaSetUploadConfig = {}) => {
   const uploadToS3Mutation = useUploadToS3()
 
   // 미디어 세트 업로드 (여러 파일을 하나의 세트로)
-  const uploadFiles = useCallback(async (files: File[]) => {
+  const uploadFiles = useCallback(async (files: File[], poseDescription: string) => {
     if (files.length === 0) return
+
+    if (!poseDescription || poseDescription.trim().length === 0) {
+      uploadBase.handleError('자세 설명은 필수입니다.')
+      return
+    }
 
     // 업로드 시작 체크
     if (!uploadBase.startUpload()) return
@@ -76,7 +81,8 @@ export const useMediaSetUpload = (config: UseMediaSetUploadConfig = {}) => {
       }))
 
       await mediaSetService.completeUploadMultiple({
-        files: filesData
+        files: filesData,
+        poseDescription: poseDescription.trim()
       })
 
       // 업로드 성공 처리

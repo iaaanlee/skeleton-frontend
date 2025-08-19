@@ -20,7 +20,6 @@ export const usePrescriptionActions = (accountId: string) => {
       ans1: string;
       ans2: string;
     };
-    promptId: string;
     isTest?: boolean;
   }) => {
     if (!accountId) {
@@ -38,10 +37,6 @@ export const usePrescriptionActions = (accountId: string) => {
     //   return false
     // }
 
-    if (!inputs.promptId) {
-      showError('분석 프롬프트를 선택해주세요.')
-      return false
-    }
 
     setIsCreating(true)
     try {

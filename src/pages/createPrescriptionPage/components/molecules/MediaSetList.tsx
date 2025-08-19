@@ -208,8 +208,8 @@ export const MediaSetList: React.FC<MediaSetListProps> = ({
 
                 {/* 미디어 세트 정보 */}
                 <div className="p-2 bg-white">
-                  <p className="text-xs text-gray-600 truncate" title={mediaSet._id}>
-                    {mediaSet._id.substring(0, 10)}...
+                  <p className="text-xs text-gray-600 truncate" title={mediaSet.poseDescription || mediaSet._id}>
+                    {mediaSet.poseDescription || `${mediaSet._id.substring(0, 10)}...`}
                   </p>
                   <p className="text-xs text-gray-500">
                     파일 {mediaSet.files.length}개
@@ -224,7 +224,10 @@ export const MediaSetList: React.FC<MediaSetListProps> = ({
         {selectedMediaSetId && (
           <div className="mt-4 p-3 bg-green-100 border border-green-300 rounded-lg">
             <p className="text-sm text-green-800">
-              <span className="font-medium">선택된 미디어 세트:</span> {mediaSets.find(ms => ms._id === selectedMediaSetId)?._id.substring(0, 10)}...
+              <span className="font-medium">선택된 미디어 세트:</span> {
+                mediaSets.find(ms => ms._id === selectedMediaSetId)?.poseDescription || 
+                `${mediaSets.find(ms => ms._id === selectedMediaSetId)?._id.substring(0, 10)}...`
+              }
             </p>
           </div>
         )}

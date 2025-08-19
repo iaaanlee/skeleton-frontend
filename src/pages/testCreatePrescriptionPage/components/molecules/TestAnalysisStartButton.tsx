@@ -6,14 +6,12 @@ type TestAnalysisStartButtonProps = {
     ans1: string;
     ans2: string;
   };
-  selectedPromptId: string | null;
   onAnalysisStart: (inputs: {
     mediaSetId: string;
     description: {
       ans1: string;
       ans2: string;
     };
-    promptId: string;
     isTest?: boolean;
   }) => void;
   isCreating?: boolean;
@@ -24,7 +22,6 @@ type TestAnalysisStartButtonProps = {
 export const TestAnalysisStartButton: React.FC<TestAnalysisStartButtonProps> = ({
   selectedMediaSetId,
   description,
-  selectedPromptId,
   onAnalysisStart,
   isCreating = false,
   disabled = false,
@@ -36,21 +33,16 @@ export const TestAnalysisStartButton: React.FC<TestAnalysisStartButtonProps> = (
       return;
     }
     
-    if (!selectedPromptId) {
-      alert('분석 프롬프트를 선택해주세요.');
-      return;
-    }
     
     // 테스트 모드로 항상 실행
     onAnalysisStart({
       mediaSetId: selectedMediaSetId,
       description,
-      promptId: selectedPromptId,
       isTest: true
     });
   };
 
-  const isButtonDisabled = disabled || isCreating || !selectedMediaSetId || !selectedPromptId;
+  const isButtonDisabled = disabled || isCreating || !selectedMediaSetId;
 
   return (
     <div className={`bg-red-50 border border-red-200 rounded-lg p-4 ${className}`}>

@@ -9,7 +9,6 @@ export { fileService } from './fileService'
 export { mediaSetService } from './mediaSetService'
 export { prescriptionService } from './prescriptionService'
 export { profileService } from './profileService'
-export { promptService } from './promptService'
 
 // 새로운 분리된 서비스들
 export { analysisJobService } from './analysisJobService'

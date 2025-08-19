@@ -5,7 +5,6 @@ import { useProfile } from '../../../../contexts/ProfileContext'
 import { extractAccountIdFromToken } from '../../../../utils/auth'
 import { MediaSetList } from '../molecules/MediaSetList'
 import { DescriptionSection } from '../molecules/DescriptionSection'
-import { PromptSelector } from '../molecules/PromptSelector'
 import { AnalysisStartButton } from '../molecules/AnalysisStartButton'
 
 type PrescriptionUploadSectionProps = {
@@ -24,7 +23,6 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
     ans1: '',
     ans2: ''
   })
-  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null)
 
   const { createPrescription, isCreating } = usePrescriptionActions(accountId || '')
 
@@ -36,9 +34,6 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
     setDescription(newDescription)
   }, [])
 
-  const handlePromptSelectionChange = useCallback((promptId: string | null) => {
-    setSelectedPromptId(promptId)
-  }, [])
 
   const handleAnalysisStart = async (inputs: {
     mediaSetId: string;
@@ -46,7 +41,6 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
       ans1: string;
       ans2: string;
     };
-    promptId: string;
     isTest?: boolean;
   }) => {
     await createPrescription(inputs)
@@ -66,17 +60,10 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
         onChange={handleDescriptionChange}
       />
 
-      {/* 프롬프트 선택 섹션 */}
-      <PromptSelector
-        onSelectionChange={handlePromptSelectionChange}
-        selectedPromptId={selectedPromptId}
-      />
-
       {/* 분석 시작 버튼 */}
       <AnalysisStartButton
         selectedMediaSetId={selectedMediaSetId}
         description={description}
-        selectedPromptId={selectedPromptId}
         onAnalysisStart={handleAnalysisStart}
         isCreating={isCreating}
       />

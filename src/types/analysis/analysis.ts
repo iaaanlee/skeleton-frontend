@@ -24,7 +24,6 @@ export type AnalysisJob = {
     ans1: string;
     ans2: string;
   };
-  promptId: string;
   status: AnalysisStatus;
   blazePoseResults?: BlazePoseResultsFromBackend;
   llmResults?: {

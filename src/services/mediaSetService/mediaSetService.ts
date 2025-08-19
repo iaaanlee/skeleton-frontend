@@ -8,6 +8,7 @@ export type MediaSet = {
   accountId: string;
   profileId: string;
   name?: string;
+  poseDescription?: string;
   files: MediaFile[];
   thumbnailUrls?: string[];
   status: 'active' | 'deleted';
@@ -78,6 +79,7 @@ export type UploadCompleteMultipleRequest = {
     fileName: string;
     fileSize: number;
   }>;
+  poseDescription: string;
 }
 
 export type UploadCompleteMultipleResponse = {

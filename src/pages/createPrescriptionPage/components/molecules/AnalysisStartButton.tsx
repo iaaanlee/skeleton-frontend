@@ -6,14 +6,12 @@ type AnalysisStartButtonProps = {
     ans1: string;
     ans2: string;
   };
-  selectedPromptId: string | null;
   onAnalysisStart: (inputs: {
     mediaSetId: string;
     description: {
       ans1: string;
       ans2: string;
     };
-    promptId: string;
     isTest?: boolean;
   }) => void;
   isCreating?: boolean;
@@ -24,7 +22,6 @@ type AnalysisStartButtonProps = {
 export const AnalysisStartButton: React.FC<AnalysisStartButtonProps> = ({
   selectedMediaSetId,
   description,
-  selectedPromptId,
   onAnalysisStart,
   isCreating = false,
   disabled = false,
@@ -36,20 +33,15 @@ export const AnalysisStartButton: React.FC<AnalysisStartButtonProps> = ({
       return;
     }
     
-    if (!selectedPromptId) {
-      alert('분석 프롬프트를 선택해주세요.');
-      return;
-    }
     
     onAnalysisStart({
       mediaSetId: selectedMediaSetId,
       description,
-      promptId: selectedPromptId,
       isTest
     });
   };
 
-  const isButtonDisabled = disabled || isCreating || !selectedMediaSetId || !selectedPromptId;
+  const isButtonDisabled = disabled || isCreating || !selectedMediaSetId;
 
   return (
     <div className={`bg-orange-50 border border-orange-200 rounded-lg p-4 ${className}`}>

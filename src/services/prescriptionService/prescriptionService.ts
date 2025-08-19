@@ -13,7 +13,6 @@ export type Prescription = {
       ans1: string;
       ans2: string;
     };
-    promptId: string;
   };
   analysisJobId: string;
   blazePoseResults?: {
@@ -60,7 +59,6 @@ export type CreatePrescriptionRequest = {
       ans1: string;
       ans2: string;
     };
-    promptId: string;
     isTest?: boolean;
   };
 }

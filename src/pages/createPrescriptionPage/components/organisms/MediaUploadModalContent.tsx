@@ -15,6 +15,7 @@ const MediaUploadModalContent: React.FC<MediaUploadModalContentProps> = ({
   onUploadSuccess
 }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [poseDescription, setPoseDescription] = useState<string>('');
   const { uploadStatus, progress, error, uploadFiles } = useMediaSetUpload();
 
   const handleFilesSelect = (files: File[]) => {
@@ -22,12 +23,18 @@ const MediaUploadModalContent: React.FC<MediaUploadModalContentProps> = ({
   };
 
   const handleUpload = () => {
-    uploadFiles(selectedFiles);
+    if (!poseDescription.trim()) {
+      alert('자세 설명을 입력해주세요.');
+      return;
+    }
+    uploadFiles(selectedFiles, poseDescription.trim());
     setSelectedFiles([]);
+    setPoseDescription('');
   };
 
   const handleClose = () => {
     setSelectedFiles([]);
+    setPoseDescription('');
     onClose();
     if (uploadStatus === 'success') {
       onUploadSuccess?.();
@@ -42,6 +49,25 @@ const MediaUploadModalContent: React.FC<MediaUploadModalContentProps> = ({
       <UploadInstructions 
         description="분석을 위한 미디어 파일들을 업로드하세요. JPEG, JPG, PNG 형식을 지원합니다." 
       />
+
+      {/* 자세 설명 입력 필드 */}
+      <div className="mb-6">
+        <label htmlFor="pose-description" className="block text-sm font-medium text-gray-700 mb-2">
+          자세 설명 *
+        </label>
+        <input
+          id="pose-description"
+          type="text"
+          value={poseDescription}
+          onChange={(e) => setPoseDescription(e.target.value)}
+          placeholder="예: 스쿼트, 데드리프트, 벤치프레스 등"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          maxLength={100}
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          어떤 자세인지 간단히 설명해주세요. (최대 100자)
+        </p>
+      </div>
 
       <UploadContent
         selectedFiles={selectedFiles}

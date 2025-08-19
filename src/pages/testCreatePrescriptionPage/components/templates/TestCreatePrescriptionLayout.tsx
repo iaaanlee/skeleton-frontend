@@ -1,14 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { PageLayout } from '../../../../components/common/templates';
 import { PageHeader, ContentContainer } from '../../../../components/common/molecules';
 import { TestPrescriptionUploadSection } from '../organisms/TestPrescriptionUploadSection';
-import { PromptTestSection } from '../../../createPrescriptionPage/components/organisms/PromptTestSection';
 import { GPTTestSection } from '../organisms/GPTTestSection';
 import { ROUTES } from '../../../../constants/routes';
 
 const TestCreatePrescriptionLayout: React.FC = () => {
-  // description 상태 관리
-  const [description] = useState<{ ans1?: string; ans2?: string }>({});
 
   return (
     <PageLayout 
@@ -28,8 +25,6 @@ const TestCreatePrescriptionLayout: React.FC = () => {
         
         <TestPrescriptionUploadSection />
         
-        {/* 테스트용 Full Prompt 확인 섹션 */}
-        <PromptTestSection description={description} />
         
         {/* GPT 직접 테스트 섹션 */}
         <GPTTestSection />

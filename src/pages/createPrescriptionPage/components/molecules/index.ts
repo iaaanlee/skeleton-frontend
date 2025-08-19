@@ -7,4 +7,3 @@ export { DescriptionSection } from './DescriptionSection';
 export { MediaSetList } from './MediaSetList';
 export { MediaSetUploadModal } from './MediaSetUploadModal';
 export { PrescriptionFileList } from './PrescriptionFileList';
-export { PromptSelector } from './PromptSelector';
