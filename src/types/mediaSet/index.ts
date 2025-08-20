@@ -7,6 +7,14 @@ export type S3Path = {
   region: string
 }
 
+// 비디오 정보 (비디오 파일에만 적용)
+export type VideoInfo = {
+  startTime: number
+  endTime: number
+  duration: number
+  frameCount: number
+}
+
 // 미디어 파일 정보
 export type MediaFile = {
   originalKey: string
@@ -23,6 +31,7 @@ export type MediaFile = {
   s3Path: S3Path
   fileType: 'media_set_file'
   uploadedAt: string
+  videoInfo?: VideoInfo
 }
 
 // 미디어 세트
@@ -33,6 +42,9 @@ export type MediaSet = {
   name: string
   files: MediaFile[]
   status: 'active' | 'deleted'
+  mediaType: 'image' | 'video'
+  poseDescription?: string
+  thumbnailUrls?: string[]
   createdAt: string
   updatedAt: string
 }

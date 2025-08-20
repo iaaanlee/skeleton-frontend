@@ -9,11 +9,19 @@ export type MediaSet = {
   profileId: string;
   name?: string;
   poseDescription?: string;
+  mediaType?: 'image' | 'video';
   files: MediaFile[];
   thumbnailUrls?: string[];
   status: 'active' | 'deleted';
   createdAt: string;
   updatedAt: string;
+}
+
+export type VideoInfo = {
+  startTime: number;
+  endTime: number;
+  duration: number;
+  frameCount: number;
 }
 
 export type MediaFile = {
@@ -35,6 +43,7 @@ export type MediaFile = {
   };
   fileType: 'media_set_file';
   uploadedAt: string;
+  videoInfo?: VideoInfo;
 }
 
 export type MediaSetListResponse = {
@@ -91,7 +100,7 @@ type IMediaSetService = {
   createMediaSet: (request: CreateMediaSetRequest) => Promise<CreateMediaSetResponse>;
   completeUpload: (request: UploadCompleteRequest) => Promise<UploadCompleteResponse>;
   completeUploadMultiple: (request: UploadCompleteMultipleRequest) => Promise<UploadCompleteMultipleResponse>;
-  getMediaSetList: (limit?: number, offset?: number) => Promise<MediaSetListResponse>;
+  getMediaSetList: (limit?: number, offset?: number, mediaType?: string) => Promise<MediaSetListResponse>;
   getMediaSetById: (mediaSetId: string) => Promise<MediaSet>;
   deleteMediaSet: (mediaSetId: string) => Promise<void>;
   uploadToS3: (uploadUrl: string, file: File) => Promise<void>;
@@ -141,11 +150,16 @@ class MediaSetService implements IMediaSetService {
   }
 
   // 미디어 세트 목록 조회
-  async getMediaSetList(limit: number = 20, offset: number = 0) {
+  async getMediaSetList(limit: number = 20, offset: number = 0, mediaType?: string) {
+    const params: { limit: number; offset: number; mediaType?: string } = { limit, offset };
+    if (mediaType) {
+      params.mediaType = mediaType;
+    }
+    
     const { data } = await this.httpClient.request<{ success: boolean; data: MediaSetListResponse }>({
       method: 'GET',
       url: '/mediaSet/list',
-      params: { limit, offset }
+      params
     })
     return data.data
   }

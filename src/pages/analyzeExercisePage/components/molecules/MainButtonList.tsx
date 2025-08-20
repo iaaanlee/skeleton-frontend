@@ -27,6 +27,11 @@ export const MainButtonList = () => {
         navigate(ROUTES.TEST_CREATE_PRESCRIPTION);
     };
 
+    const handleProcessVideo = () => {
+        console.log('비디오 가공 클릭');
+        navigate(ROUTES.PROCESS_VIDEO);
+    };
+
     return (
         <div className="space-y-4">
             <MainButton 
@@ -37,6 +42,11 @@ export const MainButtonList = () => {
             <MainButton 
                 title="처방 기록 보기" 
                 onClick={handlePastRecords}
+                variant="compact"
+            />
+            <MainButton 
+                title="비디오 가공" 
+                onClick={handleProcessVideo}
                 variant="compact"
             />
             

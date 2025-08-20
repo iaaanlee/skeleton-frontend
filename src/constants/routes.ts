@@ -20,6 +20,7 @@ export const ROUTES = {
     ANALYZE_EXERCISE: '/analyze-exercise',
     CREATE_PRESCRIPTION: '/create-prescription',
     TEST_CREATE_PRESCRIPTION: '/test-create-prescription',
+    PROCESS_VIDEO: '/process-video',
     ANALYSIS_PROGRESS: '/analysis-progress/:analysisJobId',
     ANALYSIS_RESULT: '/analysis-result/:analysisId',
     ANALYZED_IMAGE_RESULT: '/analyzed-image-result/:analysisId',

@@ -4,11 +4,12 @@ import { QUERY_KEYS } from '../common/queryKey'
 
 export const useMediaSetList = (
   limit: number = 20,
-  offset: number = 0
+  offset: number = 0,
+  mediaType?: string
 ) => {
   return useQuery({
-    queryKey: [...QUERY_KEYS.mediaSets, 'list', limit, offset],
-    queryFn: () => mediaSetService.getMediaSetList(limit, offset),
+    queryKey: [...QUERY_KEYS.mediaSets, 'list', limit, offset, mediaType],
+    queryFn: () => mediaSetService.getMediaSetList(limit, offset, mediaType),
   })
 }
 
