@@ -8,6 +8,7 @@ import {
   UnexpectedState,
   ResultSelectionLayout
 } from './components';
+import { isCompletedStatus, normalizeToUnifiedStatus } from '../../utils/status-migration';
 
 export const AnalysisResultPage = () => {
   const { analysisId } = useParams<{ analysisId: string }>();
@@ -46,11 +47,13 @@ export const AnalysisResultPage = () => {
     return <ErrorState error={statusError} onBack={handleBack} />;
   }
 
-  if (status && (status.status === 'pending' || status.status === 'blazepose_processing' || status.status === 'llm_processing')) {
+  const unifiedStatus = status?.status ? normalizeToUnifiedStatus(status.status) : null;
+  
+  if (status && unifiedStatus && ['pending', 'pose_analyzing', 'llm_analyzing'].includes(unifiedStatus)) {
     return <ProgressingState status={status} />;
   }
 
-  if (status && status.status === 'llm_completed') {
+  if (status && unifiedStatus && isCompletedStatus(unifiedStatus)) {
     return (
       <ResultSelectionLayout
         analysisId={analysisId || ''}

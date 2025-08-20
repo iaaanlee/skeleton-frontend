@@ -2,6 +2,7 @@
 import { AxiosHttpClient } from "../common/axiosHttpClient";
 import { backendHttpClient } from "../common/httpClient";
 import { BlazePoseLandmark } from "../../types/blazePose";
+import { PrescriptionStatus } from "../../types/common/status-types";
 
 export type Prescription = {
   _id: string;
@@ -35,7 +36,7 @@ export type Prescription = {
   llmResults?: {
     analysisText: string;
   };
-  status: 'processing' | 'completed' | 'failed';
+  status: PrescriptionStatus;
   createdAt: string;
   updatedAt: string;
   // PrescriptionHistory용 추가 필드들 (getCompletedPrescriptions에서 생성)
@@ -72,7 +73,7 @@ export type CreatePrescriptionResponse = {
 }
 
 export type UpdatePrescriptionStatusRequest = {
-  status: 'processing' | 'completed' | 'failed';
+  status: PrescriptionStatus;
   message?: string;
 }
 

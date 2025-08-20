@@ -12,6 +12,7 @@ import {
   AnalysisResultLayout
 } from './components';
 import { useToast } from '../../contexts/ToastContext';
+import { isCompletedStatus, normalizeToUnifiedStatus } from '../../utils/status-migration';
 
 export const AnalyzedImageResultPage = () => {
   const { analysisId } = useParams<{ analysisId: string }>();
@@ -35,7 +36,8 @@ export const AnalyzedImageResultPage = () => {
   } = useAnalysisStatus(analysisId || '');
 
   // 분석이 완료된 경우에만 prescription 결과 요청
-  const isCompleted = status?.status === 'llm_completed';
+  const unifiedStatus = status?.status ? normalizeToUnifiedStatus(status.status) : null;
+  const isCompleted = unifiedStatus ? isCompletedStatus(unifiedStatus) : false;
   const { 
     data: prescription, 
     isLoading: prescriptionLoading, 
@@ -67,7 +69,7 @@ export const AnalyzedImageResultPage = () => {
     );
   }
 
-  if (status && ['pending', 'blazepose_processing', 'llm_processing'].includes(status.status)) {
+  if (status && unifiedStatus && ['pending', 'pose_analyzing', 'llm_analyzing'].includes(unifiedStatus)) {
     return <ProgressingState status={status} />;
   }
 

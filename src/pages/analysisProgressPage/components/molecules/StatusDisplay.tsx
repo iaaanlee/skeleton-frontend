@@ -1,6 +1,7 @@
 import React from 'react';
 import StatusIcon, { StatusIconType } from '../atoms/StatusIcon';
 import { AnalysisStatus } from '../../../../types/analysis/analysis';
+import { getStatusDisplayProps } from '../../../../utils/status-migration';
 
 export type StatusDisplayProps = {
   status: AnalysisStatus;
@@ -15,17 +16,15 @@ const StatusDisplay: React.FC<StatusDisplayProps> = ({
   description,
   className = ''
 }) => {
+  const statusProps = getStatusDisplayProps(status);
+  
   const getIconType = (): StatusIconType => {
-    if (status === 'llm_completed') return 'success';
-    if (status === 'failed' || 
-        status === 'blazepose_server_failed' || 
-        status === 'blazepose_pose_failed' ||
-        status === 'llm_server_failed' ||
-        status === 'llm_api_failed' ||
-        status === 'llm_failed') {
-      return 'error';
+    switch (statusProps.variant) {
+      case 'success': return 'success';
+      case 'error': return 'error';
+      case 'warning': return 'loading'; // warning을 loading으로 매핑
+      default: return 'loading';
     }
-    return 'loading';
   };
 
   const shouldShowIcon = status !== 'pending';

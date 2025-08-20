@@ -1,3 +1,5 @@
+import { BlazePoseApiStatus, AnalysisResultStatus } from '../common/status-types';
+
 // BlazePose 분석 요청
 export type BlazePoseAnalysisRequest = {
   fileIds: string[]
@@ -8,7 +10,7 @@ export type BlazePoseAnalysisResponse = {
   success: boolean
   data: {
     analysisId: string
-    status: 'pending' | 'processing' | 'completed' | 'failed'
+    status: BlazePoseApiStatus
     estimatedTime?: number
     message?: string
   }
@@ -19,7 +21,7 @@ export type BlazePoseStatus = {
   success: boolean
   data: {
     analysisId: string
-    status: 'pending' | 'processing' | 'completed' | 'failed'
+    status: BlazePoseApiStatus
     progress?: number // 0-100
     estimatedTime?: number
     message?: string
@@ -32,7 +34,7 @@ export type BlazePoseResult = {
   success: boolean
   data: {
     analysisId: string
-    status: 'completed' | 'failed'
+    status: AnalysisResultStatus
     totalConfidence: number // 전체 평균 신뢰도
     analysisTime: number // 분석 소요 시간 (ms)
     fileResults: BlazePoseFileResult[]

@@ -1,7 +1,8 @@
 import React from 'react';
+import { AnalysisResultStatus } from '../../../../types/common/status-types';
 
 type AnalysisProgressProps = {
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: AnalysisResultStatus;
   message: string;
   estimatedTime?: number;
   error?: string;

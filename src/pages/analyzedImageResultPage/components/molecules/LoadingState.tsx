@@ -3,9 +3,10 @@ import { Header } from '../../../../components/common/templates/Header';
 import { BottomBar } from '../../../../components/common/templates/BottomBar';
 import { AnalysisProgress } from './AnalysisProgress';
 import { ROUTES } from '../../../../constants/routes';
+import { AnalysisResultStatus } from '../../../../types/common/status-types';
 
 type LoadingStateProps = {
-  status?: 'pending' | 'processing' | 'completed' | 'failed';
+  status?: AnalysisResultStatus;
   message?: string;
 };
 
