@@ -154,21 +154,21 @@ export const MediaSetList: React.FC<MediaSetListProps> = ({
               <div
                 key={mediaSet._id}
                 className={`
-                  relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all duration-200
+                  relative group rounded-lg overflow-hidden border-2 transition-all duration-200
                   ${isSelected(mediaSet._id)
                     ? 'border-green-500 ring-2 ring-green-200'
                     : 'border-gray-200 hover:border-gray-300'
                   }
                 `}
-                onClick={() => handleMediaSetSelect(mediaSet)}
               >
                 {/* 썸네일 */}
-                <div className="aspect-square bg-gray-100">
+                <div className="aspect-square bg-gray-100 relative">
                   {mediaSet.thumbnailUrls && mediaSet.thumbnailUrls.length > 0 ? (
                     <img
                       src={mediaSet.thumbnailUrls[0]}
                       alt={`미디어 세트 ${mediaSet._id}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover pointer-events-none"
+                      draggable={false}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
@@ -177,6 +177,17 @@ export const MediaSetList: React.FC<MediaSetListProps> = ({
                       </svg>
                     </div>
                   )}
+                  
+                  {/* 선택 버튼 - 이미지 위에 투명 오버레이 */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      handleMediaSetSelect(mediaSet)
+                    }}
+                    className="absolute inset-0 bg-transparent hover:bg-black hover:bg-opacity-10 transition-all duration-200 cursor-pointer"
+                    title={isSelected(mediaSet._id) ? '선택 해제' : '선택'}
+                  />
                 </div>
 
                 {/* 삭제 버튼 - 우상단 */}
