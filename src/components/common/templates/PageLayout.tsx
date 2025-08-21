@@ -24,7 +24,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
     <div className={`min-h-screen flex flex-col bg-gray-50 ${className}`}>
       {showHeader && <Header backRoute={backRoute} />}
       
-      <div className={`flex-1 ${contentClassName}`}>
+      <div className={`flex-1 overflow-y-auto ${contentClassName}`}>
         {children}
       </div>
       
