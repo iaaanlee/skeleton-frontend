@@ -19,8 +19,13 @@ export const CompletedAnalysisMediaCard: React.FC<CompletedAnalysisMediaCardProp
   };
 
   // 완료 시간을 간단한 형태로 포맷팅
-  const formatCompletedTime = (dateString: string) => {
+  const formatCompletedTime = (dateString: string | null | undefined) => {
+    if (!dateString) return '완료 시간 정보 없음';
+    
     const date = new Date(dateString);
+    // Invalid Date 체크
+    if (isNaN(date.getTime())) return '완료 시간 정보 없음';
+    
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));

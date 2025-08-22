@@ -500,13 +500,18 @@ export const PoseAnalysisDetail: React.FC<PoseAnalysisDetailProps> = ({
                 <div>
                   <span className="text-gray-600">완료 시간:</span>
                   <span className="ml-2 font-medium">
-                    {new Date(analysisDetail.completedAt).toLocaleDateString('ko-KR', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    {(() => {
+                      if (!analysisDetail.completedAt) return '완료 시간 정보 없음';
+                      const date = new Date(analysisDetail.completedAt);
+                      if (isNaN(date.getTime())) return '완료 시간 정보 없음';
+                      return date.toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      });
+                    })()}
                   </span>
                 </div>
               </div>
