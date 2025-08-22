@@ -13,6 +13,7 @@ export const queryKeys = {
   analysis: () => ['analysis'],
   analysisJob: () => ['analysisJob'],
   exerciseAnalysis: () => ['exerciseAnalysis'],
+  videoAnalysis: () => ['videoAnalysis'],
   exercise: () => ['exercise'],
   media: () => ['media'],
 };
@@ -37,6 +38,7 @@ export const QUERY_KEYS = {
   analysis: queryKeys.analysis(),
   analysisJob: queryKeys.analysisJob(),
   exerciseAnalysis: queryKeys.exerciseAnalysis(),
+  videoAnalysis: queryKeys.videoAnalysis(),
   exercise: queryKeys.exercise(),
   media: queryKeys.media(),
 };

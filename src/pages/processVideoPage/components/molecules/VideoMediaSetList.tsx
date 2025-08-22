@@ -4,6 +4,8 @@ import { useDeleteMediaSet } from '../../../../services/mediaSetService';
 import { useToast } from '../../../../contexts/ToastContext';
 
 type VideoMediaSetListProps = {
+  selectedMediaSetId?: string | null;
+  onSelectionChange?: (mediaSetId: string | null) => void;
   className?: string;
 };
 
@@ -12,6 +14,8 @@ export type VideoMediaSetListRef = {
 };
 
 export const VideoMediaSetList = forwardRef<VideoMediaSetListRef, VideoMediaSetListProps>(({
+  selectedMediaSetId,
+  onSelectionChange,
   className = ''
 }, ref) => {
   const { showSuccess, showError } = useToast();
@@ -35,6 +39,13 @@ export const VideoMediaSetList = forwardRef<VideoMediaSetListRef, VideoMediaSetL
         console.error('Delete media set error:', error);
         showError('비디오 미디어셋 삭제 중 오류가 발생했습니다.');
       }
+    }
+  };
+
+  const handleCardClick = (mediaSetId: string) => {
+    if (onSelectionChange) {
+      const newSelectedId = selectedMediaSetId === mediaSetId ? null : mediaSetId;
+      onSelectionChange(newSelectedId);
     }
   };
 
@@ -90,11 +101,21 @@ export const VideoMediaSetList = forwardRef<VideoMediaSetListRef, VideoMediaSetL
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mediaSets.map((mediaSet) => (
-              <div
-                key={mediaSet._id}
-                className="relative group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200"
-              >
+            {mediaSets.map((mediaSet) => {
+              const isSelected = selectedMediaSetId === mediaSet._id;
+              
+              return (
+                <div
+                  key={mediaSet._id}
+                  onClick={() => handleCardClick(mediaSet._id)}
+                  className={`
+                    relative group rounded-lg overflow-hidden cursor-pointer transition-all duration-200
+                    ${isSelected 
+                      ? 'bg-purple-50 border-2 border-purple-500 shadow-lg' 
+                      : 'bg-white border border-gray-200 hover:shadow-lg hover:border-gray-300'
+                    }
+                  `}
+                >
                 {/* 비디오 썸네일 */}
                 <div className="aspect-video bg-gray-100 relative">
                   {mediaSet.thumbnailUrls && mediaSet.thumbnailUrls.length > 0 ? (
@@ -159,11 +180,26 @@ export const VideoMediaSetList = forwardRef<VideoMediaSetListRef, VideoMediaSetL
                 </button>
 
                 {/* 타입 뱃지 */}
-                <div className="absolute top-2 left-2 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                {/* 선택 표시 */}
+                {isSelected && (
+                  <div className="absolute top-2 right-8 bg-purple-500 text-white rounded-full p-1">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                  </div>
+                )}
+
+                {/* 타입 뱃지 */}
+                <div className={`absolute top-2 left-2 text-xs px-2 py-1 rounded-full ${
+                  isSelected 
+                    ? 'bg-purple-500 text-white' 
+                    : 'bg-purple-100 text-purple-800'
+                }`}>
                   비디오
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

@@ -13,6 +13,7 @@ export { profileService } from './profileService'
 // 새로운 분리된 서비스들
 export { analysisJobService } from './analysisJobService'
 export { exerciseAnalysisService } from './exerciseAnalysisService'
+export { videoAnalysisService } from './videoAnalysisService'
 
 // 새로운 hooks (명명 충돌 방지)
 export { 
@@ -24,3 +25,7 @@ export {
   useStartExerciseAnalysis, 
   useRestartExerciseAnalysis 
 } from './exerciseAnalysisService'
+export { 
+  useStartVideoPoseAnalysis, 
+  useVideoPoseAnalysisStatus 
+} from './videoAnalysisService'
