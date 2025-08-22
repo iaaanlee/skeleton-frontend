@@ -43,14 +43,20 @@ export type BlazePoseResult = {
   }
 }
 
-// 개별 파일 분석 결과
+// 통일된 estimated 이미지 타입
+export type EstimatedImage = {
+  key: string           // S3 키 (영구 저장)
+  url?: string         // Pre-signed URL (런타임 생성, 캐시 가능)
+  expiresAt?: string   // URL 만료 시간
+}
+
+// 개별 파일 분석 결과 (통일된 구조)
 export type BlazePoseFileResult = {
   fileId: string
   fileName: string
   landmarks: number[][]
-  overlayImageUrl?: string // 기존 호환성을 위해 유지
-  estimatedImageUrl?: string // 새로운 estimated 이미지 URL
-  estimatedImageKey?: string // S3에서의 estimated 파일 경로
+  overlayImageUrl?: string // 기존 호환성을 위해 유지 (deprecated)
+  estimatedImages: EstimatedImage[] // 통일된 estimated 이미지 배열
   confidence: number
   analysisTime: number
   error?: string
@@ -70,8 +76,9 @@ export type BlazePoseFileResultFromBackend = {
   landmarks: BlazePoseLandmark[] // 단일 배열 (정규화된 이미지 좌표)
   worldLandmarks?: BlazePoseLandmark[] // 실제 3D 좌표 (미터 단위)
   confidence: number[]
-  estimatedKeys: string[]
-  estimatedImageUrls?: Array<{downloadUrl: string}> // pre-signed URL 배열 (expiresIn 제거)
+  estimatedKeys: string[] // deprecated - 하위 호환성용
+  estimatedImages: EstimatedImage[] // 통일된 estimated 이미지 구조
+  estimatedImageUrls?: Array<{downloadUrl: string}> // deprecated - 하위 호환성용
 }
 
 export type BlazePoseResultsFromBackend = {

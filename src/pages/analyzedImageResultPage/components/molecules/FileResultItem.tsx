@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BlazePoseLandmark } from '../../../../types/blazePose';
+import { BlazePoseLandmark, EstimatedImage } from '../../../../types/blazePose';
 
 type FileResultForDisplay = {
   fileId: string;
@@ -7,8 +7,8 @@ type FileResultForDisplay = {
   confidence: number;
   analysisTime: number;
   landmarks: BlazePoseLandmark[];
-  estimatedImageUrl?: string;
-  overlayImageUrl?: string;
+  estimatedImages: EstimatedImage[];
+  overlayImageUrl?: string; // deprecated - 하위 호환성용
   error?: string;
 };
 
@@ -84,12 +84,12 @@ export const FileResultItem: React.FC<FileResultItemProps> = ({
       </div>
 
       {/* 분석 결과 이미지 */}
-      {(fileResult.estimatedImageUrl || fileResult.overlayImageUrl) && (
+      {(fileResult.estimatedImages?.length > 0 || fileResult.overlayImageUrl) && (
         <div className="mb-4">
           <h5 className="font-medium text-gray-900 mb-2">분석 결과 이미지</h5>
           <div className="relative">
             <img
-              src={fileResult.estimatedImageUrl || fileResult.overlayImageUrl}
+              src={fileResult.estimatedImages?.[0]?.url || fileResult.overlayImageUrl}
               alt={`${fileResult.fileName} 분석 결과`}
               className="w-full max-w-md rounded-lg border border-gray-200"
               onError={handleImageError}
@@ -98,6 +98,11 @@ export const FileResultItem: React.FC<FileResultItemProps> = ({
               {formatConfidence(fileResult.confidence)}
             </span>
           </div>
+          {fileResult.estimatedImages?.length > 1 && (
+            <p className="text-sm text-gray-600 mt-2">
+              총 {fileResult.estimatedImages.length}개의 분석 이미지가 있습니다.
+            </p>
+          )}
         </div>
       )}
 

@@ -28,7 +28,11 @@ export type MediaFile = {
   originalKey: string;
   thumbnailKey?: string;
   preProcessedKeys: string[];
-  estimatedKeys: string[];
+  estimatedImages: Array<{
+    key: string;
+    url?: string;
+    expiresAt?: string;
+  }>;
   fileName: string;
   fileSize: number;
   originalSize: number;

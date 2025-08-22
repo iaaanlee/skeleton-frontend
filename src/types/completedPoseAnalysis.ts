@@ -28,7 +28,11 @@ export type MediaSetFile = {
   originalKey: string;
   thumbnailKey?: string;
   preProcessedKeys?: string[];
-  estimatedKeys?: string[];
+  estimatedImages?: Array<{
+    key: string;
+    url?: string;
+    expiresAt?: string;
+  }>;
   fileSize: number;
   contentType: string;
   uploadedAt: string;

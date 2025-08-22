@@ -28,8 +28,12 @@ export type Prescription = {
         visibility: number;
       }>; // 단일 배열로 수정, index 필드 제거
       confidence: number[];
-      estimatedKeys: string[];
-      estimatedImageUrls?: Array<{downloadUrl: string}>; // pre-signed URL 배열 추가
+      estimatedKeys: string[]; // deprecated - 하위 호환성용
+      estimatedImages: Array<{
+        key: string;
+        url?: string;
+        expiresAt?: string;
+      }>;
     }>;
     completedAt: string;
   };

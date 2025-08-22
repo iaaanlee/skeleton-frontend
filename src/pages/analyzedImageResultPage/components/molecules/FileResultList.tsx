@@ -1,5 +1,5 @@
 import React from 'react';
-import { BlazePoseLandmark } from '../../../../types/blazePose';
+import { BlazePoseLandmark, EstimatedImage } from '../../../../types/blazePose';
 import { FileResultItem } from './FileResultItem';
 
 // 실제 사용하는 타입 정의
@@ -9,8 +9,8 @@ type FileResultForDisplay = {
   confidence: number;
   analysisTime: number;
   landmarks: BlazePoseLandmark[];
-  estimatedImageUrl?: string;
-  overlayImageUrl?: string;
+  estimatedImages: EstimatedImage[];
+  overlayImageUrl?: string; // deprecated - 하위 호환성용
   error?: string;
 };
 

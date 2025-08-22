@@ -27,8 +27,17 @@ export const convertToFileResults = (result: Prescription) => {
       ? landmarks.reduce((sum, landmark) => sum + (landmark.visibility || 0), 0) / landmarks.length
       : 0;
 
-    // pre-signed URL 사용 (백엔드에서 생성된 URL)
-    const estimatedImageUrl = fileResult.estimatedImageUrls?.[0]?.downloadUrl || undefined;
+    // 새로운 통일된 구조 사용 (하위 호환성 고려)
+    let estimatedImages = fileResult.estimatedImages || [];
+    
+    // 하위 호환성: 기존 estimatedImageUrls가 있으면 변환
+    if (estimatedImages.length === 0 && fileResult.estimatedImageUrls && fileResult.estimatedImageUrls.length > 0) {
+      estimatedImages = fileResult.estimatedImageUrls.map((urlItem, index) => ({
+        key: fileResult.estimatedKeys?.[index] || `estimated_${index}`,
+        url: urlItem.downloadUrl,
+        expiresAt: undefined
+      }));
+    }
 
     return {
       fileId: `file_${index}`,
@@ -36,7 +45,7 @@ export const convertToFileResults = (result: Prescription) => {
       confidence: averageConfidence,
       analysisTime: 0, // TODO: 실제 분석 시간 추가
       landmarks: landmarks,
-      estimatedImageUrl: estimatedImageUrl,
+      estimatedImages: estimatedImages,
       overlayImageUrl: undefined,
       error: undefined
     };
