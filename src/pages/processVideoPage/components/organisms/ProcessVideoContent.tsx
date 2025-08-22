@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { VideoMediaSetList, VideoMediaSetListRef, PostureAnalysisButton, AnalysisProgressIndicator } from '../molecules';
+import { VideoMediaSetList, VideoMediaSetListRef, PostureAnalysisButton, AnalysisProgressIndicator, CompletedAnalysisSection } from '../molecules';
 import { VideoUploadModal } from '../molecules/VideoUploadModal';
-import { useStartVideoPoseAnalysis, useVideoPoseAnalysisStatus } from '../../../../services/videoAnalysisService';
+import { useStartVideoPoseAnalysis, useVideoPoseAnalysisStatus, useCompletedPoseAnalysisMediaSets } from '../../../../services/videoAnalysisService';
 import { useToast } from '../../../../contexts/ToastContext';
 
 type ProcessVideoContentProps = {
@@ -13,26 +13,46 @@ export const ProcessVideoContent: React.FC<ProcessVideoContentProps> = ({
 }) => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedMediaSetId, setSelectedMediaSetId] = useState<string | null>(null);
+  const [selectedCompletedMediaSetId, setSelectedCompletedMediaSetId] = useState<string | null>(null);
   const mediaSetListRef = useRef<VideoMediaSetListRef | null>(null);
 
   // 비디오 분석 관련 hooks
   const startVideoPoseAnalysisMutation = useStartVideoPoseAnalysis();
-  const { data: analysisStatus, isLoading: isStatusLoading } = useVideoPoseAnalysisStatus(
+  const { data: analysisStatus } = useVideoPoseAnalysisStatus(
     selectedMediaSetId,
     {
       enabled: !!selectedMediaSetId,
     }
   );
+  
+  // 완료된 자세 분석 미디어세트 조회
+  const { 
+    data: completedMediaSetsResponse, 
+    isLoading: isCompletedLoading, 
+    error: completedError,
+    refetch: refetchCompleted
+  } = useCompletedPoseAnalysisMediaSets({ 
+    mediaType: 'video', 
+    limit: 12 
+  });
+
   const { showSuccess, showError } = useToast();
 
   const handleUploadSuccess = () => {
     // 업로드 성공 시 미디어셋 목록 새로고침
     mediaSetListRef.current?.refetch();
+    // 완료된 분석 목록도 새로고침 (새로 분석 완료된 항목이 있을 수 있음)
+    refetchCompleted();
   };
 
   const handleMediaSetSelectionChange = (mediaSetId: string | null) => {
     setSelectedMediaSetId(mediaSetId);
     console.log('선택된 미디어셋:', mediaSetId);
+  };
+
+  const handleCompletedMediaSetSelectionChange = (mediaSetId: string | null) => {
+    setSelectedCompletedMediaSetId(mediaSetId);
+    console.log('선택된 완료 분석 미디어셋:', mediaSetId);
   };
 
   const handleAnalysisStart = async (mediaSetId: string) => {
@@ -85,12 +105,14 @@ export const ProcessVideoContent: React.FC<ProcessVideoContentProps> = ({
       } else if (analysisStatus?.status === 'blazepose_completed') {
         // 완전 성공 케이스
         showSuccess('비디오 자세 분석이 성공적으로 완료되었습니다!');
+        // 완료된 분석 목록 새로고침
+        refetchCompleted();
       } else if (analysisStatus?.status === 'failed') {
         // 일반 실패 케이스
         showError('비디오 자세 분석 중 오류가 발생했습니다.');
       }
     }
-  }, [analysisStatus?.status, analysisStatus?.progress, analysisStatus?.errorDetails, showSuccess, showError]);
+  }, [analysisStatus?.status, analysisStatus?.progress, analysisStatus?.errorDetails, showSuccess, showError, refetchCompleted]);
 
   // 분석 진행 상태 계산
   const isAnalyzing = analysisStatus?.status === 'blazepose_processing' || startVideoPoseAnalysisMutation.isPending;
@@ -158,6 +180,16 @@ export const ProcessVideoContent: React.FC<ProcessVideoContentProps> = ({
             ? `자세 분석 진행 중... (${analysisStatus?.progress?.completed || 0}/${analysisStatus?.progress?.total || 0} 이미지 완료)`
             : '자세 분석 진행 중...'
         }
+      />
+
+      {/* 자세 분석 완료 미디어세트 섹션 */}
+      <CompletedAnalysisSection
+        mediaSets={completedMediaSetsResponse?.data.mediaSets || []}
+        selectedMediaSetId={selectedCompletedMediaSetId}
+        onSelectionChange={handleCompletedMediaSetSelectionChange}
+        isLoading={isCompletedLoading}
+        error={completedError?.message || null}
+        hasMore={completedMediaSetsResponse?.data.hasMore || false}
       />
       
       {/* 추후 피크 지점 분석 결과 표시 섹션이 여기에 추가될 예정 */}

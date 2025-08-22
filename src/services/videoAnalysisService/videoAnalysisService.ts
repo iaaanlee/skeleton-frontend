@@ -1,4 +1,5 @@
 import { axiosHttpClient } from '../common/axiosHttpClient';
+import { CompletedPoseAnalysisApiResponse } from '../../types/completedPoseAnalysis';
 
 // 비디오 분석 시작 요청
 export type StartVideoPoseAnalysisRequest = {
@@ -31,9 +32,17 @@ export type VideoPoseAnalysisStatusResponse = {
   };
 };
 
+// 완료된 자세 분석 조회 요청
+export type GetCompletedPoseAnalysisRequest = {
+  limit?: number;
+  offset?: number;
+  mediaType?: 'video' | 'image';
+};
+
 type IVideoAnalysisService = {
   startVideoPoseAnalysis: (request: StartVideoPoseAnalysisRequest) => Promise<StartVideoPoseAnalysisResponse>;
   getVideoPoseAnalysisStatus: (mediaSetId: string) => Promise<VideoPoseAnalysisStatusResponse>;
+  getCompletedPoseAnalysisMediaSets: (request?: GetCompletedPoseAnalysisRequest) => Promise<CompletedPoseAnalysisApiResponse>;
 };
 
 class VideoAnalysisService implements IVideoAnalysisService {
@@ -52,6 +61,21 @@ class VideoAnalysisService implements IVideoAnalysisService {
       `/video-analysis/pose-analysis-status/${mediaSetId}`
     );
     return response.data;
+  }
+
+  // 완료된 자세 분석 미디어세트 조회
+  async getCompletedPoseAnalysisMediaSets(request: GetCompletedPoseAnalysisRequest = {}): Promise<CompletedPoseAnalysisApiResponse> {
+    const params = new URLSearchParams();
+    
+    if (request.limit !== undefined) params.append('limit', request.limit.toString());
+    if (request.offset !== undefined) params.append('offset', request.offset.toString());
+    if (request.mediaType) params.append('mediaType', request.mediaType);
+
+    const response = await axiosHttpClient.get<CompletedPoseAnalysisApiResponse>(
+      `/mediaSet/completed-pose-analysis?${params.toString()}`
+    );
+    
+    return response;
   }
 }
 
