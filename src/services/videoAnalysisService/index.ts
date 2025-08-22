@@ -7,4 +7,4 @@ export type {
 } from './videoAnalysisService';
 
 export { useStartVideoPoseAnalysis } from './videoAnalysisMutation';
-export { useVideoPoseAnalysisStatus, useCompletedPoseAnalysisMediaSets } from './videoAnalysisQuery';
+export { useVideoPoseAnalysisStatus, useCompletedPoseAnalysisMediaSets, usePoseAnalysisDetail } from './videoAnalysisQuery';

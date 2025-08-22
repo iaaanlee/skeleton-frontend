@@ -1,5 +1,5 @@
 import { axiosHttpClient } from '../common/axiosHttpClient';
-import { CompletedPoseAnalysisApiResponse } from '../../types/completedPoseAnalysis';
+import { CompletedPoseAnalysisApiResponse, PoseAnalysisDetailApiResponse } from '../../types/completedPoseAnalysis';
 
 // 비디오 분석 시작 요청
 export type StartVideoPoseAnalysisRequest = {
@@ -43,6 +43,7 @@ type IVideoAnalysisService = {
   startVideoPoseAnalysis: (request: StartVideoPoseAnalysisRequest) => Promise<StartVideoPoseAnalysisResponse>;
   getVideoPoseAnalysisStatus: (mediaSetId: string) => Promise<VideoPoseAnalysisStatusResponse>;
   getCompletedPoseAnalysisMediaSets: (request?: GetCompletedPoseAnalysisRequest) => Promise<CompletedPoseAnalysisApiResponse>;
+  getPoseAnalysisDetail: (mediaSetId: string) => Promise<PoseAnalysisDetailApiResponse>;
 };
 
 class VideoAnalysisService implements IVideoAnalysisService {
@@ -75,6 +76,14 @@ class VideoAnalysisService implements IVideoAnalysisService {
       `/mediaSet/completed-pose-analysis?${params.toString()}`
     );
     
+    return response;
+  }
+
+  // 자세 분석 상세 정보 조회
+  async getPoseAnalysisDetail(mediaSetId: string): Promise<PoseAnalysisDetailApiResponse> {
+    const response = await axiosHttpClient.get<PoseAnalysisDetailApiResponse>(
+      `/mediaSet/pose-analysis-detail/${mediaSetId}`
+    );
     return response;
   }
 }

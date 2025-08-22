@@ -1,6 +1,8 @@
 import React from 'react';
 import { CompletedAnalysisMediaCard } from './CompletedAnalysisMediaCard';
+import { PoseAnalysisDetail } from './PoseAnalysisDetail';
 import { CompletedPoseAnalysisMediaSet } from '../../../../types/completedPoseAnalysis';
+import { usePoseAnalysisDetail } from '../../../../services/videoAnalysisService';
 
 export type CompletedAnalysisSectionProps = {
   mediaSets: CompletedPoseAnalysisMediaSet[];
@@ -23,6 +25,16 @@ export const CompletedAnalysisSection: React.FC<CompletedAnalysisSectionProps> =
   onLoadMore,
   className = ''
 }) => {
+  // 선택된 미디어세트의 상세 분석 데이터 조회 (지연 로딩)
+  const { 
+    data: poseAnalysisDetail, 
+    isLoading: isDetailLoading, 
+    error: detailError 
+  } = usePoseAnalysisDetail(selectedMediaSetId, {
+    enabled: !!selectedMediaSetId // 선택된 항목이 있을 때만 활성화
+  });
+
+  const selectedMediaSet = mediaSets.find(ms => ms._id === selectedMediaSetId);
   const handleCardSelect = (mediaSetId: string) => {
     // 같은 카드 클릭 시 선택 해제
     if (selectedMediaSetId === mediaSetId) {
@@ -54,28 +66,30 @@ export const CompletedAnalysisSection: React.FC<CompletedAnalysisSectionProps> =
   // 에러 상태 렌더링
   if (error) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">
-            자세 분석 완료 미디어세트
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            BlazePose 분석이 완료된 비디오들을 선택하세요.
-          </p>
-        </div>
-        <div className="p-6">
-          <div className="text-center py-8">
-            <svg className="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h4 className="text-lg font-medium text-gray-900 mb-2">데이터 로드 오류</h4>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              다시 시도
-            </button>
+      <div className={`space-y-6 ${className}`}>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900">
+              자세 분석 완료 미디어세트
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              BlazePose 분석이 완료된 비디오들을 선택하세요.
+            </p>
+          </div>
+          <div className="p-6">
+            <div className="text-center py-8">
+              <svg className="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h4 className="text-lg font-medium text-gray-900 mb-2">데이터 로드 오류</h4>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                다시 시도
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -83,9 +97,11 @@ export const CompletedAnalysisSection: React.FC<CompletedAnalysisSectionProps> =
   }
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
-      {/* 섹션 헤더 */}
-      <div className="px-6 py-4 border-b border-gray-200">
+    <div className={`space-y-6 ${className}`}>
+      {/* 미디어세트 선택 섹션 */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        {/* 섹션 헤더 */}
+        <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-medium text-gray-900">
@@ -114,8 +130,8 @@ export const CompletedAnalysisSection: React.FC<CompletedAnalysisSectionProps> =
         </div>
       </div>
 
-      {/* 콘텐츠 */}
-      <div className="p-6">
+        {/* 콘텐츠 */}
+        <div className="p-6">
         {isLoading && mediaSets.length === 0 ? (
           // 초기 로딩 상태
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -184,7 +200,18 @@ export const CompletedAnalysisSection: React.FC<CompletedAnalysisSectionProps> =
             )}
           </>
         )}
+        </div>
       </div>
+
+      {/* 자세 분석 상세 정보 섹션 */}
+      {selectedMediaSet && (
+        <PoseAnalysisDetail
+          selectedMediaSet={selectedMediaSet}
+          analysisDetail={poseAnalysisDetail?.data || null}
+          isLoading={isDetailLoading}
+          error={detailError?.message || null}
+        />
+      )}
     </div>
   );
 };

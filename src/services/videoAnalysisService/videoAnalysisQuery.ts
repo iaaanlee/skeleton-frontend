@@ -33,3 +33,22 @@ export const useCompletedPoseAnalysisMediaSets = (
     gcTime: 10 * 60 * 1000, // 10분
   });
 };
+
+// 자세 분석 상세 데이터 조회 훅 (지연 로딩)
+export const usePoseAnalysisDetail = (
+  mediaSetId: string | null,
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: [...QUERY_KEYS.videoAnalysis, 'poseAnalysisDetail', mediaSetId],
+    queryFn: () => {
+      if (!mediaSetId) {
+        throw new Error('mediaSetId is required');
+      }
+      return videoAnalysisService.getPoseAnalysisDetail(mediaSetId);
+    },
+    enabled: !!mediaSetId && (options?.enabled !== false),
+    staleTime: 30 * 60 * 1000, // 30분간 캐시 유지 (분석 데이터는 변경되지 않으므로)
+    gcTime: 60 * 60 * 1000, // 1시간
+  });
+};
