@@ -77,10 +77,14 @@ export type AnalysisJob = {
   message: string
   completedSteps: AnalysisStep[]
   attemptLog: AnalysisAttempt[]
-  startedAt: string
-  completedAt?: string
+  timestamps: {
+    poseStartedAt: string | null
+    poseCompletedAt: string | null
+    llmStartedAt: string | null
+    llmCompletedAt: string | null
+    finalCompletedAt: string | null
+  }
   createdAt: string
-  updatedAt: string
   progress: number
 }
 

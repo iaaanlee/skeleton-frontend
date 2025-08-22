@@ -30,8 +30,14 @@ export type AnalysisJob = {
     analysisText: string;
   };
   errorMessage?: string;
+  timestamps: {
+    poseStartedAt: string | null;
+    poseCompletedAt: string | null;
+    llmStartedAt: string | null;
+    llmCompletedAt: string | null;
+    finalCompletedAt: string | null;
+  };
   createdAt: string;
-  updatedAt: string;
 }
 
 // 분석 상태 정보
@@ -45,8 +51,13 @@ export type AnalysisStatusInfo = {
     description: string;
   }>;
   error: string | null;
-  startedAt: string | null;
-  completedAt: string | null;
+  timestamps: {
+    poseStartedAt: string | null;
+    poseCompletedAt: string | null;
+    llmStartedAt: string | null;
+    llmCompletedAt: string | null;
+    finalCompletedAt: string | null;
+  };
   createdAt: string;
 }
 

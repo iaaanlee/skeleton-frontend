@@ -39,7 +39,33 @@ export const CompletedAnalysisMediaCard: React.FC<CompletedAnalysisMediaCardProp
     return date.toLocaleDateString('ko-KR');
   };
 
-  const completedTime = formatCompletedTime(mediaSet.analysisJob.completedAt);
+  // 완료 시간 우선순위: finalCompletedAt -> completedAt (backwards compatibility)
+  const completedTime = formatCompletedTime(
+    mediaSet.analysisJob.timestamps?.finalCompletedAt || mediaSet.analysisJob.completedAt
+  );
+  
+  // 단계별 완료 시간 정보
+  const poseCompletedTime = mediaSet.analysisJob.timestamps?.poseCompletedAt 
+    ? formatCompletedTime(mediaSet.analysisJob.timestamps.poseCompletedAt)
+    : null;
+  const llmCompletedTime = mediaSet.analysisJob.timestamps?.llmCompletedAt
+    ? formatCompletedTime(mediaSet.analysisJob.timestamps.llmCompletedAt) 
+    : null;
+    
+  // 분석 소요 시간 계산 (포즈 분석 완료부터 전체 완료까지)
+  const getAnalysisDuration = () => {
+    if (!mediaSet.analysisJob.timestamps?.poseCompletedAt || !mediaSet.analysisJob.timestamps?.finalCompletedAt) {
+      return null;
+    }
+    const poseTime = new Date(mediaSet.analysisJob.timestamps.poseCompletedAt);
+    const finalTime = new Date(mediaSet.analysisJob.timestamps.finalCompletedAt);
+    const diffMs = finalTime.getTime() - poseTime.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    
+    if (diffSec < 60) return `${diffSec}초`;
+    const diffMin = Math.floor(diffSec / 60);
+    return `${diffMin}분 ${diffSec % 60}초`;
+  };
 
   const progressText = `${mediaSet.analysisJob.progress.completed}/${mediaSet.analysisJob.progress.total}`;
   const hasFailures = mediaSet.analysisJob.progress.failed > 0;
@@ -128,7 +154,25 @@ export const CompletedAnalysisMediaCard: React.FC<CompletedAnalysisMediaCardProp
               }
             </span>
           </div>
-          <span>{completedTime}</span>
+          <div className="group relative">
+            <span className="cursor-help">{completedTime}</span>
+            {/* 상세 시간 정보 툴팁 */}
+            <div className="invisible group-hover:visible absolute right-0 bottom-full mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10">
+              <div className="space-y-1">
+                {poseCompletedTime && (
+                  <div>포즈 분석: {poseCompletedTime}</div>
+                )}
+                {llmCompletedTime && (
+                  <div>LLM 분석: {llmCompletedTime}</div>
+                )}
+                {getAnalysisDuration() && (
+                  <div className="border-t border-gray-600 pt-1 mt-1">
+                    총 소요시간: {getAnalysisDuration()}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* 진행률 */}

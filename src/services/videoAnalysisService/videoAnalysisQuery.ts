@@ -29,8 +29,8 @@ export const useCompletedPoseAnalysisMediaSets = (
     queryKey: [...QUERY_KEYS.videoAnalysis, 'completedPoseAnalysis', request],
     queryFn: () => videoAnalysisService.getCompletedPoseAnalysisMediaSets(request),
     enabled: options?.enabled !== false,
-    staleTime: 5 * 60 * 1000, // 5분간 캐시 유지
-    gcTime: 10 * 60 * 1000, // 10분
+    staleTime: 30 * 1000, // 30초간 캐시 유지 (분석 완료 후 빠른 업데이트를 위해 단축)
+    gcTime: 5 * 60 * 1000, // 5분
   });
 };
 

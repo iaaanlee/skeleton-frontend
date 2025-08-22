@@ -16,7 +16,7 @@ export type StartVideoPoseAnalysisResponse = {
 
 // 비디오 분석 상태 응답
 export type VideoPoseAnalysisStatusResponse = {
-  status: 'not_found' | 'pending' | 'blazepose_processing' | 'blazepose_completed' | 'failed' | 'blazepose_server_failed' | 'blazepose_pose_failed';
+  status: 'not_found' | 'pending' | 'blazepose_processing' | 'blazepose_completed' | 'pose_completed' | 'analysis_completed' | 'failed' | 'blazepose_server_failed' | 'blazepose_pose_failed';
   message: string;
   analysisJobId?: string;
   prescription?: any;

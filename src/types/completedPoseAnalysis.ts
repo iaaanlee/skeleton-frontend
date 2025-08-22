@@ -10,7 +10,12 @@ export type CompletedPoseAnalysisMediaSet = {
   analysisJob: {
     analysisJobId: string;
     status: 'pose_completed' | 'analysis_completed';
-    completedAt: string;
+    completedAt: string; // backwards compatibility
+    timestamps: {
+      poseCompletedAt: string | null;
+      llmCompletedAt: string | null;
+      finalCompletedAt: string | null;
+    };
     progress: {
       total: number;
       completed: number;

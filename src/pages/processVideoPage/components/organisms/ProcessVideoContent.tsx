@@ -3,6 +3,8 @@ import { VideoMediaSetList, VideoMediaSetListRef, PostureAnalysisButton, Analysi
 import { VideoUploadModal } from '../molecules/VideoUploadModal';
 import { useStartVideoPoseAnalysis, useVideoPoseAnalysisStatus, useCompletedPoseAnalysisMediaSets } from '../../../../services/videoAnalysisService';
 import { useToast } from '../../../../contexts/ToastContext';
+import { useQueryClient } from '@tanstack/react-query';
+import { QUERY_KEYS } from '../../../../services/common/queryKey';
 
 type ProcessVideoContentProps = {
   className?: string;
@@ -15,6 +17,8 @@ export const ProcessVideoContent: React.FC<ProcessVideoContentProps> = ({
   const [selectedMediaSetId, setSelectedMediaSetId] = useState<string | null>(null);
   const [selectedCompletedMediaSetId, setSelectedCompletedMediaSetId] = useState<string | null>(null);
   const mediaSetListRef = useRef<VideoMediaSetListRef | null>(null);
+  const queryClient = useQueryClient();
+  const completionHandledRef = useRef<Set<string>>(new Set());
 
   // 비디오 분석 관련 hooks
   const startVideoPoseAnalysisMutation = useStartVideoPoseAnalysis();
@@ -47,6 +51,8 @@ export const ProcessVideoContent: React.FC<ProcessVideoContentProps> = ({
 
   const handleMediaSetSelectionChange = (mediaSetId: string | null) => {
     setSelectedMediaSetId(mediaSetId);
+    // 새로운 미디어셋 선택 시 완료 처리 기록 초기화
+    completionHandledRef.current.clear();
     console.log('선택된 미디어셋:', mediaSetId);
   };
 
@@ -76,43 +82,77 @@ export const ProcessVideoContent: React.FC<ProcessVideoContentProps> = ({
     }
   };
 
-  // 분석 완료 시 부분 실패 알림 처리
+  // 분석 완료 감지 → 즉시 완료된 분석 목록 새로고침
   useEffect(() => {
-    if (analysisStatus?.status === 'blazepose_completed' || analysisStatus?.status === 'failed') {
-      const progress = analysisStatus?.progress;
-      const errorDetails = analysisStatus?.errorDetails;
-
-      if (progress && errorDetails && errorDetails.failedImages?.length > 0) {
-        const totalImages = progress.total;
-        const failedCount = progress.failed;
-        const successCount = progress.completed;
+    console.log('🔍 analysisStatus 변화 감지:', analysisStatus);
+    
+    if (!analysisStatus) {
+      console.log('❌ analysisStatus가 null/undefined');
+      return;
+    }
+    
+    const currentStatus = analysisStatus.status;
+    const analysisJobId = analysisStatus.analysisJobId;
+    
+    console.log('📊 상태 정보:', { 
+      currentStatus, 
+      analysisJobId,
+      progress: analysisStatus.progress,
+      fullAnalysisStatus: analysisStatus  // 전체 객체 확인
+    });
+    
+    // 상태 확인
+    const isCompleted = currentStatus === 'blazepose_completed' || currentStatus === 'analysis_completed' || currentStatus === 'pose_completed';
+    const isFailed = currentStatus === 'failed';
+    const isProcessing = currentStatus === 'blazepose_processing' || currentStatus === 'pending';
+    
+    console.log('✅ 상태 체크:', { isCompleted, isFailed, isProcessing });
+    
+    // analysisJobId가 있고, 완료/실패 상태이며, 아직 처리하지 않은 경우에만 실행
+    if (analysisJobId && (isCompleted || isFailed)) {
+      const handledSet = completionHandledRef.current;
+      const handledKey = `${analysisJobId}-${currentStatus}`;
+      
+      console.log('🔑 중복 체크:', { 
+        handledKey, 
+        hasHandled: handledSet.has(handledKey),
+        handledKeys: Array.from(handledSet)
+      });
+      
+      if (!handledSet.has(handledKey)) {
+        handledSet.add(handledKey);
         
-        if (successCount > 0 && failedCount > 0) {
-          // 부분 성공 케이스
-          showSuccess(
-            `자세 분석이 완료되었습니다. (성공: ${successCount}/${totalImages}, 실패: ${failedCount}개 이미지)`
-          );
+        if (isCompleted) {
+          console.log('🎯 분석 완료 감지 - 처리 시작:', { analysisJobId, status: currentStatus });
           
-          // 실패한 이미지들 상세 정보 (콘솔에 로그)
-          console.warn('Failed images during analysis:', {
-            failedImages: errorDetails.failedImages,
-            errorMessages: errorDetails.errorMessages,
+          // 즉시 완료된 분석 목록 새로고침
+          queryClient.invalidateQueries({ 
+            queryKey: [...QUERY_KEYS.videoAnalysis, 'completedPoseAnalysis']
           });
-        } else if (failedCount === totalImages) {
-          // 전체 실패 케이스
-          showError(`자세 분석에 실패했습니다. 모든 ${totalImages}개 이미지 처리 실패`);
+          refetchCompleted();
+          
+          // 완료 메시지 표시
+          const message = currentStatus === 'analysis_completed' 
+            ? '비디오 자세 분석 및 운동 처방이 완료되었습니다!'
+            : '비디오 자세 분석이 완료되었습니다!';
+          showSuccess(message);
+          
+          console.log('✨ 완료 처리 완료');
+        } else if (isFailed) {
+          console.log('❌ 분석 실패 감지:', { analysisJobId, status: currentStatus });
+          showError('비디오 자세 분석 중 오류가 발생했습니다.');
         }
-      } else if (analysisStatus?.status === 'blazepose_completed') {
-        // 완전 성공 케이스
-        showSuccess('비디오 자세 분석이 성공적으로 완료되었습니다!');
-        // 완료된 분석 목록 새로고침
-        refetchCompleted();
-      } else if (analysisStatus?.status === 'failed') {
-        // 일반 실패 케이스
-        showError('비디오 자세 분석 중 오류가 발생했습니다.');
+      } else {
+        console.log('⚠️ 이미 처리된 완료 상태 - 스킵');
+      }
+    } else {
+      if (isProcessing) {
+        console.log('🔄 분석 진행 중:', { analysisJobId, currentStatus, progress: analysisStatus.progress });
+      } else {
+        console.log('⏸️ 처리 조건 불만족:', { analysisJobId, isCompleted, isFailed, currentStatus });
       }
     }
-  }, [analysisStatus?.status, analysisStatus?.progress, analysisStatus?.errorDetails, showSuccess, showError, refetchCompleted]);
+  }, [analysisStatus, queryClient, refetchCompleted, showSuccess, showError]);
 
   // 분석 진행 상태 계산
   const isAnalyzing = analysisStatus?.status === 'blazepose_processing' || startVideoPoseAnalysisMutation.isPending;
@@ -176,7 +216,7 @@ export const ProcessVideoContent: React.FC<ProcessVideoContentProps> = ({
         analysisJobId={analysisJobId}
         progress={analysisProgress}
         message={
-          analysisStatus?.status === 'blazepose_processing' 
+          analysisStatus?.progress?.total 
             ? `자세 분석 진행 중... (${analysisStatus?.progress?.completed || 0}/${analysisStatus?.progress?.total || 0} 이미지 완료)`
             : '자세 분석 진행 중...'
         }

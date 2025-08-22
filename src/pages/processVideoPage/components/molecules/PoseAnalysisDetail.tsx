@@ -501,8 +501,13 @@ export const PoseAnalysisDetail: React.FC<PoseAnalysisDetailProps> = ({
                   <span className="text-gray-600">완료 시간:</span>
                   <span className="ml-2 font-medium">
                     {(() => {
-                      if (!analysisDetail.completedAt) return '완료 시간 정보 없음';
-                      const date = new Date(analysisDetail.completedAt);
+                      // 새로운 timestamps 구조 우선 사용, 없으면 기존 completedAt 사용
+                      const completedTime = selectedMediaSet.analysisJob?.timestamps?.finalCompletedAt || 
+                                          selectedMediaSet.analysisJob?.completedAt ||
+                                          analysisDetail.completedAt;
+                      
+                      if (!completedTime) return '완료 시간 정보 없음';
+                      const date = new Date(completedTime);
                       if (isNaN(date.getTime())) return '완료 시간 정보 없음';
                       return date.toLocaleDateString('ko-KR', {
                         year: 'numeric',
@@ -514,6 +519,26 @@ export const PoseAnalysisDetail: React.FC<PoseAnalysisDetailProps> = ({
                     })()}
                   </span>
                 </div>
+                {/* 단계별 완료 시간 추가 정보 */}
+                {selectedMediaSet.analysisJob?.timestamps && (
+                  <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
+                    <div className="text-gray-600 font-medium mb-1">분석 단계별 완료 시간:</div>
+                    <div className="space-y-1 text-xs">
+                      {selectedMediaSet.analysisJob.timestamps.poseCompletedAt && (
+                        <div>
+                          <span className="text-gray-500">포즈 분석:</span>
+                          <span className="ml-2">{new Date(selectedMediaSet.analysisJob.timestamps.poseCompletedAt).toLocaleString('ko-KR')}</span>
+                        </div>
+                      )}
+                      {selectedMediaSet.analysisJob.timestamps.llmCompletedAt && (
+                        <div>
+                          <span className="text-gray-500">LLM 분석:</span>
+                          <span className="ml-2">{new Date(selectedMediaSet.analysisJob.timestamps.llmCompletedAt).toLocaleString('ko-KR')}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
