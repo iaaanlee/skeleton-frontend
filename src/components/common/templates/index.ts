@@ -2,6 +2,7 @@
 export { Header } from './Header';
 export { BottomBar } from './BottomBar';
 export { default as PageLayout } from './PageLayout';
+export { default as ScrollablePageLayout } from './ScrollablePageLayout';
 export { default as FormLayout } from './FormLayout';
 export { default as ModalLayout } from './ModalLayout';
 export { DeleteConfirmModal } from './DeleteConfirmModal';

@@ -3,7 +3,7 @@ import { Header } from './Header';
 import { BottomBar } from './BottomBar';
 import { RouteValue } from '../../../constants/routes';
 
-type PageLayoutProps = {
+type ScrollablePageLayoutProps = {
   children: React.ReactNode;
   backRoute?: RouteValue;
   showHeader?: boolean;
@@ -12,7 +12,7 @@ type PageLayoutProps = {
   contentClassName?: string;
 };
 
-const PageLayout: React.FC<PageLayoutProps> = ({
+const ScrollablePageLayout: React.FC<ScrollablePageLayoutProps> = ({
   children,
   backRoute,
   showHeader = true,
@@ -24,7 +24,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
     <div className={`min-h-screen flex flex-col bg-gray-50 ${className}`}>
       {showHeader && <Header backRoute={backRoute} />}
       
-      <main className={`flex-1 ${contentClassName}`}>
+      <main className={`flex-1 overflow-y-auto ${contentClassName}`}>
         {children}
       </main>
       
@@ -33,4 +33,4 @@ const PageLayout: React.FC<PageLayoutProps> = ({
   );
 };
 
-export default PageLayout;
+export default ScrollablePageLayout;

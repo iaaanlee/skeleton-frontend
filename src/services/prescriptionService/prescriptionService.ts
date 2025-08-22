@@ -48,6 +48,7 @@ export type Prescription = {
   title?: string;
   description?: string;
   fileCount?: number;
+  mediaType?: 'image' | 'video'; // 미디어 타입 추가
   analysisId?: string;
   thumbnailUrl?: string;
 }

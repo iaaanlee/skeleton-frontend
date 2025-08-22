@@ -62,7 +62,7 @@ export const PrescriptionItem: React.FC<PrescriptionItemProps> = ({
               {prescription.title || '운동 자세 분석'}
             </h3>
             <span className="text-sm text-gray-500">
-              {formatDate(prescription.createdAt)}
+              {formatDate(prescription.updatedAt || prescription.createdAt)}
             </span>
           </div>
           
@@ -72,7 +72,7 @@ export const PrescriptionItem: React.FC<PrescriptionItemProps> = ({
           
           <div className="flex items-center space-x-4 mt-2">
             <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-              {prescription.fileCount || 0}개 이미지
+              {prescription.fileCount || 0}개 {prescription.mediaType === 'video' ? '영상' : '이미지'}
             </span>
             <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
               분석 완료

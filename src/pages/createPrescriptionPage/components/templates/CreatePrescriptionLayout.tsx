@@ -1,12 +1,12 @@
 import React from 'react';
-import { PageLayout } from '../../../../components/common/templates';
+import { ScrollablePageLayout } from '../../../../components/common/templates';
 import { PageHeader, ContentContainer } from '../../../../components/common/molecules';
 import { PrescriptionUploadSection } from '../organisms/PrescriptionUploadSection';
 import { ROUTES } from '../../../../constants/routes';
 
 const CreatePrescriptionLayout: React.FC = () => {
   return (
-    <PageLayout 
+    <ScrollablePageLayout 
       backRoute={ROUTES.ANALYZE_EXERCISE}
       contentClassName="p-4"
     >
@@ -18,7 +18,7 @@ const CreatePrescriptionLayout: React.FC = () => {
         
         <PrescriptionUploadSection />
       </ContentContainer>
-    </PageLayout>
+    </ScrollablePageLayout>
   );
 };
 

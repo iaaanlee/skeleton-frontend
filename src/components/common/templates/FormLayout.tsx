@@ -9,6 +9,7 @@ type FormLayoutProps = {
   titleAlign?: 'left' | 'center' | 'right';
   className?: string;
   contentClassName?: string;
+  scrollable?: boolean;
 };
 
 const FormLayout: React.FC<FormLayoutProps> = ({
@@ -18,7 +19,8 @@ const FormLayout: React.FC<FormLayoutProps> = ({
   maxWidth = '4xl',
   titleAlign = 'center',
   className = '',
-  contentClassName = ''
+  contentClassName = '',
+  scrollable = true
 }) => {
   const maxWidthClasses = {
     sm: 'max-w-sm',
@@ -36,15 +38,19 @@ const FormLayout: React.FC<FormLayoutProps> = ({
     right: 'text-right'
   };
 
+  const containerClass = scrollable 
+    ? `p-5 ${maxWidthClasses[maxWidth]} mx-auto min-h-0 ${className}`
+    : `p-5 ${maxWidthClasses[maxWidth]} mx-auto ${className}`;
+
   return (
-    <div className={`p-5 ${maxWidthClasses[maxWidth]} mx-auto ${className}`}>
+    <div className={containerClass}>
       <PageHeader
         title={title}
         description={description}
         titleClassName={alignClasses[titleAlign]}
         descriptionClassName={alignClasses[titleAlign]}
       />
-      <div className={contentClassName}>
+      <div className={`${contentClassName} ${scrollable ? 'pb-20' : ''}`}>
         {children}
       </div>
     </div>

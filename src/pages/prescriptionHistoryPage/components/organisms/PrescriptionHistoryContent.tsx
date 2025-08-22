@@ -1,5 +1,5 @@
 import React from 'react';
-import { PageLayout } from '../../../../components/common/templates';
+import { ScrollablePageLayout } from '../../../../components/common/templates';
 import { ROUTES, RouteValue } from '../../../../constants/routes';
 import { Prescription } from '../../../../services/prescriptionService/prescriptionService';
 import ContentArea from '../molecules/ContentArea';
@@ -22,13 +22,13 @@ export const PrescriptionHistoryContent: React.FC<PrescriptionHistoryContentProp
   backRoute = ROUTES.ANALYZE_EXERCISE
 }) => {
   return (
-    <PageLayout backRoute={backRoute}>
+    <ScrollablePageLayout backRoute={backRoute}>
       <ContentArea
         prescriptions={prescriptions}
         isLoading={isLoading}
         error={error}
         onPrescriptionClick={onPrescriptionClick}
       />
-    </PageLayout>
+    </ScrollablePageLayout>
   );
 };

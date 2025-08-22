@@ -18,8 +18,8 @@ export const MediaSetList: React.FC<MediaSetListProps> = ({
 }) => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
-  // React Query로 미디어 세트 목록 조회
-  const { data: mediaSetListResponse, isLoading, error, refetch } = useMediaSetList()
+  // React Query로 미디어 세트 목록 조회 (이미지 타입만)
+  const { data: mediaSetListResponse, isLoading, error, refetch } = useMediaSetList(20, 0, 'image')
 
   // 단일 선택 훅 사용
   const {

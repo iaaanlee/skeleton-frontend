@@ -8,7 +8,7 @@ const ProcessVideoLayout: React.FC = () => {
   return (
     <PageLayout 
       backRoute={ROUTES.ANALYZE_EXERCISE}
-      contentClassName="p-4 overflow-y-auto"
+      contentClassName="p-4"
     >
       <ContentContainer maxWidth="4xl" className="min-h-0">
         <PageHeader

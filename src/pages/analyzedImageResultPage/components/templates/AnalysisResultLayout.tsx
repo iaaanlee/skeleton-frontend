@@ -1,5 +1,5 @@
 import React from 'react';
-import { PageLayout } from '../../../../components/common/templates';
+import { ScrollablePageLayout } from '../../../../components/common/templates';
 import { PageHeader, ContentContainer } from '../../../../components/common/molecules';
 import { ROUTES } from '../../../../constants/routes';
 import { Prescription } from '../../../../services/prescriptionService';
@@ -15,7 +15,7 @@ const AnalysisResultLayout: React.FC<AnalysisResultLayoutProps> = ({
   onSaveResult
 }) => {
   return (
-    <PageLayout 
+    <ScrollablePageLayout 
       backRoute={ROUTES.PRESCRIPTION_HISTORY}
       contentClassName="p-4"
     >
@@ -30,7 +30,7 @@ const AnalysisResultLayout: React.FC<AnalysisResultLayoutProps> = ({
           onSaveResult={onSaveResult}
         />
       </ContentContainer>
-    </PageLayout>
+    </ScrollablePageLayout>
   );
 };
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfile } from '../../../../contexts/ProfileContext';
 import { useGetCurrentProfileDetails } from '../../../../services/profileService';
+import { ScrollablePageLayout } from '../../../../components/common/templates';
 import { EditProfileHeader } from '../organisms/EditProfileHeader';
 import { EditProfileContent } from '../organisms/EditProfileContent';
 import LoadingState from '../molecules/LoadingState';
@@ -33,14 +34,14 @@ const EditProfileLayout: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <ScrollablePageLayout showHeader={false} showBottomBar={false}>
             <EditProfileHeader />
             <EditProfileContent 
                 profile={fullProfile.data.profile}
                 onUpdateSuccess={handleUpdateSuccess}
                 onUpdateError={handleUpdateError}
             />
-        </div>
+        </ScrollablePageLayout>
     );
 };
 
