@@ -1,6 +1,7 @@
 // Atomic components
 export { AnalysisProgress } from './AnalysisProgress';
 export { AnalysisSummary } from './AnalysisSummary';
+export { EngineInfoDisplay } from './EngineInfoDisplay';
 export { FileResultItem } from './FileResultItem';
 export { FileResultList } from './FileResultList';
 export { LandmarksVisualization } from './LandmarksVisualization';

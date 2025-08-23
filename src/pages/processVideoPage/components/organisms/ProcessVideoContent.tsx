@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { VideoMediaSetList, VideoMediaSetListRef, PostureAnalysisButton, AnalysisProgressIndicator, CompletedAnalysisSection } from '../molecules';
+import { VideoMediaSetList, VideoMediaSetListRef, PostureAnalysisButton, PoseEngineSelector, AnalysisProgressIndicator, CompletedAnalysisSection } from '../molecules';
 import { VideoUploadModal } from '../molecules/VideoUploadModal';
 import { useStartVideoPoseAnalysis, useVideoPoseAnalysisStatus, useCompletedPoseAnalysisMediaSets } from '../../../../services/videoAnalysisService';
 import { useToast } from '../../../../contexts/ToastContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '../../../../services/common/queryKey';
+import { PoseEngineType } from '../../../../types/poseEngine';
 
 type ProcessVideoContentProps = {
   className?: string;
@@ -15,6 +16,7 @@ export const ProcessVideoContent: React.FC<ProcessVideoContentProps> = ({
 }) => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedMediaSetId, setSelectedMediaSetId] = useState<string | null>(null);
+  const [selectedEngine, setSelectedEngine] = useState<PoseEngineType>('blazepose'); // 기본값: BlazePose
   const [selectedCompletedMediaSetId, setSelectedCompletedMediaSetId] = useState<string | null>(null);
   const mediaSetListRef = useRef<VideoMediaSetListRef | null>(null);
   const queryClient = useQueryClient();
@@ -61,10 +63,16 @@ export const ProcessVideoContent: React.FC<ProcessVideoContentProps> = ({
     console.log('선택된 완료 분석 미디어셋:', mediaSetId);
   };
 
+  const handleEngineChange = (engine: PoseEngineType) => {
+    setSelectedEngine(engine);
+    console.log('선택된 포즈 엔진:', engine);
+  };
+
   const handleAnalysisStart = async (mediaSetId: string) => {
     try {
       const result = await startVideoPoseAnalysisMutation.mutateAsync({
-        mediaSetId
+        mediaSetId,
+        poseEngine: selectedEngine
       });
 
       if (result.status === 'success') {
@@ -193,6 +201,14 @@ export const ProcessVideoContent: React.FC<ProcessVideoContentProps> = ({
             onSelectionChange={handleMediaSetSelectionChange}
           />
         </div>
+      </div>
+
+      {/* 포즈 추정 엔진 선택 섹션 */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <PoseEngineSelector
+          selectedEngine={selectedEngine}
+          onEngineChange={handleEngineChange}
+        />
       </div>
 
       {/* 자세 분석 시작 버튼 */}

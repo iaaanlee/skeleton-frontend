@@ -17,6 +17,20 @@ export const useCreatePrescription = () => {
   })
 }
 
+export const useCreateImageAnalysisOnlyPrescription = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: (request: CreatePrescriptionRequest) => prescriptionService.createImageAnalysisOnlyPrescription(request),
+    onSuccess: () => {
+      // 처방 목록 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: [...QUERY_KEYS.prescriptions]
+      })
+    }
+  })
+}
+
 export const useDeletePrescription = () => {
   const queryClient = useQueryClient()
   

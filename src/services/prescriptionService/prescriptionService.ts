@@ -3,6 +3,7 @@ import { AxiosHttpClient } from "../common/axiosHttpClient";
 import { backendHttpClient } from "../common/httpClient";
 import { BlazePoseLandmark } from "../../types/blazePose";
 import { PrescriptionStatus } from "../../types/common/status-types";
+import { PoseEngineType, PoseAnalysisResult } from "../../types/poseEngine";
 
 export type Prescription = {
   _id: string;
@@ -14,8 +15,14 @@ export type Prescription = {
       ans1: string;
       ans2: string;
     };
+    poseEngine?: PoseEngineType; // 포즈 추정 엔진 선택
   };
   analysisJobId: string;
+  
+  // 통합 포즈 분석 결과
+  poseAnalysis?: PoseAnalysisResult;
+  
+  // 하위 호환성을 위한 BlazePose 결과 (deprecated)
   blazePoseResults?: {
     totalFiles: number;
     results: Array<{
@@ -65,6 +72,7 @@ export type CreatePrescriptionRequest = {
       ans1: string;
       ans2: string;
     };
+    poseEngine?: PoseEngineType; // 포즈 추정 엔진 선택 (기본값: blazepose)
     isTest?: boolean;
   };
 }
@@ -95,6 +103,7 @@ export type SaveLLMResultsRequest = {
 
 type IPrescriptionService = {
   createPrescription: (request: CreatePrescriptionRequest) => Promise<CreatePrescriptionResponse>;
+  createImageAnalysisOnlyPrescription: (request: CreatePrescriptionRequest) => Promise<CreatePrescriptionResponse>;
   getPrescriptionById: (prescriptionId: string) => Promise<Prescription>;
   getCompletedPrescriptions: (limit?: number, offset?: number) => Promise<PrescriptionListResponse>;
   getPrescriptionsByMediaSet: (mediaSetId: string) => Promise<PrescriptionListResponse>;
@@ -110,11 +119,21 @@ type IPrescriptionService = {
 class PrescriptionService implements IPrescriptionService { 
   constructor(private httpClient: AxiosHttpClient) {}
 
-  // 처방 생성
+  // 처방 생성 (전체 분석)
   async createPrescription(request: CreatePrescriptionRequest) {
     const { data } = await this.httpClient.request<{ success: boolean; data: CreatePrescriptionResponse }>({
       method: 'POST',
       url: '/prescription',
+      data: request,
+    })
+    return data.data
+  }
+
+  // 이미지 분석만 처방 생성 (포즈 추정까지만)
+  async createImageAnalysisOnlyPrescription(request: CreatePrescriptionRequest) {
+    const { data } = await this.httpClient.request<{ success: boolean; data: CreatePrescriptionResponse }>({
+      method: 'POST',
+      url: '/prescription/image-analysis-only',
       data: request,
     })
     return data.data
@@ -138,19 +157,6 @@ class PrescriptionService implements IPrescriptionService {
       params: { limit, offset }
     })
     
-    // 🔍 디버깅: 받은 데이터 구조 로깅
-    console.log('🔍 [FRONTEND DEBUG] getCompletedPrescriptions 응답:', {
-      success: data.success,
-      totalPrescriptions: data.data?.prescriptions?.length || 0,
-      total: data.data?.total || 0,
-      firstPrescription: data.data?.prescriptions?.[0] ? {
-        id: data.data.prescriptions[0].id,
-        title: data.data.prescriptions[0].title,
-        thumbnailUrl: data.data.prescriptions[0].thumbnailUrl,
-        fileCount: data.data.prescriptions[0].fileCount,
-        mediaType: data.data.prescriptions[0].mediaType
-      } : null
-    })
     
     return data.data
   }
@@ -169,27 +175,6 @@ class PrescriptionService implements IPrescriptionService {
     const { data } = await this.httpClient.request<{ success: boolean; data: Prescription }>({
       method: 'GET',
       url: `/prescription/by-analysis/${analysisJobId}`
-    })
-    
-    // 🔍 디버깅: 받은 prescription 데이터 구조 로깅
-    console.log('🔍 [FRONTEND DEBUG] getPrescriptionByAnalysisJob 응답:', {
-      success: data.success,
-      prescriptionId: data.data?._id,
-      analysisJobId: data.data?.analysisJobId,
-      hasBlazePoseResults: !!data.data?.blazePoseResults,
-      blazePoseResultsStructure: data.data?.blazePoseResults ? {
-        totalFiles: data.data.blazePoseResults.totalFiles,
-        resultsCount: data.data.blazePoseResults.results?.length || 0,
-        firstResult: data.data.blazePoseResults.results?.[0] ? {
-          fileName: data.data.blazePoseResults.results[0].fileName,
-          landmarksCount: data.data.blazePoseResults.results[0].landmarks?.length || 0,
-          confidenceCount: data.data.blazePoseResults.results[0].confidence?.length || 0,
-          estimatedKeysCount: data.data.blazePoseResults.results[0].estimatedKeys?.length || 0,
-          hasEstimatedImages: !!data.data.blazePoseResults.results[0].estimatedImages
-        } : null
-      } : null,
-      hasLLMResults: !!data.data?.llmResults,
-      llmText: data.data?.llmResults?.analysisText ? 'LLM 텍스트 있음' : 'LLM 텍스트 없음'
     })
     
     return data.data

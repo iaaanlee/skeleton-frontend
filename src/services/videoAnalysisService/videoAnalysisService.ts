@@ -1,9 +1,11 @@
 import { axiosHttpClient } from '../common/axiosHttpClient';
 import { CompletedPoseAnalysisApiResponse, PoseAnalysisDetailApiResponse } from '../../types/completedPoseAnalysis';
+import { PoseEngineType } from '../../types/poseEngine';
 
 // 비디오 분석 시작 요청
 export type StartVideoPoseAnalysisRequest = {
   mediaSetId: string;
+  poseEngine?: PoseEngineType; // 포즈 추정 엔진 선택 (기본값: blazepose)
 };
 
 // 비디오 분석 시작 응답

@@ -6,4 +6,5 @@ export { AnalysisStartButton } from './AnalysisStartButton';
 export { DescriptionSection } from './DescriptionSection';
 export { MediaSetList } from './MediaSetList';
 export { MediaSetUploadModal } from './MediaSetUploadModal';
+export { PoseEngineSelector } from './PoseEngineSelector';
 export { PrescriptionFileList } from './PrescriptionFileList';

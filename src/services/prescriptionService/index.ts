@@ -10,5 +10,5 @@ export type {
 } from './prescriptionService'
 
 // React Query hooks
-export { useCreatePrescription, useDeletePrescription } from './prescriptionMutation'
+export { useCreatePrescription, useCreateImageAnalysisOnlyPrescription, useDeletePrescription } from './prescriptionMutation'
 export { usePrescriptionById, useCompletedPrescriptions, usePrescriptionByAnalysisJob } from './prescriptionQuery'

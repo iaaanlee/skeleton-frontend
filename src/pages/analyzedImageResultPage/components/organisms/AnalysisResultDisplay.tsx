@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Prescription } from '../../../../services/prescriptionService';
+import { POSE_ENGINES } from '../../../../types/poseEngine';
 import { AnalysisSummary } from '../molecules/AnalysisSummary';
+import { EngineInfoDisplay } from '../molecules/EngineInfoDisplay';
 import { FileResultList } from '../molecules/FileResultList';
 import { LandmarksVisualization } from '../molecules/LandmarksVisualization';
 import ExpandableSection from '../molecules/ExpandableSection';
@@ -21,13 +23,21 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
   result,
   onSaveResult
 }) => {
+  // 사용된 엔진 정보 추출
+  const usedEngine = result.poseAnalysis?.engine || result.inputs?.poseEngine || 'blazepose';
+  const engineInfo = POSE_ENGINES.find(engine => engine.id === usedEngine);
+  const engineName = engineInfo?.name || 'BlazePose';
+  
+  // 통합 포즈 데이터 또는 레거시 데이터 사용
+  const poseData = result.poseAnalysis || result.blazePoseResults;
+  
   const [expandedSections, setExpandedSections] = useState<{
     llm: boolean;
-    blazePose: boolean;
+    poseAnalysis: boolean;
     landmarks: boolean;
   }>({
     llm: true,
-    blazePose: true,
+    poseAnalysis: true,
     landmarks: false
   });
 
@@ -45,9 +55,12 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
     window.print();
   };
 
-  const blazePoseStatistics = [
+  // 엔진별 관절 개수 정보
+  const jointCount = usedEngine === 'hybrik' ? 24 : 33;
+  
+  const poseStatistics = [
     {
-      value: result.blazePoseResults?.totalFiles || 0,
+      value: poseData?.totalFiles || 0,
       label: '분석된 이미지',
       color: 'blue' as const
     },
@@ -57,7 +70,7 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
       color: 'green' as const
     },
     {
-      value: result.blazePoseResults?.results?.[0]?.landmarks?.length || 0,
+      value: jointCount,
       label: '관절 좌표 수',
       color: 'purple' as const
     }
@@ -65,12 +78,12 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
 
   const generalStatistics = [
     {
-      value: result.blazePoseResults?.totalFiles || 0,
+      value: poseData?.totalFiles || 0,
       label: '분석된 파일',
       color: 'blue' as const
     },
     {
-      value: formatConfidence(result.blazePoseResults?.results?.[0]?.confidence?.[0] || 0),
+      value: formatConfidence(averageConfidence),
       label: '전체 신뢰도',
       color: 'green' as const
     },
@@ -83,11 +96,14 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* 사용된 엔진 정보 */}
+      <EngineInfoDisplay engine={usedEngine} />
+
       {/* 분석 요약 */}
       <AnalysisSummary 
-        totalFiles={result.blazePoseResults?.totalFiles || 0}
+        totalFiles={poseData?.totalFiles || 0}
         totalConfidence={averageConfidence}
-        totalLandmarks={result.blazePoseResults?.results?.[0]?.landmarks?.length || 33}
+        totalLandmarks={jointCount}
       />
 
       {/* LLM 분석 결과 */}
@@ -105,16 +121,16 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
         </ExpandableSection>
       )}
 
-      {/* BlazePose 분석 결과 */}
-      {result.blazePoseResults && (
+      {/* 포즈 분석 결과 */}
+      {poseData && (
         <ExpandableSection
-          title="BlazePose 분석 결과"
-          isExpanded={expandedSections.blazePose}
-          onToggle={() => toggleSection('blazePose')}
+          title={`${engineName} 분석 결과`}
+          isExpanded={expandedSections.poseAnalysis}
+          onToggle={() => toggleSection('poseAnalysis')}
         >
           <div className="space-y-4">
             {/* 전체 통계 */}
-            <StatisticsGrid items={blazePoseStatistics} />
+            <StatisticsGrid items={poseStatistics} />
 
             {/* 파일별 상세 결과 */}
             {fileResults.length > 0 && (

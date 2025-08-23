@@ -5,7 +5,9 @@ import { useProfile } from '../../../../contexts/ProfileContext'
 import { extractAccountIdFromToken } from '../../../../utils/auth'
 import { MediaSetList } from '../molecules/MediaSetList'
 import { DescriptionSection } from '../molecules/DescriptionSection'
+import { PoseEngineSelector } from '../molecules/PoseEngineSelector'
 import { AnalysisStartButton } from '../molecules/AnalysisStartButton'
+import { PoseEngineType } from '../../../../types/poseEngine'
 
 type PrescriptionUploadSectionProps = {
   className?: string
@@ -19,12 +21,13 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
   const accountId = token ? extractAccountIdFromToken(token) : null
   
   const [selectedMediaSetId, setSelectedMediaSetId] = useState<string | null>(null)
+  const [selectedEngine, setSelectedEngine] = useState<PoseEngineType>('blazepose') // 기본값: BlazePose
   const [description, setDescription] = useState({
     ans1: '',
     ans2: ''
   })
 
-  const { createPrescription, isCreating } = usePrescriptionActions(accountId || '')
+  const { createPrescription, isCreating, createImageAnalysisOnly, isImageAnalyzing } = usePrescriptionActions(accountId || '')
 
   const handleMediaSetSelectionChange = useCallback((mediaSetId: string | null) => {
     setSelectedMediaSetId(mediaSetId)
@@ -32,6 +35,10 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
 
   const handleDescriptionChange = useCallback((newDescription: { ans1: string; ans2: string }) => {
     setDescription(newDescription)
+  }, [])
+
+  const handleEngineChange = useCallback((engine: PoseEngineType) => {
+    setSelectedEngine(engine)
   }, [])
 
 
@@ -43,7 +50,27 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
     };
     isTest?: boolean;
   }) => {
-    await createPrescription(inputs)
+    // 포즈 엔진 정보를 추가하여 요청
+    const requestWithEngine = {
+      ...inputs,
+      poseEngine: selectedEngine
+    };
+    await createPrescription(requestWithEngine)
+  }
+
+  const handleImageAnalysisStart = async (inputs: {
+    mediaSetId: string;
+    description: {
+      ans1: string;
+      ans2: string;
+    };
+  }) => {
+    // 포즈 엔진 정보를 추가하여 요청
+    const requestWithEngine = {
+      ...inputs,
+      poseEngine: selectedEngine
+    };
+    await createImageAnalysisOnly(requestWithEngine)
   }
 
   return (
@@ -53,6 +80,14 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
         profileId={currentProfile?.profileId || ''}
         onSelectionChange={handleMediaSetSelectionChange}
       />
+
+      {/* 포즈 추정 엔진 선택 섹션 */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <PoseEngineSelector
+          selectedEngine={selectedEngine}
+          onEngineChange={handleEngineChange}
+        />
+      </div>
 
       {/* 운동 분석 요청사항 */}
       <DescriptionSection
@@ -65,7 +100,9 @@ export const PrescriptionUploadSection: React.FC<PrescriptionUploadSectionProps>
         selectedMediaSetId={selectedMediaSetId}
         description={description}
         onAnalysisStart={handleAnalysisStart}
+        onImageAnalysisStart={handleImageAnalysisStart}
         isCreating={isCreating}
+        isImageAnalyzing={isImageAnalyzing}
       />
     </div>
   )
