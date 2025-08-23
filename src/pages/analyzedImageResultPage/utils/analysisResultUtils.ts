@@ -43,8 +43,8 @@ export const convertToFileResults = (result: Prescription) => {
       fileId: `file_${index}`,
       fileName: fileResult.fileName || `파일 ${index + 1}`,
       confidence: averageConfidence,
-      analysisTime: 0, // TODO: 실제 분석 시간 추가
       landmarks: landmarks,
+      worldLandmarks: fileResult.worldLandmarks || [],
       estimatedImages: estimatedImages,
       overlayImageUrl: undefined,
       error: undefined

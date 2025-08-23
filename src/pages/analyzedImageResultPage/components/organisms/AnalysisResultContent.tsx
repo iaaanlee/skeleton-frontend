@@ -71,7 +71,6 @@ export const AnalysisResultContent: React.FC<AnalysisResultContentProps> = ({
         fileId: `file_${index}`,
         fileName: fileResult.fileName || `파일 ${index + 1}`,
         confidence: averageConfidence,
-        analysisTime: 0, // TODO: 실제 분석 시간 추가
         landmarks: landmarks,
         estimatedImages: estimatedImages,
         overlayImageUrl: undefined,
@@ -88,7 +87,7 @@ export const AnalysisResultContent: React.FC<AnalysisResultContentProps> = ({
       <AnalysisSummary 
         totalFiles={result.blazePoseResults?.totalFiles || 0}
         totalConfidence={calculateAverageConfidence()}
-        analysisTime={0}
+        totalLandmarks={result.blazePoseResults?.results?.[0]?.landmarks?.length || 33}
       />
 
       {/* LLM 분석 결과 */}

@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { BlazePoseLandmark, EstimatedImage } from '../../../../types/blazePose';
+import { BlazePoseGraphGrid } from './BlazePoseGraphGrid';
 
 type FileResultForDisplay = {
   fileId: string;
   fileName: string;
   confidence: number;
-  analysisTime: number;
   landmarks: BlazePoseLandmark[];
+  worldLandmarks?: BlazePoseLandmark[];
   estimatedImages: EstimatedImage[];
   overlayImageUrl?: string; // deprecated - 하위 호환성용
   error?: string;
+  qualityScore?: number; // 이미지 전처리 품질 점수
 };
 
 type FileResultItemProps = {
@@ -17,7 +19,6 @@ type FileResultItemProps = {
   index: number;
   totalFiles: number;
   formatConfidence: (confidence: number) => string;
-  formatTime: (milliseconds: number) => string;
   getConfidenceColor: (confidence: number) => string;
   getConfidenceBadge: (confidence: number) => string;
 };
@@ -27,7 +28,6 @@ export const FileResultItem: React.FC<FileResultItemProps> = ({
   index,
   totalFiles,
   formatConfidence,
-  formatTime,
   getConfidenceColor,
   getConfidenceBadge
 }) => {
@@ -61,25 +61,25 @@ export const FileResultItem: React.FC<FileResultItemProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <div className="text-center p-3 bg-gray-50 rounded-lg">
+        <div className="text-center p-3 bg-green-50 rounded-lg">
           <div className={`text-lg font-bold ${getConfidenceColor(fileResult.confidence)}`}>
             {formatConfidence(fileResult.confidence)}
           </div>
-          <div className="text-xs text-gray-600">신뢰도</div>
+          <div className="text-xs text-gray-600">포즈 신뢰도</div>
         </div>
         
-        <div className="text-center p-3 bg-gray-50 rounded-lg">
-          <div className="text-lg font-bold text-purple-600">
-            {formatTime(fileResult.analysisTime)}
-          </div>
-          <div className="text-xs text-gray-600">분석 시간</div>
-        </div>
-        
-        <div className="text-center p-3 bg-gray-50 rounded-lg">
+        <div className="text-center p-3 bg-blue-50 rounded-lg">
           <div className="text-lg font-bold text-blue-600">
             {fileResult.landmarks?.length || 0}
           </div>
-          <div className="text-xs text-gray-600">관절 좌표</div>
+          <div className="text-xs text-gray-600">감지 관절 수</div>
+        </div>
+        
+        <div className="text-center p-3 bg-purple-50 rounded-lg">
+          <div className="text-lg font-bold text-purple-600">
+            {fileResult.estimatedImages?.length || 1}
+          </div>
+          <div className="text-xs text-gray-600">분석 이미지</div>
         </div>
       </div>
 
@@ -106,6 +106,16 @@ export const FileResultItem: React.FC<FileResultItemProps> = ({
         </div>
       )}
 
+      {/* 관절 좌표 그래프 */}
+      {(fileResult.landmarks?.length > 0 || (fileResult.worldLandmarks && fileResult.worldLandmarks.length > 0)) && (
+        <div className="mb-4">
+          <BlazePoseGraphGrid 
+            landmarks={fileResult.landmarks}
+            worldLandmarks={fileResult.worldLandmarks}
+          />
+        </div>
+      )}
+
       {/* 확장된 정보 */}
       {isExpanded && (
         <div className="border-t border-gray-200 pt-4 mt-4">
@@ -117,7 +127,7 @@ export const FileResultItem: React.FC<FileResultItemProps> = ({
               <div className="space-y-1 text-sm text-gray-600">
                 <div>파일명: {fileResult.fileName}</div>
                 <div>파일 ID: {fileResult.fileId}</div>
-                <div>분석 시간: {formatTime(fileResult.analysisTime)}</div>
+                <div>이미지 개수: {fileResult.estimatedImages?.length || 1}개</div>
               </div>
             </div>
             

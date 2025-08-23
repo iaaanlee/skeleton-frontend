@@ -7,8 +7,8 @@ type FileResultForDisplay = {
   fileId: string;
   fileName: string;
   confidence: number;
-  analysisTime: number;
   landmarks: BlazePoseLandmark[];
+  worldLandmarks?: BlazePoseLandmark[];
   estimatedImages: EstimatedImage[];
   overlayImageUrl?: string; // deprecated - 하위 호환성용
   error?: string;
@@ -23,10 +23,7 @@ export const FileResultList: React.FC<FileResultListProps> = ({ fileResults }) =
     return `${(confidence * 100).toFixed(1)}%`;
   };
 
-  const formatTime = (milliseconds: number) => {
-    const seconds = Math.floor(milliseconds / 1000);
-    return `${seconds}초`;
-  };
+  // formatTime 함수 제거됨
 
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 0.8) return 'text-green-600';
@@ -49,7 +46,6 @@ export const FileResultList: React.FC<FileResultListProps> = ({ fileResults }) =
           index={index + 1}
           totalFiles={fileResults.length}
           formatConfidence={formatConfidence}
-          formatTime={formatTime}
           getConfidenceColor={getConfidenceColor}
           getConfidenceBadge={getConfidenceBadge}
         />

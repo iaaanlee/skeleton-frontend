@@ -3,24 +3,15 @@ import React from 'react';
 type AnalysisSummaryProps = {
   totalFiles: number;
   totalConfidence: number;
-  analysisTime: number;
+  totalLandmarks?: number; // 감지된 관절 수 추가
 };
 
 export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
   totalFiles,
   totalConfidence,
-  analysisTime
+  totalLandmarks = 33
 }) => {
-  const formatTime = (milliseconds: number) => {
-    const seconds = Math.floor(milliseconds / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    
-    if (minutes > 0) {
-      return `${minutes}분 ${remainingSeconds}초`;
-    }
-    return `${remainingSeconds}초`;
-  };
+  // formatTime 함수 제거됨
 
   const formatConfidence = (confidence: number) => {
     return `${(confidence * 100).toFixed(1)}%`;
@@ -54,7 +45,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
           <div className="text-3xl font-bold text-blue-600 mb-2">
             {totalFiles}
           </div>
-          <div className="text-sm text-gray-600">분석된 파일</div>
+          <div className="text-sm text-gray-600">분석된 이미지</div>
         </div>
 
         <div className="text-center p-4 bg-green-50 rounded-lg">
@@ -62,25 +53,25 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
             {formatConfidence(totalConfidence)}
           </div>
           <div className="text-sm text-gray-600">
-            전체 신뢰도 ({getConfidenceText(totalConfidence)})
+            포즈 감지 신뢰도 ({getConfidenceText(totalConfidence)})
           </div>
         </div>
 
         <div className="text-center p-4 bg-purple-50 rounded-lg">
           <div className="text-3xl font-bold text-purple-600 mb-2">
-            {formatTime(analysisTime)}
+            {totalLandmarks}
           </div>
-          <div className="text-sm text-gray-600">분석 소요 시간</div>
+          <div className="text-sm text-gray-600">감지된 관절 수</div>
         </div>
       </div>
 
       <div className="mt-6 p-4 bg-gray-50 rounded-lg">
         <h4 className="font-semibold text-gray-900 mb-2">분석 결과 요약</h4>
         <ul className="text-sm text-gray-600 space-y-1">
-          <li>• 총 {totalFiles}개의 파일이 성공적으로 분석되었습니다.</li>
-          <li>• 전체 신뢰도는 {formatConfidence(totalConfidence)}입니다.</li>
-          <li>• 분석에 {formatTime(analysisTime)}이 소요되었습니다.</li>
-          <li>• 각 파일별 상세 결과는 아래에서 확인할 수 있습니다.</li>
+          <li>• 총 {totalFiles}개의 이미지에서 운동 자세가 성공적으로 분석되었습니다.</li>
+          <li>• BlazePose 포즈 감지 신뢰도: {formatConfidence(totalConfidence)} ({getConfidenceText(totalConfidence)})</li>
+          <li>• 총 {totalLandmarks}개의 인체 관절 좌표가 감지되었습니다.</li>
+          <li>• 상세 분석 결과 및 개선 제안사항을 아래에서 확인하세요.</li>
         </ul>
       </div>
     </div>

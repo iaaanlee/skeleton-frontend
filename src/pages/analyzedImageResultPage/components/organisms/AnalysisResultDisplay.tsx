@@ -87,7 +87,7 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
       <AnalysisSummary 
         totalFiles={result.blazePoseResults?.totalFiles || 0}
         totalConfidence={averageConfidence}
-        analysisTime={0}
+        totalLandmarks={result.blazePoseResults?.results?.[0]?.landmarks?.length || 33}
       />
 
       {/* LLM 분석 결과 */}
