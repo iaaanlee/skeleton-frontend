@@ -138,6 +138,20 @@ class PrescriptionService implements IPrescriptionService {
       params: { limit, offset }
     })
     
+    // 🔍 디버깅: 받은 데이터 구조 로깅
+    console.log('🔍 [FRONTEND DEBUG] getCompletedPrescriptions 응답:', {
+      success: data.success,
+      totalPrescriptions: data.data?.prescriptions?.length || 0,
+      total: data.data?.total || 0,
+      firstPrescription: data.data?.prescriptions?.[0] ? {
+        id: data.data.prescriptions[0].id,
+        title: data.data.prescriptions[0].title,
+        thumbnailUrl: data.data.prescriptions[0].thumbnailUrl,
+        fileCount: data.data.prescriptions[0].fileCount,
+        mediaType: data.data.prescriptions[0].mediaType
+      } : null
+    })
+    
     return data.data
   }
 
@@ -156,6 +170,28 @@ class PrescriptionService implements IPrescriptionService {
       method: 'GET',
       url: `/prescription/by-analysis/${analysisJobId}`
     })
+    
+    // 🔍 디버깅: 받은 prescription 데이터 구조 로깅
+    console.log('🔍 [FRONTEND DEBUG] getPrescriptionByAnalysisJob 응답:', {
+      success: data.success,
+      prescriptionId: data.data?._id,
+      analysisJobId: data.data?.analysisJobId,
+      hasBlazePoseResults: !!data.data?.blazePoseResults,
+      blazePoseResultsStructure: data.data?.blazePoseResults ? {
+        totalFiles: data.data.blazePoseResults.totalFiles,
+        resultsCount: data.data.blazePoseResults.results?.length || 0,
+        firstResult: data.data.blazePoseResults.results?.[0] ? {
+          fileName: data.data.blazePoseResults.results[0].fileName,
+          landmarksCount: data.data.blazePoseResults.results[0].landmarks?.length || 0,
+          confidenceCount: data.data.blazePoseResults.results[0].confidence?.length || 0,
+          estimatedKeysCount: data.data.blazePoseResults.results[0].estimatedKeys?.length || 0,
+          hasEstimatedImages: !!data.data.blazePoseResults.results[0].estimatedImages
+        } : null
+      } : null,
+      hasLLMResults: !!data.data?.llmResults,
+      llmText: data.data?.llmResults?.analysisText ? 'LLM 텍스트 있음' : 'LLM 텍스트 없음'
+    })
+    
     return data.data
   }
 
