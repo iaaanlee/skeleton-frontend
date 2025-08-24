@@ -17,6 +17,9 @@ export const AnalysisProgressPage = () => {
   
   // 현재 표시 상태 관리 (레거시 상태로 정규화)
   const [displayStatus, setDisplayStatus] = useState<AnalysisStatus>('pending');
+  
+  // 초기 로딩 완료 여부 추적
+  const [hasInitialData, setHasInitialData] = useState(false);
 
   // 분석 상태 조회
   const { 
@@ -25,17 +28,22 @@ export const AnalysisProgressPage = () => {
     error 
   } = useAnalysisStatus(analysisJobId || '');
 
-  // 상태에 따른 네비게이션 처리
-  useAnalysisNavigation(displayStatus);
+  // 상태에 따른 네비게이션 처리 - 초기 데이터가 있을 때만 실행
+  useAnalysisNavigation(hasInitialData ? displayStatus : 'pending');
 
-  // 페이지 마운트 시 상태 초기화
+  // 페이지 마운트 시 상태 초기화 - 서버 응답을 기다리는 동안 안전한 상태로 설정
   useEffect(() => {
-    setDisplayStatus('pending');
-  }, []);
+    if (!status?.status) {
+      setDisplayStatus('pending');
+    }
+  }, [status?.status]);
 
   // 서버 상태에 따른 표시 상태 업데이트 (통합 상태 정규화)
   useEffect(() => {
     if (!status?.status) return;
+
+    // 초기 데이터 로딩 완료 표시
+    setHasInitialData(true);
 
     // 1. 서버 상태를 통합 상태로 정규화
     const unifiedStatus = normalizeToUnifiedStatus(status.status);

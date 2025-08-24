@@ -31,6 +31,7 @@ export const LEGACY_STATUS_MAPPING: Record<string, UnifiedAnalysisStatus> = {
   // 기존 AnalysisJob 상태 매핑
   'pending': 'pending',
   'blazepose_processing': 'pose_analyzing',
+  'pose_processing': 'pose_analyzing',
   'blazepose_completed': 'pose_completed',
   'llm_processing': 'llm_analyzing',
   'llm_completed': 'analysis_completed',

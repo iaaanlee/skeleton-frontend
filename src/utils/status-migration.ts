@@ -32,7 +32,15 @@ import {
  */
 export const normalizeToUnifiedStatus = (status: string | AnalysisStatus): UnifiedAnalysisStatus => {
   if (!status) return 'pending';
-  return LEGACY_STATUS_MAPPING[status] || 'analysis_failed';
+  
+  // 디버깅을 위한 로그 추가
+  const mapped = LEGACY_STATUS_MAPPING[status];
+  if (!mapped) {
+    console.warn(`⚠️ Unknown status mapping: "${status}" -> defaulting to 'pending'`);
+    return 'pending'; // 알 수 없는 상태는 pending으로 처리 (analysis_failed 대신)
+  }
+  
+  return mapped;
 };
 
 // 하위 호환성을 위한 alias

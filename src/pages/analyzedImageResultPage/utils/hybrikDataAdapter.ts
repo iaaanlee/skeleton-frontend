@@ -56,12 +56,42 @@ export const convertHybrIK3DToLandmarks = (
     return [];
   }
 
-  return joints3d.map((joint, index) => ({
-    x: joint.x,
-    y: joint.y, 
-    z: joint.z,
-    visibility: confidence?.[index] || 0.0
-  }));
+  return joints3d.map((joint, index) => {
+    let x, y, z;
+
+    try {
+      // joint가 배열인지 객체인지 확인하고 처리
+      if (Array.isArray(joint) && joint.length >= 3) {
+        // joint가 [x, y, z] 형태의 배열인 경우
+        [x, y, z] = joint;
+      } else if (joint && typeof joint === 'object' && joint !== null) {
+        // joint가 {x, y, z} 형태의 객체인 경우
+        x = joint.x;
+        y = joint.y;
+        z = joint.z;
+      } else {
+        // 예상치 못한 형태의 데이터인 경우 기본값 설정
+        console.warn(`⚠️ Unexpected 3D joint data structure at index ${index}:`, joint);
+        x = y = z = 0;
+      }
+
+      // 각 좌표값에 대해 추가 검증
+      if (typeof x !== 'number' || isNaN(x) || !isFinite(x)) x = 0;
+      if (typeof y !== 'number' || isNaN(y) || !isFinite(y)) y = 0;
+      if (typeof z !== 'number' || isNaN(z) || !isFinite(z)) z = 0;
+
+    } catch (error) {
+      console.error(`⚠️ Error parsing 3D joint data at index ${index}:`, error, joint);
+      x = y = z = 0;
+    }
+
+    return {
+      x,
+      y,
+      z,
+      visibility: (confidence?.[index] !== undefined && typeof confidence[index] === 'number') ? confidence[index] : 0.0
+    };
+  });
 };
 
 /**
@@ -78,12 +108,40 @@ export const convertHybrIK2DToLandmarks = (
     return [];
   }
 
-  return joints2d.map((joint, index) => ({
-    x: joint.x,
-    y: joint.y,
-    z: 0, // 2D 좌표이므로 Z=0
-    visibility: confidence?.[index] || 0.0
-  }));
+  return joints2d.map((joint, index) => {
+    let x, y;
+
+    try {
+      // joint가 배열인지 객체인지 확인하고 처리
+      if (Array.isArray(joint) && joint.length >= 2) {
+        // joint가 [x, y] 형태의 배열인 경우
+        [x, y] = joint;
+      } else if (joint && typeof joint === 'object' && joint !== null) {
+        // joint가 {x, y} 형태의 객체인 경우
+        x = joint.x;
+        y = joint.y;
+      } else {
+        // 예상치 못한 형태의 데이터인 경우 기본값 설정
+        console.warn(`⚠️ Unexpected 2D joint data structure at index ${index}:`, joint);
+        x = y = 0;
+      }
+
+      // 각 좌표값에 대해 추가 검증
+      if (typeof x !== 'number' || isNaN(x) || !isFinite(x)) x = 0;
+      if (typeof y !== 'number' || isNaN(y) || !isFinite(y)) y = 0;
+
+    } catch (error) {
+      console.error(`⚠️ Error parsing 2D joint data at index ${index}:`, error, joint);
+      x = y = 0;
+    }
+
+    return {
+      x,
+      y,
+      z: 0, // 2D 좌표이므로 Z=0
+      visibility: (confidence?.[index] !== undefined && typeof confidence[index] === 'number') ? confidence[index] : 0.0
+    };
+  });
 };
 
 /**
