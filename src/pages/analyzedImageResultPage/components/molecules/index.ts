@@ -6,6 +6,10 @@ export { FileResultItem } from './FileResultItem';
 export { FileResultList } from './FileResultList';
 export { LandmarksVisualization } from './LandmarksVisualization';
 
+// HybrIK specific components
+export { HybrIK3DCoordinatesDisplay } from './HybrIK3DCoordinatesDisplay';
+export { HybrIKOverlayDisplay } from './HybrIKOverlayDisplay';
+
 // New refactored components
 export { default as PageHeader } from './PageHeader';
 export { default as ExpandableSection } from './ExpandableSection';

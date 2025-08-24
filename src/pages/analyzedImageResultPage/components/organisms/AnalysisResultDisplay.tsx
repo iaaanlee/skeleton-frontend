@@ -5,6 +5,9 @@ import { AnalysisSummary } from '../molecules/AnalysisSummary';
 import { EngineInfoDisplay } from '../molecules/EngineInfoDisplay';
 import { FileResultList } from '../molecules/FileResultList';
 import { LandmarksVisualization } from '../molecules/LandmarksVisualization';
+import { HybrIKGraphGrid } from '../molecules/HybrIKGraphGrid';
+import { HybrIK3DCoordinatesDisplay, HybrIKOverlayDisplay } from '../molecules';
+import { convertHybrIKForVisualization, calculateHybrIKStatistics } from '../../utils/hybrikDataAdapter';
 import ExpandableSection from '../molecules/ExpandableSection';
 import StatisticsGrid from '../molecules/StatisticsGrid';
 import ActionButtonGroup from '../molecules/ActionButtonGroup';
@@ -145,20 +148,76 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
         </ExpandableSection>
       )}
 
-      {/* 관절 좌표 시각화 */}
-      {result.blazePoseResults?.results?.[0]?.landmarks && 
-       result.blazePoseResults.results[0].landmarks.length > 0 && (
-        <ExpandableSection
-          title="관절 좌표 상세 정보"
-          isExpanded={expandedSections.landmarks}
-          onToggle={() => toggleSection('landmarks')}
-        >
-          <LandmarksVisualization 
-            landmarks={result.blazePoseResults.results[0].landmarks}
-            confidence={result.blazePoseResults.results[0].confidence[0] || 0}
-          />
-        </ExpandableSection>
-      )}
+      {/* 관절 좌표 시각화 - 엔진별 분기 처리 */}
+      {(() => {
+        // BlazePose 데이터가 있는 경우
+        if (result.blazePoseResults?.results?.[0]?.landmarks && 
+            result.blazePoseResults.results[0].landmarks.length > 0) {
+          return (
+            <ExpandableSection
+              title="관절 좌표 상세 정보 (BlazePose - 33개 관절)"
+              isExpanded={expandedSections.landmarks}
+              onToggle={() => toggleSection('landmarks')}
+            >
+              <LandmarksVisualization 
+                landmarks={result.blazePoseResults.results[0].landmarks}
+                confidence={result.blazePoseResults.results[0].confidence[0] || 0}
+              />
+            </ExpandableSection>
+          );
+        }
+        
+        // HybrIK 데이터가 있는 경우
+        if (result.poseAnalysis?.results?.[0]?.hybrikData && 
+            (result.poseAnalysis.results[0].hybrikData.joints3d?.length > 0 || 
+             result.poseAnalysis.results[0].hybrikData.joints2d?.length > 0)) {
+          
+          const hybrikData = result.poseAnalysis.results[0].hybrikData;
+          console.log('🎯 HybrIK Data Check:', {
+            joints3d: hybrikData?.joints3d?.length,
+            joints2d: hybrikData?.joints2d?.length, 
+            confidence: hybrikData?.confidence?.length,
+            estimatedImages: hybrikData?.estimatedImages?.length || 0,
+            meta: hybrikData?.meta
+          });
+          
+          const { landmarks, worldLandmarks } = convertHybrIKForVisualization(hybrikData);
+          
+          return (
+            <ExpandableSection
+              title="관절 좌표 상세 정보 (HybrIK - 24개 관절)"
+              isExpanded={expandedSections.landmarks}
+              onToggle={() => toggleSection('landmarks')}
+            >
+              <div className="space-y-6">
+                {/* HybrIK 오버레이 이미지 */}
+                {hybrikData.meta?.debug_visualization && (
+                  <HybrIKOverlayDisplay 
+                    debugVisualization={hybrikData.meta.debug_visualization}
+                    fileName={result.poseAnalysis.results[0].fileName}
+                  />
+                )}
+                
+                {/* HybrIK 3D 좌표 표시 */}
+                {hybrikData.joints3d && hybrikData.joints3d.length > 0 && (
+                  <HybrIK3DCoordinatesDisplay
+                    joints3d={hybrikData.joints3d}
+                    confidence={hybrikData.confidence || []}
+                  />
+                )}
+                
+                {/* HybrIK 그래프 */}
+                <HybrIKGraphGrid 
+                  landmarks={landmarks}
+                  worldLandmarks={worldLandmarks}
+                />
+              </div>
+            </ExpandableSection>
+          );
+        }
+        
+        return null; // 데이터가 없으면 아무것도 표시하지 않음
+      })()}
 
       {/* 분석 통계 */}
       <div className="bg-white rounded-lg shadow-sm p-6">
