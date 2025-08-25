@@ -34,7 +34,7 @@ export type Prescription = {
         z: number;
         visibility: number;
       }>; // 단일 배열로 수정, index 필드 제거
-      confidence: number[];
+      // 🗑️ confidence 배열 완전 제거 - landmarks[i].visibility 사용
       estimatedKeys: string[]; // deprecated - 하위 호환성용
       estimatedImages: Array<{
         key: string;

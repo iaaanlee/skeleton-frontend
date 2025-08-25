@@ -212,7 +212,6 @@ export const AnalysisResultContent: React.FC<AnalysisResultContentProps> = ({
             <div className="px-6 pb-6">
               <LandmarksVisualization 
                 landmarks={result.blazePoseResults.results[0].landmarks}
-                confidence={result.blazePoseResults.results[0].confidence[0] || 0}
               />
             </div>
           )}
@@ -233,7 +232,7 @@ export const AnalysisResultContent: React.FC<AnalysisResultContentProps> = ({
           </div>
           <div className="text-center p-4 bg-green-50 rounded-lg">
             <div className="text-2xl font-bold text-green-600">
-              {formatConfidence(result.blazePoseResults?.results?.[0]?.confidence?.[0] || 0)}
+              {formatConfidence(calculateAverageConfidence())}
             </div>
             <div className="text-sm text-gray-600">전체 신뢰도</div>
           </div>

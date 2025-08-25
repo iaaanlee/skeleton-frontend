@@ -159,7 +159,6 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
             >
               <LandmarksVisualization 
                 landmarks={result.blazePoseResults.results[0].landmarks}
-                confidence={result.blazePoseResults.results[0].confidence[0] || 0}
               />
             </ExpandableSection>
           );

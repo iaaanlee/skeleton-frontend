@@ -47,21 +47,15 @@ export type HybrIKJoint3D = {
   z: number;
 };
 
-export type HybrIKJoint2D = {
-  x: number;
-  y: number;
-};
+// 🗑️ HybrIKJoint2D 타입 완전 제거
+// 2D 좌표 대신 3D 좌표의 X,Y 성분 사용
 
 export type HybrIKResult = {
-  joints3d: HybrIKJoint3D[];
-  joints2d: HybrIKJoint2D[];
-  confidence: number[];
+  joints3d: HybrIKJoint3D[]; // 정밀도 조정됨 (1자리)
+  confidence: number[]; // 정밀도 조정됨 (2자리)
   meta: Record<string, any>;
-  estimatedImages: Array<{
-    key: string;
-    url?: string;
-    expiresAt?: string;
-  }>;
+  // 🗑️ joints2d 완전 제거
+  // 🗑️ estimatedImages 제거됨 (Phase 4)
 };
 
 // 통합 포즈 분석 결과 타입
@@ -77,7 +71,7 @@ export type UnifiedPoseResult = {
       z: number;
       visibility: number;
     }>;
-    confidence: number[];
+    // 🗑️ confidence 배열 완전 제거 - landmarks[i].visibility 사용
     estimatedImages: Array<{
       key: string;
       url?: string;
@@ -87,13 +81,7 @@ export type UnifiedPoseResult = {
   
   hybrikData?: HybrIKResult;
   
-  // 정규화된 공통 데이터 (24개 관절)
-  normalizedJoints: Array<{
-    x: number;
-    y: number;
-    z: number;
-    confidence: number;
-  }>;
+  // normalizedJoints 필드 제거됨 - 원본 데이터 사용
   overallConfidence: number;
 };
 

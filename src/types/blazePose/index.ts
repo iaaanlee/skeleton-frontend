@@ -75,7 +75,7 @@ export type BlazePoseFileResultFromBackend = {
   fileName: string
   landmarks: BlazePoseLandmark[] // 단일 배열 (정규화된 이미지 좌표)
   worldLandmarks?: BlazePoseLandmark[] // 실제 3D 좌표 (미터 단위)
-  confidence: number[]
+  // 🗑️ confidence 배열 완전 제거 - landmarks[i].visibility 사용
   estimatedKeys: string[] // deprecated - 하위 호환성용
   estimatedImages: EstimatedImage[] // 통일된 estimated 이미지 구조
   estimatedImageUrls?: Array<{downloadUrl: string}> // deprecated - 하위 호환성용

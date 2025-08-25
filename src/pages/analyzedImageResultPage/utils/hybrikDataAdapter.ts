@@ -1,4 +1,5 @@
-import { HybrIKJoint3D, HybrIKJoint2D } from '../../../types/poseEngine';
+import { HybrIKJoint3D } from '../../../types/poseEngine';
+// 🗑️ HybrIKJoint2D import 제거 - 더 이상 사용하지 않음
 import { 
   HYBRIK_JOINT_NAMES, 
   HYBRIK_SKELETON_CONNECTIONS,
@@ -114,16 +115,20 @@ export const convertHybrIK3DToLandmarks = (
 };
 
 /**
- * HybrIK 2D 관절을 BlazePose 호환 형식으로 변환 (Z=0으로 설정)
- * @param joints2d HybrIK 2D 관절 좌표  
- * @param confidence HybrIK 신뢰도 배열
- * @returns BlazePose 호환 Landmark 배열
+ * 🗑️ HybrIK 2D 좌표 변환 메서드 완전 제거
+ * joints2d 데이터를 더 이상 사용하지 않음
+ * 3D 좌표의 X,Y 성분으로 대체 사용
  */
-export const convertHybrIK2DToLandmarks = (
-  joints2d: HybrIKJoint2D[],
+
+/**
+ * HybrIK 3D 좌표에서 2D 좌표 생성 (X,Y 성분 사용)
+ * joints2d 대체 함수
+ */
+export const generate2DFromHybrIK3D = (
+  joints3d: HybrIKJoint3D[],
   confidence: number[] | number[][]
 ): Array<{ x: number, y: number, z: number, visibility: number }> => {
-  if (!joints2d || joints2d.length === 0) {
+  if (!joints3d || joints3d.length === 0) {
     return [];
   }
 
@@ -131,7 +136,6 @@ export const convertHybrIK2DToLandmarks = (
   let flatConfidence: number[] = [];
   if (confidence && confidence.length > 0) {
     flatConfidence = confidence.map((conf: any) => {
-      // 중첩 배열 처리: [[0.995], [0.993]] 형태를 [0.995, 0.993]로 변환
       if (Array.isArray(conf)) {
         return conf[0] || 0.0;
       }
@@ -139,40 +143,35 @@ export const convertHybrIK2DToLandmarks = (
     });
   }
 
-  return joints2d.map((joint, index) => {
+  return joints3d.map((joint, index) => {
     let x, y;
 
     try {
-      // joint가 배열인지 객체인지 확인하고 처리
-      if (Array.isArray(joint) && joint.length >= 2) {
-        // joint가 [x, y] 형태의 배열인 경우
-        [x, y] = joint;
+      if (Array.isArray(joint) && joint.length >= 3) {
+        // 3D 좌표에서 X,Y 성분만 사용
+        [x, y] = joint; // Z는 무시
       } else if (joint && typeof joint === 'object' && joint !== null) {
-        // joint가 {x, y} 형태의 객체인 경우
         x = joint.x;
         y = joint.y;
       } else {
-        // 예상치 못한 형태의 데이터인 경우 기본값 설정
-        console.warn(`⚠️ Unexpected 2D joint data structure at index ${index}:`, joint);
+        console.warn(`⚠️ Unexpected 3D joint data structure at index ${index}:`, joint);
         x = y = 0;
       }
 
-      // 각 좌표값에 대해 추가 검증
       if (typeof x !== 'number' || isNaN(x) || !isFinite(x)) x = 0;
       if (typeof y !== 'number' || isNaN(y) || !isFinite(y)) y = 0;
 
     } catch (error) {
-      console.error(`⚠️ Error parsing 2D joint data at index ${index}:`, error, joint);
+      console.error(`⚠️ Error parsing 3D joint data for 2D projection at index ${index}:`, error, joint);
       x = y = 0;
     }
 
-    // confidence 값 설정 (기본값 0.95로 설정 - HybrIK는 일반적으로 높은 신뢰도)
     const visibilityValue = flatConfidence[index] !== undefined ? flatConfidence[index] : 0.95;
 
     return {
       x,
       y,
-      z: 0, // 2D 좌표이므로 Z=0
+      z: 0, // 2D 투영이므로 Z=0
       visibility: visibilityValue
     };
   });
@@ -185,19 +184,19 @@ export const convertHybrIK2DToLandmarks = (
  */
 export const convertHybrIKForVisualization = (hybrikData: {
   joints3d?: HybrIKJoint3D[];
-  joints2d?: HybrIKJoint2D[];
   confidence?: number[] | number[][];
+  // 🗑️ joints2d 완전 제거
 }) => {
-  const { joints3d, joints2d, confidence = [] } = hybrikData;
+  const { joints3d, confidence = [] } = hybrikData;
 
   // 3D 좌표를 worldLandmarks로 사용 (실제 3D 좌표)
   const worldLandmarks = joints3d ? convertHybrIK3DToLandmarks(joints3d, confidence) : undefined;
   
-  // 2D 좌표를 landmarks로 사용 (이미지 좌표)
-  const landmarks = joints2d ? convertHybrIK2DToLandmarks(joints2d, confidence) : undefined;
+  // 3D 좌표의 X,Y 성분을 landmarks로 사용 (2D 좌표 대체)
+  const landmarks = joints3d ? generate2DFromHybrIK3D(joints3d, confidence) : undefined;
 
   return {
-    landmarks,      // 2D 이미지 좌표 (BlazePose landmarks와 유사)
+    landmarks,      // 3D에서 생성한 2D 좌표 (joints2d 대체)
     worldLandmarks  // 3D 실제 좌표 (BlazePose worldLandmarks와 유사)
   };
 };
