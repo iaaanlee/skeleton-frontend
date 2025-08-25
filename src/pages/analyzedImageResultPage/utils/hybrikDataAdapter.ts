@@ -24,10 +24,14 @@ export const getHybrIKJointCategory = (index: number): 'face' | 'upper_body' | '
 export const HYBRIK_CONNECTIONS = HYBRIK_SKELETON_CONNECTIONS;
 
 /**
- * HybrIK 관절명 반환
+ * HybrIK 관절명 반환 (한글 표시명)
  */
 export const getHybrIKJointName = (index: number): string => {
-  return HYBRIK_JOINT_NAMES[index] || `joint_${index}`;
+  const englishName = HYBRIK_JOINT_NAMES[index];
+  if (!englishName) return `관절_${index}`;
+  
+  // HYBRIK_JOINT_DISPLAY_NAMES을 타입 체크하여 안전하게 접근
+  return (HYBRIK_JOINT_DISPLAY_NAMES as any)[englishName] || englishName;
 };
 
 /**
@@ -50,10 +54,22 @@ export const getHybrIKCategoryColor = (category: 'face' | 'upper_body' | 'lower_
  */
 export const convertHybrIK3DToLandmarks = (
   joints3d: HybrIKJoint3D[], 
-  confidence: number[]
+  confidence: number[] | number[][]
 ): Array<{ x: number, y: number, z: number, visibility: number }> => {
   if (!joints3d || joints3d.length === 0) {
     return [];
+  }
+
+  // Confidence 배열 평탄화 처리
+  let flatConfidence: number[] = [];
+  if (confidence && confidence.length > 0) {
+    flatConfidence = confidence.map((conf: any) => {
+      // 중첩 배열 처리: [[0.995], [0.993]] 형태를 [0.995, 0.993]로 변환
+      if (Array.isArray(conf)) {
+        return conf[0] || 0.0;
+      }
+      return typeof conf === 'number' ? conf : 0.0;
+    });
   }
 
   return joints3d.map((joint, index) => {
@@ -85,11 +101,14 @@ export const convertHybrIK3DToLandmarks = (
       x = y = z = 0;
     }
 
+    // confidence 값 설정 (기본값 0.95로 설정 - HybrIK는 일반적으로 높은 신뢰도)
+    const visibilityValue = flatConfidence[index] !== undefined ? flatConfidence[index] : 0.95;
+
     return {
       x,
       y,
       z,
-      visibility: (confidence?.[index] !== undefined && typeof confidence[index] === 'number') ? confidence[index] : 0.0
+      visibility: visibilityValue
     };
   });
 };
@@ -102,10 +121,22 @@ export const convertHybrIK3DToLandmarks = (
  */
 export const convertHybrIK2DToLandmarks = (
   joints2d: HybrIKJoint2D[],
-  confidence: number[]
+  confidence: number[] | number[][]
 ): Array<{ x: number, y: number, z: number, visibility: number }> => {
   if (!joints2d || joints2d.length === 0) {
     return [];
+  }
+
+  // Confidence 배열 평탄화 처리
+  let flatConfidence: number[] = [];
+  if (confidence && confidence.length > 0) {
+    flatConfidence = confidence.map((conf: any) => {
+      // 중첩 배열 처리: [[0.995], [0.993]] 형태를 [0.995, 0.993]로 변환
+      if (Array.isArray(conf)) {
+        return conf[0] || 0.0;
+      }
+      return typeof conf === 'number' ? conf : 0.0;
+    });
   }
 
   return joints2d.map((joint, index) => {
@@ -135,11 +166,14 @@ export const convertHybrIK2DToLandmarks = (
       x = y = 0;
     }
 
+    // confidence 값 설정 (기본값 0.95로 설정 - HybrIK는 일반적으로 높은 신뢰도)
+    const visibilityValue = flatConfidence[index] !== undefined ? flatConfidence[index] : 0.95;
+
     return {
       x,
       y,
       z: 0, // 2D 좌표이므로 Z=0
-      visibility: (confidence?.[index] !== undefined && typeof confidence[index] === 'number') ? confidence[index] : 0.0
+      visibility: visibilityValue
     };
   });
 };
@@ -152,7 +186,7 @@ export const convertHybrIK2DToLandmarks = (
 export const convertHybrIKForVisualization = (hybrikData: {
   joints3d?: HybrIKJoint3D[];
   joints2d?: HybrIKJoint2D[];
-  confidence?: number[];
+  confidence?: number[] | number[][];
 }) => {
   const { joints3d, joints2d, confidence = [] } = hybrikData;
 

@@ -5,9 +5,7 @@ import { AnalysisSummary } from '../molecules/AnalysisSummary';
 import { EngineInfoDisplay } from '../molecules/EngineInfoDisplay';
 import { FileResultList } from '../molecules/FileResultList';
 import { LandmarksVisualization } from '../molecules/LandmarksVisualization';
-import { HybrIKGraphGrid } from '../molecules/HybrIKGraphGrid';
 import { HybrIK3DCoordinatesDisplay, HybrIKOverlayDisplay } from '../molecules';
-import { convertHybrIKForVisualization, calculateHybrIKStatistics } from '../../utils/hybrikDataAdapter';
 import ExpandableSection from '../molecules/ExpandableSection';
 import StatisticsGrid from '../molecules/StatisticsGrid';
 import ActionButtonGroup from '../molecules/ActionButtonGroup';
@@ -150,7 +148,7 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
 
       {/* 관절 좌표 시각화 - 엔진별 분기 처리 */}
       {(() => {
-        // BlazePose 데이터가 있는 경우
+        // BlazePose 데이터가 있는 경우 (기존 방식 유지)
         if (result.blazePoseResults?.results?.[0]?.landmarks && 
             result.blazePoseResults.results[0].landmarks.length > 0) {
           return (
@@ -167,30 +165,20 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
           );
         }
         
-        // HybrIK 데이터가 있는 경우
+        // HybrIK 데이터가 있는 경우 - 3D 좌표 정보만 표시 (그래프는 각 파일별로 표시됨)
         if (result.poseAnalysis?.results?.[0]?.hybrikData && 
-            (result.poseAnalysis.results[0].hybrikData.joints3d?.length > 0 || 
-             result.poseAnalysis.results[0].hybrikData.joints2d?.length > 0)) {
+            result.poseAnalysis.results[0].hybrikData.joints3d?.length > 0) {
           
           const hybrikData = result.poseAnalysis.results[0].hybrikData;
-          console.log('🎯 HybrIK Data Check:', {
-            joints3d: hybrikData?.joints3d?.length,
-            joints2d: hybrikData?.joints2d?.length, 
-            confidence: hybrikData?.confidence?.length,
-            estimatedImages: hybrikData?.estimatedImages?.length || 0,
-            meta: hybrikData?.meta
-          });
-          
-          const { landmarks, worldLandmarks } = convertHybrIKForVisualization(hybrikData);
           
           return (
             <ExpandableSection
-              title="관절 좌표 상세 정보 (HybrIK - 24개 관절)"
+              title="HybrIK 3D 관절 좌표 상세 정보 (24개 관절)"
               isExpanded={expandedSections.landmarks}
               onToggle={() => toggleSection('landmarks')}
             >
               <div className="space-y-6">
-                {/* HybrIK 오버레이 이미지 */}
+                {/* HybrIK 오버레이 이미지 (첫 번째 이미지만) */}
                 {hybrikData.meta?.debug_visualization && (
                   <HybrIKOverlayDisplay 
                     debugVisualization={hybrikData.meta.debug_visualization}
@@ -199,18 +187,19 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
                 )}
                 
                 {/* HybrIK 3D 좌표 표시 */}
-                {hybrikData.joints3d && hybrikData.joints3d.length > 0 && (
-                  <HybrIK3DCoordinatesDisplay
-                    joints3d={hybrikData.joints3d}
-                    confidence={hybrikData.confidence || []}
-                  />
-                )}
-                
-                {/* HybrIK 그래프 */}
-                <HybrIKGraphGrid 
-                  landmarks={landmarks}
-                  worldLandmarks={worldLandmarks}
+                <HybrIK3DCoordinatesDisplay
+                  joints3d={hybrikData.joints3d}
+                  confidence={hybrikData.confidence || []}
                 />
+                
+                {/* 안내 메시지 추가 */}
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h6 className="font-medium text-blue-900 mb-2">📊 관절 좌표 그래프 위치 안내</h6>
+                  <p className="text-sm text-blue-800">
+                    각 이미지별 관절 좌표 그래프는 위의 "파일별 분석 결과" 섹션에서 확인하실 수 있습니다.
+                    각 파일마다 2D 이미지 좌표와 3D 월드 좌표 그래프가 표시됩니다.
+                  </p>
+                </div>
               </div>
             </ExpandableSection>
           );

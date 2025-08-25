@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { BlazePoseLandmark, EstimatedImage } from '../../../../types/blazePose';
 import { BlazePoseGraphGrid } from './BlazePoseGraphGrid';
+import { HybrIKGraphGrid } from './HybrIKGraphGrid';
+import { convertHybrIKForVisualization } from '../../utils/hybrikDataAdapter';
 
 type FileResultForDisplay = {
   fileId: string;
@@ -12,6 +14,7 @@ type FileResultForDisplay = {
   overlayImageUrl?: string; // deprecated - 하위 호환성용
   error?: string;
   qualityScore?: number; // 이미지 전처리 품질 점수
+  hybrikData?: any; // HybrIK 데이터 추가
 };
 
 type FileResultItemProps = {
@@ -107,14 +110,39 @@ export const FileResultItem: React.FC<FileResultItemProps> = ({
       )}
 
       {/* 관절 좌표 그래프 */}
-      {(fileResult.landmarks?.length > 0 || (fileResult.worldLandmarks && fileResult.worldLandmarks.length > 0)) && (
-        <div className="mb-4">
-          <BlazePoseGraphGrid 
-            landmarks={fileResult.landmarks}
-            worldLandmarks={fileResult.worldLandmarks}
-          />
-        </div>
-      )}
+      {(() => {
+        // HybrIK 데이터가 있는 경우
+        if (fileResult.hybrikData && 
+            (fileResult.hybrikData.joints3d?.length > 0 || 
+             fileResult.hybrikData.joints2d?.length > 0)) {
+          
+          const { landmarks, worldLandmarks } = convertHybrIKForVisualization(fileResult.hybrikData);
+          
+          return (
+            <div className="mb-4">
+              <HybrIKGraphGrid 
+                landmarks={landmarks}
+                worldLandmarks={worldLandmarks}
+              />
+            </div>
+          );
+        }
+        
+        // BlazePose 데이터가 있는 경우
+        if (fileResult.landmarks?.length > 0 || 
+            (fileResult.worldLandmarks && fileResult.worldLandmarks.length > 0)) {
+          return (
+            <div className="mb-4">
+              <BlazePoseGraphGrid 
+                landmarks={fileResult.landmarks}
+                worldLandmarks={fileResult.worldLandmarks}
+              />
+            </div>
+          );
+        }
+        
+        return null;
+      })()}
 
       {/* 확장된 정보 */}
       {isExpanded && (

@@ -84,6 +84,11 @@ export const convertToFileResults = (result: Prescription) => {
     // 이미지 정보 추출 - 통합 구조 우선
     let estimatedImages = fileResult.estimatedImages || [];
     
+    // HybrIK의 경우 estimatedImages 추가 처리
+    if (fileResult.hybrikData?.estimatedImages) {
+      estimatedImages = fileResult.hybrikData.estimatedImages;
+    }
+    
     // 하위 호환성: 기존 estimatedImageUrls가 있으면 변환
     if (estimatedImages.length === 0 && fileResult.estimatedImageUrls && fileResult.estimatedImageUrls.length > 0) {
       estimatedImages = fileResult.estimatedImageUrls.map((urlItem: any, imgIndex: number) => ({
@@ -105,7 +110,9 @@ export const convertToFileResults = (result: Prescription) => {
       worldLandmarks: worldLandmarks,
       estimatedImages: estimatedImages,
       overlayImageUrl: undefined,
-      error: undefined
+      error: undefined,
+      // HybrIK 데이터 추가
+      hybrikData: fileResult.hybrikData
     };
   });
 };

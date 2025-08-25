@@ -53,11 +53,16 @@ export const HybrIKGraph: React.FC<HybrIKGraphProps> = ({
 
     // Extract x, y coordinates based on projection type
     const extractCoordinates = (landmark: HybrIKLandmark) => {
+      let x, y;
       if (projectionType === 'xy') {
-        return { x: landmark.x, y: landmark.y };
+        x = landmark.x;
+        y = landmark.y;
       } else { // yz - Side view: Z(depth) on X-axis, Y(vertical) on Y-axis
-        return { x: landmark.z, y: landmark.y };
+        x = landmark.z;
+        y = landmark.y;
       }
+      
+      return { x, y };
     };
 
     // Calculate bounds for normalization
@@ -125,10 +130,11 @@ export const HybrIKGraph: React.FC<HybrIKGraphProps> = ({
     const points = data.map((landmark, index) => {
       const { x, y } = extractCoordinates(landmark);
       
-      // Validate coordinates before normalization
+      // Validate coordinates before normalization (더 관대한 검사)
       const isValidCoord = 
         typeof x === 'number' && !isNaN(x) && isFinite(x) &&
         typeof y === 'number' && !isNaN(y) && isFinite(y);
+        // (0,0)도 유효한 좌표로 처리
       
       return {
         index,
@@ -237,8 +243,8 @@ export const HybrIKGraph: React.FC<HybrIKGraphProps> = ({
                 strokeWidth="1"
               />
               
-              {/* Point label for high visibility points */}
-              {point.visibility > 0.7 && (
+              {/* Point label - HybrIK는 일반적으로 높은 신뢰도를 가지므로 임계값을 낮춤 */}
+              {point.visibility > 0.5 && (
                 <g>
                   <text
                     x={point.x}
@@ -254,12 +260,12 @@ export const HybrIKGraph: React.FC<HybrIKGraphProps> = ({
                   <text
                     x={point.x}
                     y={point.y - pointRadius - 14}
-                    fontSize="7"
-                    fill="#6b7280"
+                    fontSize="8"
+                    fill="#4b5563"
                     textAnchor="middle"
                     className="pointer-events-none"
                   >
-                    ({getHybrIKJointName(point.index)})
+                    {getHybrIKJointName(point.index)}
                   </text>
                 </g>
               )}
