@@ -61,7 +61,11 @@ export const convertToFileResults = (result: Prescription) => {
     } else {
       // HybrIK 신뢰도 계산
       if (fileResult.hybrikData?.confidence && Array.isArray(fileResult.hybrikData.confidence)) {
-        const validConfidence = fileResult.hybrikData.confidence.filter((conf: any) => 
+        // 🔧 중첩 배열 처리: [[0.995], [0.993]] 형태를 [0.995, 0.993]로 변환
+        const flattenedConfidence = fileResult.hybrikData.confidence.map((conf: any) => 
+          Array.isArray(conf) ? conf[0] : conf
+        );
+        const validConfidence = flattenedConfidence.filter((conf: any) => 
           typeof conf === 'number' && !isNaN(conf) && isFinite(conf)
         );
         if (validConfidence.length > 0) {
