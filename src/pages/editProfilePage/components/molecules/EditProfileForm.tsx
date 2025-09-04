@@ -1,7 +1,7 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { ProfileInfo } from '../../../../types/profile/profile';
-import { UpdateProfileRequest } from '../../../../types/profile/request';
+import { UpdateProfileRequest, CreateProfileRequest } from '../../../../types/profile/request';
 import { VALIDATION_CONSTANTS } from '../../../../constants/validation';
 import { ProfileNameSection } from './ProfileNameSection';
 import { BodyStatusInfoSection } from './BodyStatusInfoSection';
@@ -17,6 +17,52 @@ interface EditProfileFormProps {
 }
 
 export const EditProfileForm = ({ profile, onSubmit, isPending }: EditProfileFormProps) => {
+    // NaN 값을 null로 변환하는 헬퍼 함수
+    const sanitizeNumber = (value: any): number | null => {
+        if (value === null || value === undefined) return null;
+        const num = typeof value === 'number' ? value : Number(value);
+        return isNaN(num) ? null : num;
+    };
+
+    // bodyStatus 데이터 정제
+    const sanitizedBodyStatus = profile?.bodyStatus ? {
+        gender: (profile.bodyStatus.gender || 'male') as 'male' | 'female',
+        birthYear: sanitizeNumber(profile.bodyStatus.birthYear),
+        height: sanitizeNumber(profile.bodyStatus.height),
+        weight: sanitizeNumber(profile.bodyStatus.weight),
+        detailInfo: profile.bodyStatus.detailInfo ? {
+            bodyFatRatioPercent: sanitizeNumber(profile.bodyStatus.detailInfo.bodyFatRatioPercent),
+            skeletalMuscleMassKg: sanitizeNumber(profile.bodyStatus.detailInfo.skeletalMuscleMassKg)
+        } : undefined
+    } : {
+        gender: 'male' as 'male' | 'female',
+        birthYear: null,
+        height: null,
+        weight: null,
+        detailInfo: undefined
+    };
+
+    // exerciseInfoList 데이터 정제
+    const sanitizedExerciseInfoList = (profile?.exerciseInfoList || []).map(exercise => ({
+        ...exercise,
+        trainingYear: sanitizeNumber(exercise.trainingYear)
+    }));
+
+    // preferences 데이터 정제
+    const sanitizedPreferences = profile?.preferences ? {
+        ...profile.preferences,
+        exerciseTime: (profile.preferences.exerciseTime || []).map(time => {
+            const num = sanitizeNumber(time);
+            return num !== null ? num : undefined;
+        }).filter((t): t is number => t !== undefined)
+    } : {
+        exerciseIntensity: null,
+        exerciseFrequency: [],
+        exerciseTime: [],
+        exerciseLocation: [],
+        exerciseEquipment: []
+    };
+
     const { 
         register, 
         handleSubmit, 
@@ -24,16 +70,11 @@ export const EditProfileForm = ({ profile, onSubmit, isPending }: EditProfileFor
         reset,
         control,
         watch
-    } = useForm<UpdateProfileRequest>({
+    } = useForm<CreateProfileRequest>({
         defaultValues: {
             profileName: profile?.profileName || '',
-            bodyStatus: profile?.bodyStatus || {
-                gender: 'male',
-                birthYear: null,
-                height: null,
-                weight: null
-            },
-            exerciseInfoList: profile?.exerciseInfoList || [],
+            bodyStatus: sanitizedBodyStatus,
+            exerciseInfoList: sanitizedExerciseInfoList,
             cautions: profile?.cautions || {
                 disease: [],
                 injury: [],
@@ -41,17 +82,11 @@ export const EditProfileForm = ({ profile, onSubmit, isPending }: EditProfileFor
                 sensitivePart: [],
                 dangerousPart: []
             },
-            preferences: profile?.preferences || {
-                exerciseIntensity: null,
-                exerciseFrequency: [],
-                exerciseTime: [],
-                exerciseLocation: [],
-                exerciseEquipment: []
-            },
+            preferences: sanitizedPreferences,
         }
     });
 
-    const handleFormSubmit = (data: UpdateProfileRequest) => {
+    const handleFormSubmit = (data: CreateProfileRequest) => {
         // 유효성 검사
         if (data.bodyStatus.birthYear && (data.bodyStatus.birthYear < VALIDATION_CONSTANTS.BIRTH_YEAR.MIN || data.bodyStatus.birthYear > VALIDATION_CONSTANTS.BIRTH_YEAR.MAX)) {
             alert(VALIDATION_CONSTANTS.BIRTH_YEAR.RANGE_MESSAGE);
@@ -68,7 +103,7 @@ export const EditProfileForm = ({ profile, onSubmit, isPending }: EditProfileFor
             return;
         }
 
-        onSubmit(data);
+        onSubmit(data as UpdateProfileRequest);
     };
 
     return (

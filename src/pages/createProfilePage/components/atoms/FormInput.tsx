@@ -30,10 +30,9 @@ export const FormInput = <T extends FieldValues>({
                 type={type} 
                 placeholder={placeholder} 
                 {...register(name, validation)}
-                onWheel={(e) => {
+                onWheelCapture={(e) => {
                     if (type === 'number') {
-                        e.preventDefault(); // 숫자 변경 방지
-                        e.currentTarget.blur(); // 포커스 해제
+                        e.currentTarget.blur(); // 포커스 해제만 수행 (preventDefault는 passive event에서 사용 불가)
                     }
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
