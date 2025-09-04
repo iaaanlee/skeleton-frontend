@@ -27,6 +27,7 @@ export type VideoInfo = {
 export type MediaFile = {
   originalKey: string;
   thumbnailKey?: string;
+  thumbnailUrl?: string; // 백엔드에서 생성하는 pre-signed URL
   preProcessedKeys: string[];
   estimatedImages: Array<{
     key: string;
