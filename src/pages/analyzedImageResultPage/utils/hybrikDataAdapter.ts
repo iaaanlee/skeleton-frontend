@@ -187,13 +187,24 @@ export const convertHybrIKForVisualization = (hybrikData: {
   confidence?: number[] | number[][];
   // 🗑️ joints2d 완전 제거
 }) => {
+  // 방어 코드: 잘못된 입력 데이터 처리
+  if (!hybrikData || typeof hybrikData !== 'object') {
+    console.warn('⚠️ convertHybrIKForVisualization: Invalid hybrikData input');
+    return { landmarks: undefined, worldLandmarks: undefined };
+  }
+
   const { joints3d, confidence = [] } = hybrikData;
 
+  // 방어 코드: joints3d 유효성 검사
+  if (!joints3d || !Array.isArray(joints3d) || joints3d.length === 0) {
+    return { landmarks: undefined, worldLandmarks: undefined };
+  }
+
   // 3D 좌표를 worldLandmarks로 사용 (실제 3D 좌표)
-  const worldLandmarks = joints3d ? convertHybrIK3DToLandmarks(joints3d, confidence) : undefined;
+  const worldLandmarks = convertHybrIK3DToLandmarks(joints3d, confidence);
   
   // 3D 좌표의 X,Y 성분을 landmarks로 사용 (2D 좌표 대체)
-  const landmarks = joints3d ? generate2DFromHybrIK3D(joints3d, confidence) : undefined;
+  const landmarks = generate2DFromHybrIK3D(joints3d, confidence);
 
   return {
     landmarks,      // 3D에서 생성한 2D 좌표 (joints2d 대체)

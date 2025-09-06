@@ -4,12 +4,14 @@ type AnalysisSummaryProps = {
   totalFiles: number;
   totalConfidence: number;
   totalLandmarks?: number; // 감지된 관절 수 추가
+  engineName?: string; // 엔진 이름 추가 (예: "HybrIK", "BlazePose")
 };
 
 export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
   totalFiles,
   totalConfidence,
-  totalLandmarks = 33
+  totalLandmarks = 33,
+  engineName = "BlazePose"
 }) => {
   // formatTime 함수 제거됨
 
@@ -36,7 +38,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
           분석 완료
         </h2>
         <p className="text-gray-600">
-          BlazePose 분석이 성공적으로 완료되었습니다.
+          {engineName} 분석이 성공적으로 완료되었습니다.
         </p>
       </div>
 
@@ -69,7 +71,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
         <h4 className="font-semibold text-gray-900 mb-2">분석 결과 요약</h4>
         <ul className="text-sm text-gray-600 space-y-1">
           <li>• 총 {totalFiles}개의 이미지에서 운동 자세가 성공적으로 분석되었습니다.</li>
-          <li>• BlazePose 포즈 감지 신뢰도: {formatConfidence(totalConfidence)} ({getConfidenceText(totalConfidence)})</li>
+          <li>• {engineName} 포즈 감지 신뢰도: {formatConfidence(totalConfidence)} ({getConfidenceText(totalConfidence)})</li>
           <li>• 총 {totalLandmarks}개의 인체 관절 좌표가 감지되었습니다.</li>
           <li>• 상세 분석 결과 및 개선 제안사항을 아래에서 확인하세요.</li>
         </ul>

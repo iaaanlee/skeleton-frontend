@@ -59,9 +59,12 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
   // 엔진별 관절 개수 정보
   const jointCount = usedEngine === 'hybrik' ? 24 : 33;
   
+  // totalFiles 계산: poseData.totalFiles 또는 실제 결과 개수 사용
+  const actualTotalFiles = poseData?.totalFiles || fileResults.length;
+
   const poseStatistics = [
     {
-      value: poseData?.totalFiles || 0,
+      value: actualTotalFiles,
       label: '분석된 이미지',
       color: 'blue' as const
     },
@@ -79,7 +82,7 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
 
   const generalStatistics = [
     {
-      value: poseData?.totalFiles || 0,
+      value: actualTotalFiles,
       label: '분석된 파일',
       color: 'blue' as const
     },
@@ -102,9 +105,10 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
 
       {/* 분석 요약 */}
       <AnalysisSummary 
-        totalFiles={poseData?.totalFiles || 0}
+        totalFiles={actualTotalFiles}
         totalConfidence={averageConfidence}
         totalLandmarks={jointCount}
+        engineName={engineName}
       />
 
       {/* LLM 분석 결과 */}

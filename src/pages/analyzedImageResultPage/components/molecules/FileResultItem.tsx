@@ -114,8 +114,6 @@ export const FileResultItem: React.FC<FileResultItemProps> = ({
         // HybrIK 데이터가 있는 경우 (3D 좌표만 체크)
         if (fileResult.hybrikData && 
             fileResult.hybrikData.joints3d?.length > 0) {
-          // 🗑️ joints2d 체크 제거 - 3D 좌표만 사용
-          
           const { landmarks, worldLandmarks } = convertHybrIKForVisualization(fileResult.hybrikData);
           
           return (

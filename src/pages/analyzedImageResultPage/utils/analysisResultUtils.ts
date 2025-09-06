@@ -1,5 +1,4 @@
 import { Prescription } from '../../../services/prescriptionService';
-import { BlazePoseFileResultFromBackend } from '../../../types/blazePose';
 
 export const formatConfidence = (confidence: number): string => {
   return `${(confidence * 100).toFixed(1)}%`;
@@ -13,23 +12,28 @@ export const calculateAverageConfidence = (result: Prescription): number => {
   
   const firstResult = poseResults.results[0] as any;
   
-  // 1. overallConfidence 값이 있고 유효하면 사용
+  // 1. overallConfidence 값이 있고 유효하며 0보다 크면 사용
   if (typeof firstResult.overallConfidence === 'number' && 
       !isNaN(firstResult.overallConfidence) && 
-      isFinite(firstResult.overallConfidence)) {
+      isFinite(firstResult.overallConfidence) &&
+      firstResult.overallConfidence > 0) {
     return firstResult.overallConfidence;
   }
   
-  // 2. HybrIK 데이터 처리
-  if (firstResult.hybrikData?.confidence) {
-    const confidenceArray = firstResult.hybrikData.confidence;
-    if (Array.isArray(confidenceArray) && confidenceArray.length > 0) {
-      const validConfidence = confidenceArray.filter((conf: any) => 
-        typeof conf === 'number' && !isNaN(conf) && isFinite(conf)
-      );
-      if (validConfidence.length > 0) {
-        return validConfidence.reduce((sum: number, conf: number) => sum + conf, 0) / validConfidence.length;
-      }
+  // 2. HybrIK 데이터 처리 (hybrikData 구조 또는 최상위 confidence)
+  const hybrikConfidence = firstResult.hybrikData?.confidence || firstResult.confidence;
+  if (hybrikConfidence && Array.isArray(hybrikConfidence) && hybrikConfidence.length > 0) {
+    // 중첩 배열 처리: [[0.995], [0.993]] → [0.995, 0.993]
+    const flattenedConfidence = hybrikConfidence.map((conf: any) => 
+      Array.isArray(conf) ? conf[0] : conf
+    );
+    const validConfidence = flattenedConfidence.filter((conf: any) => 
+      typeof conf === 'number' && !isNaN(conf) && isFinite(conf) && conf >= 0 && conf <= 1
+    );
+    if (validConfidence.length > 0) {
+      return Math.max(0, Math.min(1, 
+        validConfidence.reduce((sum: number, conf: number) => sum + conf, 0) / validConfidence.length
+      ));
     }
   }
   
@@ -66,10 +70,12 @@ export const convertToFileResults = (result: Prescription) => {
           Array.isArray(conf) ? conf[0] : conf
         );
         const validConfidence = flattenedConfidence.filter((conf: any) => 
-          typeof conf === 'number' && !isNaN(conf) && isFinite(conf)
+          typeof conf === 'number' && !isNaN(conf) && isFinite(conf) && conf >= 0 && conf <= 1
         );
         if (validConfidence.length > 0) {
-          averageConfidence = validConfidence.reduce((sum: number, conf: number) => sum + conf, 0) / validConfidence.length;
+          averageConfidence = Math.max(0, Math.min(1, 
+            validConfidence.reduce((sum: number, conf: number) => sum + conf, 0) / validConfidence.length
+          ));
         }
       } 
       // BlazePose 신뢰도 계산 (하위 호환성)
@@ -102,7 +108,8 @@ export const convertToFileResults = (result: Prescription) => {
     const landmarks = fileResult.blazePoseData?.landmarks || fileResult.landmarks || [];
     const worldLandmarks = fileResult.blazePoseData?.worldLandmarks || fileResult.worldLandmarks || [];
 
-    return {
+    // 🔍 변환 결과 구조 확인
+    const convertedResult = {
       fileId: `file_${index}`,
       fileName: fileResult.fileName || `파일 ${index + 1}`,
       confidence: averageConfidence,
@@ -114,5 +121,19 @@ export const convertToFileResults = (result: Prescription) => {
       // HybrIK 데이터 추가
       hybrikData: fileResult.hybrikData
     };
+
+    // HybrIK 데이터 구조 적응: hybrikData 또는 최상위 joints3d 지원
+    if (!fileResult.hybrikData && 
+        fileResult.joints3d && 
+        Array.isArray(fileResult.joints3d) && 
+        fileResult.joints3d.length > 0) {
+      // 최상위 joints3d/confidence를 hybrikData 구조로 재구성 (Type Safe)
+      convertedResult.hybrikData = {
+        joints3d: fileResult.joints3d,
+        confidence: Array.isArray(fileResult.confidence) ? fileResult.confidence : []
+      };
+    }
+
+    return convertedResult;
   });
 };
