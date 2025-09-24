@@ -1,0 +1,1 @@
+export { SessionInstanceDetailsPageLayout } from './SessionInstanceDetailsPageLayout';

@@ -26,6 +26,11 @@ export const ROUTES = {
     ANALYZED_IMAGE_RESULT: '/analyzed-image-result/:analysisId',
     PRESCRIPTION_HISTORY: '/prescription-history',
     
+    // 운동 관리 (Workout Management)
+    MANAGE_SESSION_SCHEDULE: '/manage-session-schedule',
+    SESSION_INSTANCE_DETAILS: '/session-instance-details/:sessionId',
+    MODIFY_SESSION_INSTANCE: '/modify-session-instance/:sessionId',
+
     // 기타 (향후 확장용)
     CALENDAR: '/calendar',
     C: '/c',

@@ -5,10 +5,11 @@ export * from './common'
 
 // 개별 서비스들 (명시적 export로 충돌 방지)
 export { blazePoseService } from './blazePoseService'
-export { fileService } from './fileService' 
+export { fileService } from './fileService'
 export { mediaSetService } from './mediaSetService'
 export { prescriptionService } from './prescriptionService'
 export { profileService } from './profileService'
+export { sessionScheduleService, seriesService, sessionService } from './workoutService'
 
 // 새로운 분리된 서비스들
 export { analysisJobService } from './analysisJobService'
@@ -25,7 +26,28 @@ export {
   useStartExerciseAnalysis, 
   useRestartExerciseAnalysis 
 } from './exerciseAnalysisService'
-export { 
-  useStartVideoPoseAnalysis, 
-  useVideoPoseAnalysisStatus 
+export {
+  useStartVideoPoseAnalysis,
+  useVideoPoseAnalysisStatus
 } from './videoAnalysisService'
+
+// Session details hooks
+export { useSessionDetail } from './workoutService/sessionDetailService'
+
+// Session modification hooks
+export {
+  useModifySession,
+  useSearchExercises,
+  useExerciseTemplate,
+  useExerciseCategories,
+  useRecentExercises
+} from './workoutService/sessionModificationService'
+
+// Workout management hooks
+export {
+  useSessionSchedule,
+  useCalendarDots,
+  useDailySchedule,
+  useSeriesByProfile,
+  useSessionsByProfile
+} from './workoutService'

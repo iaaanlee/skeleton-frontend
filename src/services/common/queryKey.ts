@@ -16,6 +16,13 @@ export const queryKeys = {
   videoAnalysis: () => ['videoAnalysis'],
   exercise: () => ['exercise'],
   media: () => ['media'],
+  // Workout Management
+  sessionSchedule: (profileId: string, startDate: string, endDate: string) => ['sessionSchedule', profileId, startDate, endDate],
+  calendarDots: (profileId: string, startDate: string, endDate: string) => ['calendarDots', profileId, startDate, endDate],
+  dailySchedule: (profileId: string, date: string) => ['dailySchedule', profileId, date],
+  series: (profileId: string) => ['series', profileId],
+  sessions: (profileId: string) => ['sessions', profileId],
+  sessionDetail: (sessionId: string) => ['sessionDetail', sessionId],
 };
 
 export const QUERY_KEYS = {
@@ -41,4 +48,16 @@ export const QUERY_KEYS = {
   videoAnalysis: queryKeys.videoAnalysis(),
   exercise: queryKeys.exercise(),
   media: queryKeys.media(),
+  // Workout Management
+  workout: {
+    sessionSchedule: (profileId: string, startDate: string, endDate: string) =>
+      queryKeys.sessionSchedule(profileId, startDate, endDate),
+    calendarDots: (profileId: string, startDate: string, endDate: string) =>
+      queryKeys.calendarDots(profileId, startDate, endDate),
+    dailySchedule: (profileId: string, date: string) =>
+      queryKeys.dailySchedule(profileId, date),
+    series: (profileId: string) => queryKeys.series(profileId),
+    sessions: (profileId: string) => queryKeys.sessions(profileId),
+    sessionDetail: (sessionId: string) => queryKeys.sessionDetail(sessionId),
+  },
 };

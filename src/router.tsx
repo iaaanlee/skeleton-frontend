@@ -14,6 +14,9 @@ import { AnalysisProgressPage } from './pages/analysisProgressPage';
 import { AnalysisResultPage } from './pages/analysisResultPage';
 import { AnalyzedImageResultPage } from './pages/analyzedImageResultPage';
 import { PrescriptionHistoryPage } from './pages/prescriptionHistoryPage';
+import { ManageSessionSchedulePage } from './pages/manageSessionSchedulePage';
+import { SessionInstanceDetailsPage } from './pages/sessionInstanceDetailsPage';
+import { ModifySessionInstancePage } from './pages/modifySessionInstancePage';
 import { ProtectedRoute } from './routes';
 import { ROUTES } from './constants/routes';
 import { Navigate } from 'react-router-dom';
@@ -100,6 +103,18 @@ export const router = createBrowserRouter([
     {
         path: ROUTES.PRESCRIPTION_HISTORY,
         element: <ProtectedRoute requireProfile={true}><PrescriptionHistoryPage /></ProtectedRoute>
+    },
+    {
+        path: ROUTES.MANAGE_SESSION_SCHEDULE,
+        element: <ProtectedRoute requireProfile={true}><ManageSessionSchedulePage /></ProtectedRoute>
+    },
+    {
+        path: ROUTES.SESSION_INSTANCE_DETAILS,
+        element: <ProtectedRoute requireProfile={true}><SessionInstanceDetailsPage /></ProtectedRoute>
+    },
+    {
+        path: ROUTES.MODIFY_SESSION_INSTANCE,
+        element: <ProtectedRoute requireProfile={true}><ModifySessionInstancePage /></ProtectedRoute>
     },
     // Catch-all 라우트 - 반드시 맨 마지막에 위치
     {
