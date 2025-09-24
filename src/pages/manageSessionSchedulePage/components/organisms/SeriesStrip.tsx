@@ -18,8 +18,8 @@ export const SeriesStrip: React.FC<Props> = ({ profileId }) => {
         <div className="px-4">
           <h3 className="text-sm font-medium text-gray-700 mb-3">시리즈</h3>
           <div className="flex gap-3 overflow-x-auto">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="flex-shrink-0 w-32 h-20 bg-gray-200 rounded-lg animate-pulse" />
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={`loading-${i}`} className="flex-shrink-0 w-32 h-20 bg-gray-200 rounded-lg animate-pulse" />
             ))}
           </div>
         </div>
@@ -58,8 +58,8 @@ export const SeriesStrip: React.FC<Props> = ({ profileId }) => {
           </div>
         ) : (
           <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-            {series.map((seriesItem) => (
-              <SeriesCard key={seriesItem.seriesId} series={seriesItem} />
+            {series.map((seriesItem, index) => (
+              <SeriesCard key={seriesItem.seriesId || `series-${index}`} series={seriesItem} />
             ))}
           </div>
         )}
@@ -105,16 +105,20 @@ const SeriesCard: React.FC<{ series: SeriesSummary }> = ({ series }) => {
       </p>
 
       <div className="flex items-center justify-between text-xs">
-        {series.difficulty && (
-          <span className={`px-2 py-1 rounded-full ${getDifficultyColor(series.difficulty)}`}>
-            {series.difficulty}
-          </span>
-        )}
-        {series.estimatedDurationMinutes && (
-          <span className="text-gray-500">
-            ~{series.estimatedDurationMinutes}분
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {series.difficulty && (
+            <span className={`px-2 py-1 rounded-full ${getDifficultyColor(series.difficulty)}`}>
+              {series.difficulty}
+            </span>
+          )}
+        </div>
+        <div>
+          {series.estimatedDurationMinutes && (
+            <span className="text-gray-500">
+              ~{series.estimatedDurationMinutes}분
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

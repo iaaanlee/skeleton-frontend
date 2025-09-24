@@ -10,6 +10,6 @@ export const ManageSessionSchedulePage = () => {
     }
 
     return (
-        <ManageSessionSchedulePageLayout profileId={currentProfile._id} />
+        <ManageSessionSchedulePageLayout profileId={currentProfile.profileId} />
     );
 };
