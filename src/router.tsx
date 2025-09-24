@@ -26,16 +26,26 @@ import { useProfile } from './contexts/ProfileContext';
 // Catch-all 라우트를 위한 컴포넌트
 const NotFoundRedirect = () => {
   const { isAuthenticated } = useAccountAuth();
-  const { currentProfile } = useProfile();
+  const { currentProfile, isLoading } = useProfile();
 
+  // 1. account가 없으면 login으로
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
+  // 2. 프로필 로딩 중이면 대기
+  if (isLoading) {
+    return <div className="flex justify-center items-center min-h-screen">
+      <div>로딩 중...</div>
+    </div>;
+  }
+
+  // 3. account는 있는데 profile 정보가 없으면 select-profile로
   if (!currentProfile) {
     return <Navigate to="/select-profile" replace />;
   }
 
+  // 4. 알 수 없는 경로는 기본적으로 main으로
   return <Navigate to="/main" replace />;
 };
 

@@ -8,7 +8,7 @@ export const MainButtonList = () => {
 
     const handleWorkoutProgram = () => {
         console.log('운동 프로그램 클릭');
-        // TODO: 운동 프로그램 페이지로 이동
+        navigate(ROUTES.MANAGE_SESSION_SCHEDULE);
     };
 
     const handleExerciseAnalysis = () => {

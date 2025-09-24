@@ -37,12 +37,70 @@ type ProfileProviderProps = {
 export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) => {
   const { isAuthenticated } = useAccountAuth();
   const queryClient = useQueryClient();
-  const [shouldFetchProfile, setShouldFetchProfile] = useState(false);
-  
+
+  // 초기 로딩 상태 명시적 관리
+  const [isInitialLoading, setIsInitialLoading] = useState(() => {
+    const pathname = window.location.pathname;
+    const isAuth = pathname === '/login' || pathname === '/create-account' || pathname === '/select-profile';
+    // 비인증 페이지가 아니고 인증된 상태라면 초기 로딩
+    return !isAuth && isAuthenticated;
+  });
+
+  const [shouldFetchProfile, setShouldFetchProfile] = useState(() => {
+    const pathname = window.location.pathname;
+    const isAuth = pathname === '/login' || pathname === '/create-account' || pathname === '/select-profile';
+    // 초기값을 조건에 맞게 설정
+    return !isAuth && isAuthenticated;
+  });
+
   // 로그인/회원가입/프로필선택 페이지에서는 프로필 요청하지 않음
-  const isAuthPage = window.location.pathname === '/login' || 
-                     window.location.pathname === '/create-account' ||
-                     window.location.pathname === '/select-profile';
+  const [isAuthPage, setIsAuthPage] = useState(() => {
+    const pathname = window.location.pathname;
+    return pathname === '/login' ||
+           pathname === '/create-account' ||
+           pathname === '/select-profile';
+  });
+
+  // URL 변경 감지하여 isAuthPage 업데이트
+  useEffect(() => {
+    const updateAuthPageStatus = () => {
+      const pathname = window.location.pathname;
+      const newIsAuthPage = pathname === '/login' ||
+                           pathname === '/create-account' ||
+                           pathname === '/select-profile';
+      setIsAuthPage(newIsAuthPage);
+
+      // URL 변경 시 필요하면 초기 로딩 상태 설정
+      if (!newIsAuthPage && isAuthenticated) {
+        setIsInitialLoading(true);
+      } else {
+        setIsInitialLoading(false);
+      }
+    };
+
+    // popstate 이벤트 리스너 (뒤로가기/앞으로가기)
+    window.addEventListener('popstate', updateAuthPageStatus);
+
+    // pushState, replaceState 감지 (React Router 네비게이션)
+    const originalPushState = window.history.pushState;
+    const originalReplaceState = window.history.replaceState;
+
+    window.history.pushState = function(state, title, url) {
+      originalPushState.call(window.history, state, title, url);
+      updateAuthPageStatus();
+    };
+
+    window.history.replaceState = function(state, title, url) {
+      originalReplaceState.call(window.history, state, title, url);
+      updateAuthPageStatus();
+    };
+
+    return () => {
+      window.removeEventListener('popstate', updateAuthPageStatus);
+      window.history.pushState = originalPushState;
+      window.history.replaceState = originalReplaceState;
+    };
+  }, [isAuthenticated]);
 
   // 인증 상태가 변경될 때 처리
   useEffect(() => {
@@ -50,6 +108,7 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
       // 로그아웃 시 프로필 관련 쿼리 제거
       queryClient.removeQueries({ queryKey: QUERY_KEYS.profile.current() });
       setShouldFetchProfile(false);
+      setIsInitialLoading(false);
     }
   }, [isAuthenticated, queryClient]);
 
@@ -58,6 +117,7 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
     // 인증되지 않았거나 인증 페이지인 경우 요청하지 않음
     if (!isAuthenticated || isAuthPage) {
       setShouldFetchProfile(false);
+      setIsInitialLoading(false);
     } else {
       // 인증되고 + 비인증페이지가 아닌 경우에만 프로필 요청
       setShouldFetchProfile(true);
@@ -67,7 +127,7 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
   // 현재 프로필 조회 (백엔드 Redis 세션에서)
   const {
     data: currentProfile,
-    isLoading,
+    isLoading: isQueryLoading,
     error,
     refetch: refetchProfile
   } = useQuery({
@@ -85,12 +145,19 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
           console.error('Failed to fetch current profile:', error);
         }
         return null;
+      } finally {
+        // API 호출 완료 시 초기 로딩 종료
+        setIsInitialLoading(false);
       }
     },
     enabled: shouldFetchProfile,
     retry: false,
     staleTime: 5 * 60 * 1000, // 5분
+    refetchOnWindowFocus: false, // 창 포커스 시 자동 재요청 방지
   });
+
+  // 전체 로딩 상태 = 초기 로딩 또는 쿼리 로딩
+  const isLoading = isInitialLoading || isQueryLoading;
 
   // 프로필 관련 모든 캐시 정리 함수
   const clearAllProfileCaches = () => {
@@ -112,10 +179,10 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
   const selectProfile = async (profileId: string) => {
     // 먼저 기존 캐시 모두 정리
     clearAllProfileCaches();
-    
+
     // 새 프로필 선택
     await profileService.selectProfile(profileId);
-    
+
     // 새로운 프로필 정보 가져오기
     await refetchProfile();
   };
@@ -125,6 +192,7 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
     await profileService.clearProfile();
     clearAllProfileCaches();
     setShouldFetchProfile(false);
+    setIsInitialLoading(false);
   };
 
   const value = {
