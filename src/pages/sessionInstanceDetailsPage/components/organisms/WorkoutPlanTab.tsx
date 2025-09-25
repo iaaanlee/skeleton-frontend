@@ -99,27 +99,43 @@ export const WorkoutPlanTab: React.FC<Props> = ({ effectiveBlueprint, sessionSta
   };
 
   // 이미지 기준 파트 헤더 요약 텍스트 - "총 3세트 · 중량 덤벨이 x 3, 할로우 바디 포지션 x 2"
-  const getPartSummary = (part: EffectivePartBlueprint): string => {
+  const getPartSummary = (part: EffectivePartBlueprint) => {
     const totalSets = part.sets.length;
-    const exerciseCounts = new Map<string, number>();
+    const exerciseTemplateIds = new Map<string, number>();
 
     // 각 운동별로 등장 횟수 카운트
     part.sets.forEach(set => {
       set.exercises.forEach(exercise => {
         const templateId = exercise.exerciseTemplateId.toString();
-        exerciseCounts.set(templateId, (exerciseCounts.get(templateId) || 0) + 1);
+        exerciseTemplateIds.set(templateId, (exerciseTemplateIds.get(templateId) || 0) + 1);
       });
     });
 
-    if (exerciseCounts.size === 0) {
-      return `총 ${totalSets}세트`;
+    return {
+      totalSets,
+      exerciseTemplateIds
+    };
+  };
+
+  // 파트 요약을 렌더링하는 컴포넌트
+  const PartSummaryText: React.FC<{ part: EffectivePartBlueprint }> = ({ part }) => {
+    const { totalSets, exerciseTemplateIds } = getPartSummary(part);
+
+    if (exerciseTemplateIds.size === 0) {
+      return <span>총 {totalSets}세트</span>;
     }
 
-    // 운동 개수만 표시 (운동명은 복잡하므로 개수만)
-    const exerciseTypes = exerciseCounts.size;
-    const totalExercises = Array.from(exerciseCounts.values()).reduce((sum, count) => sum + count, 0);
-
-    return `총 ${totalSets}세트 · ${exerciseTypes}개 운동 ${totalExercises}회`;
+    return (
+      <span>
+        총 {totalSets}세트 · {' '}
+        {Array.from(exerciseTemplateIds.entries()).map(([templateId, count], index) => (
+          <span key={templateId}>
+            {index > 0 && ', '}
+            <ExerciseName exerciseTemplateId={templateId} /> x {count}
+          </span>
+        ))}
+      </span>
+    );
   };
 
   if (effectiveBlueprint.length === 0) {
@@ -166,7 +182,7 @@ export const WorkoutPlanTab: React.FC<Props> = ({ effectiveBlueprint, sessionSta
                   <div className="text-left">
                     <h3 className="font-semibold text-gray-900">{part.partName}</h3>
                     <p className="text-sm text-gray-500">
-                      {getPartSummary(part)}
+                      <PartSummaryText part={part} />
                     </p>
                   </div>
                 </div>
@@ -315,14 +331,20 @@ const SetCard: React.FC<{
           })}
       </div>
 
-      {/* 문서 기준: 세트 하단 - 휴식시간 섹션 */}
+      {/* 문서 기준: 세트 하단 - 휴식시간 섹션 (운동 카드와 동일한 스타일) */}
       {set.restTime && set.restTime > 0 && (
-        <div className="mt-3 p-2 bg-blue-50 rounded text-sm text-center mx-3 mb-3">
-          <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.586a1 1 0 01.707.293L12 11l.707-.707A1 1 0 0113.414 10H15M9 10v4.586a1 1 0 00.293.707L10 16l.707-.707A1 1 0 0011.414 15H13M9 10V9a2 2 0 012-2h2a2 2 0 012 2v1" />
-          </svg>
-          운동 후 휴식 {formatRestTime(set.restTime)}
-          {sessionStatus === 'started' && <span className="text-xs opacity-75"> (진행중)</span>}
+        <div className="px-3 mt-2 mb-3">
+          <div className="flex items-center py-2 px-3 rounded border bg-gray-50 border-gray-200">
+            <div className="w-6 h-6 rounded-full flex items-center justify-center mr-3 bg-gray-100">
+              <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-medium text-gray-900 text-sm">운동 후 휴식</p>
+              <p className="text-xs text-gray-600">{formatRestTime(set.restTime)}</p>
+            </div>
+          </div>
         </div>
       )}
     </div>
