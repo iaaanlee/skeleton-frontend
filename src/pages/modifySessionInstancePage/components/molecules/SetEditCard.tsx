@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { ExerciseEditCard } from './ExerciseEditCard';
-import type { EffectiveSetBlueprint, EffectiveExerciseBlueprint } from '../../../../types/workout';
+import type { EffectiveSetBlueprint, EffectiveExerciseBlueprint, PinState } from '../../../../types/workout';
+import { PinWrapper } from '../atoms';
 
 type Props = {
   set: EffectiveSetBlueprint;
   setIndex: number;
+  pinState?: PinState;
   onUpdateSet: (updatedSet: EffectiveSetBlueprint) => void;
   onDeleteSet: () => void;
   onAddExercise: () => void;
@@ -13,6 +15,7 @@ type Props = {
 export const SetEditCard: React.FC<Props> = ({
   set,
   setIndex,
+  pinState,
   onUpdateSet,
   onDeleteSet,
   onAddExercise
@@ -21,19 +24,44 @@ export const SetEditCard: React.FC<Props> = ({
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [editingRestTime, setEditingRestTime] = useState(set.restTime);
   const [editingTimeLimit, setEditingTimeLimit] = useState(set.timeLimit);
+  // PRD PAGES 요구사항: "동일 세트 패턴 일괄 적용" 토글
+  const [applyToSimilarSets, setApplyToSimilarSets] = useState(false);
+
+  // Default Pin State (no pins active)
+  const defaultPinState: PinState = {
+    sessionPin: false,
+    partPin: false,
+    setPin: false,
+    exercisePin: false
+  };
+  const activePinState = pinState || defaultPinState;
 
   const handleSaveSettings = () => {
-    onUpdateSet({
+    const updatedSet = {
       ...set,
       restTime: editingRestTime,
       timeLimit: editingTimeLimit
-    });
+    };
+
+    // PRD PAGES 요구사항: 일괄 적용 토글 처리
+    if (applyToSimilarSets) {
+      // TODO: Stage 4B 고급 구현에서 세션 내 유사한 패턴의 세트들에 설정 적용
+      console.log('일괄 적용 모드: 유사한 세트에 설정 적용 예정', {
+        restTime: editingRestTime,
+        timeLimit: editingTimeLimit,
+        exerciseCount: set.exercises.length
+      });
+      // 실제 구현은 상위 컴포넌트에서 전체 세션 데이터에 접근해서 처리해야 함
+    }
+
+    onUpdateSet(updatedSet);
     setIsEditingSettings(false);
   };
 
   const handleCancelSettings = () => {
     setEditingRestTime(set.restTime);
     setEditingTimeLimit(set.timeLimit);
+    setApplyToSimilarSets(false); // 토글도 초기화
     setIsEditingSettings(false);
   };
 
@@ -64,7 +92,10 @@ export const SetEditCard: React.FC<Props> = ({
   };
 
   return (
-    <div className="bg-gray-50 rounded-lg p-3">
+    <PinWrapper
+      pinState={activePinState}
+      className="bg-gray-50 p-3"
+    >
       {/* Set Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-3">
@@ -152,6 +183,27 @@ export const SetEditCard: React.FC<Props> = ({
               </div>
             </div>
 
+            {/* PRD PAGES 요구사항: 일괄 적용 토글 */}
+            <div className="border-t pt-3">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="applyToSimilarSets"
+                  checked={applyToSimilarSets}
+                  onChange={(e) => setApplyToSimilarSets(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <label htmlFor="applyToSimilarSets" className="text-sm text-gray-700">
+                  이 세션 내 동일 세트 패턴 일괄 적용
+                </label>
+              </div>
+              {applyToSimilarSets && (
+                <p className="mt-1 text-xs text-gray-500">
+                  비슷한 구성의 세트들({set.exercises.length}개 운동)에 동일한 휴식/제한시간이 적용됩니다
+                </p>
+              )}
+            </div>
+
             <div className="flex justify-end space-x-2">
               <button
                 onClick={handleCancelSettings}
@@ -178,6 +230,7 @@ export const SetEditCard: React.FC<Props> = ({
               key={`${exercise.exerciseTemplateId}-${exerciseIndex}`}
               exercise={exercise}
               exerciseIndex={exerciseIndex}
+              pinState={activePinState}
               onUpdate={(updatedExercise) => handleUpdateExercise(exerciseIndex, updatedExercise)}
               onDelete={() => handleDeleteExercise(exerciseIndex)}
             />
@@ -207,6 +260,6 @@ export const SetEditCard: React.FC<Props> = ({
           </button>
         </div>
       )}
-    </div>
+    </PinWrapper>
   );
 };

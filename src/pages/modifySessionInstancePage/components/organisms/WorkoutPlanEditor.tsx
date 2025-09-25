@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ExerciseSelectionBottomSheet, SetEditCard } from '../molecules';
-import type { EffectivePartBlueprint, ModifySessionRequest, PartModification, ExerciseTemplate, EffectiveSetBlueprint } from '../../../../types/workout';
+import type { EffectivePartBlueprint, ModifySessionRequest, PartModification, ExerciseTemplate, EffectiveSetBlueprint, PinState } from '../../../../types/workout';
+import { PinWrapper } from '../atoms';
 
 type Props = {
   effectiveBlueprint: EffectivePartBlueprint[];
@@ -13,6 +14,14 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
   // TODO: pendingModifications will be used in state management phase
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [pendingModifications, setPendingModifications] = useState<PartModification[]>([]);
+
+  // Default Pin State (no pins active) - will be replaced with actual Pin detection in next phase
+  const defaultPinState: PinState = {
+    sessionPin: false,
+    partPin: false,
+    setPin: false,
+    exercisePin: false
+  };
 
   // Suppress unused variable warning - will be used in state management implementation
   void setPendingModifications;
@@ -74,7 +83,11 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
 
       <div className="space-y-3">
         {effectiveBlueprint.map((part, partIndex) => (
-          <div key={part.partSeedId} className="bg-white rounded-lg border">
+          <PinWrapper
+            key={part.partSeedId}
+            pinState={defaultPinState}
+            className="bg-white border"
+          >
             {/* Part Header */}
             <div className="p-4 border-b">
               <div className="flex items-center justify-between">
@@ -129,6 +142,7 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
                     key={set.setSeedId}
                     set={set}
                     setIndex={setIndex}
+                    pinState={defaultPinState}
                     onUpdateSet={(updatedSet) => handleUpdateSet(partIndex, setIndex, updatedSet)}
                     onDeleteSet={() => handleDeleteSet(partIndex, setIndex)}
                     onAddExercise={() => handleAddExercise(partIndex)}
@@ -160,7 +174,7 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
                 )}
               </div>
             )}
-          </div>
+          </PinWrapper>
         ))}
 
         {effectiveBlueprint.length === 0 && (

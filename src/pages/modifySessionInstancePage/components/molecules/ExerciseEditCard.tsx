@@ -1,27 +1,53 @@
 import React, { useState } from 'react';
-import type { EffectiveExerciseBlueprint, ExerciseSpec } from '../../../../types/workout';
+import type { EffectiveExerciseBlueprint, ExerciseSpec, PinState } from '../../../../types/workout';
+import { PinWrapper } from '../atoms';
 
 type Props = {
   exercise: EffectiveExerciseBlueprint;
   exerciseIndex: number;
+  pinState?: PinState;
   onUpdate: (updatedExercise: EffectiveExerciseBlueprint) => void;
   onDelete: () => void;
 };
 
-export const ExerciseEditCard: React.FC<Props> = ({ exercise, exerciseIndex, onUpdate, onDelete }) => {
+export const ExerciseEditCard: React.FC<Props> = ({ exercise, exerciseIndex, pinState, onUpdate, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingSpec, setEditingSpec] = useState<ExerciseSpec>(exercise.spec);
+  // PRD PAGES 요구사항: "모든 동일한 운동에 일괄 적용" 토글
+  const [applyToAllSame, setApplyToAllSame] = useState(false);
+
+  // Default Pin State (no pins active)
+  const defaultPinState: PinState = {
+    sessionPin: false,
+    partPin: false,
+    setPin: false,
+    exercisePin: false
+  };
+  const activePinState = pinState || defaultPinState;
 
   const handleSave = () => {
-    onUpdate({
+    const updatedExercise = {
       ...exercise,
       spec: editingSpec
-    });
+    };
+
+    // PRD PAGES 요구사항: 일괄 적용 토글 처리
+    if (applyToAllSame) {
+      // TODO: Stage 4B 고급 구현에서 세션 내 동일한 exerciseTemplateId를 가진 모든 운동에 스펙 적용
+      console.log('일괄 적용 모드: 동일한 운동에 스펙 적용 예정', {
+        exerciseTemplateId: exercise.exerciseTemplateId,
+        newSpec: editingSpec
+      });
+      // 실제 구현은 상위 컴포넌트에서 전체 세션 데이터에 접근해서 처리해야 함
+    }
+
+    onUpdate(updatedExercise);
     setIsEditing(false);
   };
 
   const handleCancel = () => {
     setEditingSpec(exercise.spec);
+    setApplyToAllSame(false); // 토글도 초기화
     setIsEditing(false);
   };
 
@@ -41,7 +67,11 @@ export const ExerciseEditCard: React.FC<Props> = ({ exercise, exerciseIndex, onU
 
   if (!isEditing) {
     return (
-      <div className="bg-white rounded-lg p-3 border">
+      <PinWrapper
+        pinState={activePinState}
+        onClick={() => setIsEditing(true)}
+        className="bg-white p-3 border"
+      >
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <h5 className="font-medium text-gray-900 mb-1">
@@ -83,12 +113,15 @@ export const ExerciseEditCard: React.FC<Props> = ({ exercise, exerciseIndex, onU
             </button>
           </div>
         </div>
-      </div>
+      </PinWrapper>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg p-4 border border-blue-200">
+    <PinWrapper
+      pinState={activePinState}
+      className="bg-white p-4 border border-blue-200"
+    >
       <div className="space-y-4">
         <div className="flex items-center justify-between mb-4">
           <h5 className="font-medium text-gray-900">
@@ -106,6 +139,16 @@ export const ExerciseEditCard: React.FC<Props> = ({ exercise, exerciseIndex, onU
               className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
             >
               저장
+            </button>
+            {/* PRD PAGES 요구사항: 삭제 버튼 (우상단 휴지통) */}
+            <button
+              onClick={onDelete}
+              className="flex items-center justify-center w-8 h-8 rounded hover:bg-red-100 transition-colors text-red-600"
+              title="운동 삭제"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
             </button>
           </div>
         </div>
@@ -225,7 +268,28 @@ export const ExerciseEditCard: React.FC<Props> = ({ exercise, exerciseIndex, onU
             </div>
           )}
         </div>
+
+        {/* PRD PAGES 요구사항: 일괄 적용 토글 */}
+        <div className="border-t pt-3">
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="applyToAllSame"
+              checked={applyToAllSame}
+              onChange={(e) => setApplyToAllSame(e.target.checked)}
+              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+            />
+            <label htmlFor="applyToAllSame" className="text-sm text-gray-700">
+              이 세션 내 모든 동일한 운동에 일괄 적용
+            </label>
+          </div>
+          {applyToAllSame && (
+            <p className="mt-1 text-xs text-gray-500">
+              같은 운동({exercise.exerciseTemplateId})의 모든 강도와 목표가 함께 수정됩니다
+            </p>
+          )}
+        </div>
       </div>
-    </div>
+    </PinWrapper>
   );
 };

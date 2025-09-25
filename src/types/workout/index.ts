@@ -235,3 +235,6 @@ export type ApiResponse<T> = {
   data?: T;
   error?: string;
 };
+
+// Pin System Types (Stage 4B)
+export * from './pinSystem';
