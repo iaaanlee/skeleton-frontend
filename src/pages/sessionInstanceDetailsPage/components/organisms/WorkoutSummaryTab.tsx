@@ -1,201 +1,157 @@
 import React from 'react';
-import type { SessionDetail } from '../../../../types/workout';
+import type { SessionDetail, EffectivePartBlueprint, ExerciseSpec } from '../../../../types/workout';
+import { ExerciseName } from '../molecules/ExerciseName';
 
 type Props = {
   sessionDetail: SessionDetail;
+  onExerciseClick?: (exerciseTemplateId: string) => void;
 };
 
-export const WorkoutSummaryTab: React.FC<Props> = ({ sessionDetail }) => {
-  const formatDateTime = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'long',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+// 문서 Phase 2.1 기준: 운동별 그룹핑 로직 (이미지 기준)
+type ExerciseGroup = {
+  exerciseTemplateId: string;
+  name: string;
+  sets: {
+    setNumber: number;
+    currentPlan: string;
+    previousRecords: string[];
+  }[];
+};
 
-  const getTotalRestTime = () => {
-    return sessionDetail.effectiveBlueprint.reduce((totalRest, part) =>
-      totalRest + part.sets.reduce((partRest, set) => partRest + (set.restTime || 0), 0), 0
-    );
-  };
+export const WorkoutSummaryTab: React.FC<Props> = ({ sessionDetail, onExerciseClick }) => {
+  const formatExerciseSpec = (spec: ExerciseSpec) => {
+    const { goal, load, timeLimit } = spec;
 
-  const formatDuration = (seconds: number) => {
-    if (seconds < 60) {
-      return `${seconds}초`;
-    } else {
-      const minutes = Math.floor(seconds / 60);
-      const remainingSeconds = seconds % 60;
-      return remainingSeconds > 0 ? `${minutes}분 ${remainingSeconds}초` : `${minutes}분`;
+    let goalText = '';
+    switch (goal.type) {
+      case 'reps':
+        goalText = `${goal.value}회`;
+        break;
+      case 'time':
+        goalText = `${goal.value}초`;
+        break;
+      case 'distance':
+        goalText = `${goal.value}m`;
+        break;
+      case 'weight':
+        goalText = `${goal.value}kg`;
+        break;
     }
+
+    let loadText = load.text || '';
+    if (load.type === 'weight' && load.value) {
+      loadText = `${load.value}kg`;
+    } else if (load.type === 'bodyweight') {
+      loadText = '체중';
+    }
+
+    const parts = [goalText, loadText].filter(Boolean);
+
+    if (timeLimit && timeLimit > 0) {
+      parts.push(`제한시간 ${timeLimit}초`);
+    }
+
+    return parts.join(' · ');
   };
 
-  const getExerciseTypes = () => {
-    const exerciseCount = new Map<string, number>();
+  // 문서 기준: 운동별 그룹핑 로직
+  const groupExercisesByKey = (blueprint: EffectivePartBlueprint[]): ExerciseGroup[] => {
+    const groups = new Map<string, ExerciseGroup>();
 
-    sessionDetail.effectiveBlueprint.forEach(part => {
+    blueprint.forEach(part => {
       part.sets.forEach(set => {
         set.exercises.forEach(exercise => {
-          // TODO: 실제 운동 템플릿에서 운동 타입을 가져와야 함
-          const exerciseType = `운동 ${exercise.exerciseTemplateId}`;
-          exerciseCount.set(exerciseType, (exerciseCount.get(exerciseType) || 0) + 1);
+          const key = exercise.exerciseTemplateId.toString();
+          if (!groups.has(key)) {
+            groups.set(key, {
+              exerciseTemplateId: key,
+              name: '', // ExerciseName 컴포넌트에서 표시
+              sets: []
+            });
+          }
+
+          const group = groups.get(key)!;
+          group.sets.push({
+            setNumber: group.sets.length + 1,
+            currentPlan: formatExerciseSpec(exercise.spec),
+            previousRecords: [] // TODO: API 연동 필요
+          });
         });
       });
     });
 
-    return Array.from(exerciseCount.entries());
+    return Array.from(groups.values());
   };
 
-  const totalRestTime = getTotalRestTime();
-  const exerciseTypes = getExerciseTypes();
+  const exerciseGroups = groupExercisesByKey(sessionDetail.effectiveBlueprint);
+
+  // 문서 기준: ExerciseSummaryTable 컴포넌트
+  const ExerciseSummaryTable: React.FC<{ exercise: ExerciseGroup }> = ({ exercise }) => (
+    <div className="exercise-section mb-6 bg-white rounded-lg border p-4">
+      <div className="flex items-center mb-4">
+        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+          <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <span
+          className="text-lg font-semibold text-gray-900 cursor-pointer hover:text-orange-600 transition-colors"
+          onClick={() => onExerciseClick?.(exercise.exerciseTemplateId)}
+        >
+          <ExerciseName exerciseTemplateId={exercise.exerciseTemplateId} />
+        </span>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-gray-200">
+              <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">세트</th>
+              <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">이전 세션 기록(시리즈)</th>
+              <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">이번 세션 계획</th>
+            </tr>
+          </thead>
+          <tbody>
+            {exercise.sets.map((set, index) => (
+              <tr key={index} className="border-b border-gray-100">
+                <td className="py-3 px-2">
+                  <span className="inline-flex items-center justify-center w-6 h-6 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+                    {set.setNumber}
+                  </span>
+                </td>
+                <td className="py-3 px-2 text-sm text-gray-600">
+                  {set.previousRecords.length > 0 ? set.previousRecords.join(', ') : '-'}
+                </td>
+                <td className="py-3 px-2 text-sm text-gray-900">{set.currentPlan}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      {/* 세션 기본 정보 */}
-      <div className="bg-white rounded-lg border p-4">
-        <h3 className="font-semibold text-gray-900 mb-4">세션 정보</h3>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">예정 시간</span>
-            <span className="font-medium">{formatDateTime(sessionDetail.scheduledAt)}</span>
+    <div className="space-y-4">
+      {/* 문서 기준: 운동별 섹션 그룹핑 */}
+      {exerciseGroups.length === 0 ? (
+        <div className="bg-white rounded-lg p-8 text-center">
+          <div className="text-gray-400 mb-4">
+            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
           </div>
-
-          {sessionDetail.startedAt && (
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">시작 시간</span>
-              <span className="font-medium">{formatDateTime(sessionDetail.startedAt)}</span>
-            </div>
-          )}
-
-          {sessionDetail.completedAt && (
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">완료 시간</span>
-              <span className="font-medium">{formatDateTime(sessionDetail.completedAt)}</span>
-            </div>
-          )}
-
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">생성 방식</span>
-            <span className={`px-2 py-1 text-xs rounded-full ${
-              sessionDetail.creationType === 'series'
-                ? 'bg-blue-100 text-blue-800'
-                : 'bg-gray-100 text-gray-800'
-            }`}>
-              {sessionDetail.creationType === 'series' ? '시리즈에서 생성' : '단독 생성'}
-            </span>
-          </div>
-
-          {sessionDetail.seriesName && (
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">소속 프로그램</span>
-              <span className="font-medium">{sessionDetail.seriesName}</span>
-            </div>
-          )}
+          <p className="text-gray-600 font-medium mb-2">운동이 없습니다</p>
+          <p className="text-gray-500 text-sm">세션에 운동이 추가되지 않았습니다.</p>
         </div>
-      </div>
-
-      {/* 운동 통계 */}
-      <div className="bg-white rounded-lg border p-4">
-        <h3 className="font-semibold text-gray-900 mb-4">운동 통계</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center p-3 bg-blue-50 rounded-lg">
-            <p className="text-2xl font-bold text-blue-600">{sessionDetail.preview.totalParts}</p>
-            <p className="text-sm text-gray-600">총 파트</p>
-          </div>
-          <div className="text-center p-3 bg-green-50 rounded-lg">
-            <p className="text-2xl font-bold text-green-600">{sessionDetail.preview.totalSets}</p>
-            <p className="text-sm text-gray-600">총 세트</p>
-          </div>
-          <div className="text-center p-3 bg-purple-50 rounded-lg">
-            <p className="text-2xl font-bold text-purple-600">{sessionDetail.preview.totalExercises}</p>
-            <p className="text-sm text-gray-600">총 운동</p>
-          </div>
-          <div className="text-center p-3 bg-orange-50 rounded-lg">
-            <p className="text-2xl font-bold text-orange-600">{sessionDetail.preview.estimatedDurationMinutes}</p>
-            <p className="text-sm text-gray-600">예상시간(분)</p>
-          </div>
-        </div>
-      </div>
-
-      {/* 휴식 시간 정보 */}
-      <div className="bg-white rounded-lg border p-4">
-        <h3 className="font-semibold text-gray-900 mb-4">휴식 시간</h3>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">총 휴식 시간</span>
-            <span className="font-medium">{formatDuration(totalRestTime)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">평균 세트 간 휴식</span>
-            <span className="font-medium">
-              {sessionDetail.preview.totalSets > 0
-                ? formatDuration(Math.round(totalRestTime / sessionDetail.preview.totalSets))
-                : '0초'
-              }
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 운동 종류별 횟수 */}
-      {exerciseTypes.length > 0 && (
-        <div className="bg-white rounded-lg border p-4">
-          <h3 className="font-semibold text-gray-900 mb-4">운동 구성</h3>
-          <div className="space-y-2">
-            {exerciseTypes.map(([exerciseType, count]) => (
-              <div key={exerciseType} className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded">
-                <span className="text-gray-700">{exerciseType}</span>
-                <span className="font-medium text-gray-900">{count}회</span>
-              </div>
-            ))}
-          </div>
-        </div>
+      ) : (
+        exerciseGroups.map((exercise) => (
+          <ExerciseSummaryTable
+            key={exercise.exerciseTemplateId}
+            exercise={exercise}
+          />
+        ))
       )}
-
-      {/* 파트별 상세 정보 */}
-      <div className="bg-white rounded-lg border p-4">
-        <h3 className="font-semibold text-gray-900 mb-4">파트별 상세</h3>
-        <div className="space-y-3">
-          {sessionDetail.effectiveBlueprint
-            .sort((a, b) => a.order - b.order)
-            .map((part, index) => (
-              <div key={part.partSeedId} className="border border-gray-200 rounded-lg p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900">
-                    {index + 1}. {part.partName}
-                  </h4>
-                  {part.partBlueprintId === null && (
-                    <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
-                      새로 추가됨
-                    </span>
-                  )}
-                </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">세트: </span>
-                    <span className="font-medium">{part.sets.length}개</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">운동: </span>
-                    <span className="font-medium">
-                      {part.sets.reduce((sum, set) => sum + set.exercises.length, 0)}개
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">휴식: </span>
-                    <span className="font-medium">
-                      {formatDuration(part.sets.reduce((sum, set) => sum + (set.restTime || 0), 0))}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-        </div>
-      </div>
     </div>
   );
 };

@@ -8,11 +8,15 @@ type Props = {
 
 export const SessionInfoEditor: React.FC<Props> = ({ sessionDetail, onChange }) => {
   const [sessionName, setSessionName] = useState(sessionDetail.sessionName);
+
+  // 🔧 방어적 코딩: scheduledAt이 undefined일 경우 대비
+  const safeScheduledAt = sessionDetail.scheduledAt || new Date().toISOString();
+
   const [scheduledDate, setScheduledDate] = useState(
-    sessionDetail.scheduledAt.split('T')[0]
+    safeScheduledAt.split('T')[0]
   );
   const [scheduledTime, setScheduledTime] = useState(
-    sessionDetail.scheduledAt.split('T')[1]?.substring(0, 5) || '09:00'
+    safeScheduledAt.split('T')[1]?.substring(0, 5) || '09:00'
   );
 
   const handleSessionNameChange = (name: string) => {

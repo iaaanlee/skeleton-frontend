@@ -88,6 +88,12 @@ export type ScheduleViewState = {
   };
 };
 
+// Session Detail 활성화 시스템 (PRD 요구사항)
+export type ActiveItem = {
+  level: 'part' | 'set' | 'move';
+  id: string;
+} | null;
+
 // Session Detail 관련 타입 (Stage 2)
 export type EffectivePartBlueprint = {
   partBlueprintId: string | null;

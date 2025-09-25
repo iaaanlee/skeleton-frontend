@@ -10,19 +10,6 @@ type Props = {
 export const SessionDetailTopBar: React.FC<Props> = ({ sessionName, status }) => {
   const navigate = useNavigate();
 
-  const getStatusBadge = (status: SessionStatus) => {
-    switch (status) {
-      case 'scheduled':
-        return <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">예정</span>;
-      case 'started':
-        return <span className="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full">진행중</span>;
-      case 'completed':
-        return <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">완료</span>;
-      default:
-        return <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">알 수 없음</span>;
-    }
-  };
-
   return (
     <div className="bg-white border-b">
       <div className="flex items-center justify-between px-4 py-3">
@@ -41,9 +28,6 @@ export const SessionDetailTopBar: React.FC<Props> = ({ sessionName, status }) =>
           <h1 className="text-lg font-semibold text-gray-900 truncate px-4">
             {sessionName}
           </h1>
-          <div className="mt-1">
-            {getStatusBadge(status)}
-          </div>
         </div>
 
         {/* 메뉴 버튼 */}

@@ -6,52 +6,74 @@ type Props = {
 };
 
 export const SessionInfoCard: React.FC<Props> = ({ sessionDetail }) => {
-  const formatDateTime = (isoString: string) => {
-    const date = new Date(isoString);
-    return {
-      date: date.toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        weekday: 'long'
-      }),
-      time: date.toLocaleTimeString('ko-KR', {
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    };
+  // 문서 Phase 2.2: 상태별 텍스트 반환
+  const getStatusText = (status: SessionDetail['status']) => {
+    switch (status) {
+      case 'scheduled':
+        return '미진행';
+      case 'started':
+        return '진행중';
+      case 'completed':
+        return '완료';
+      default:
+        return '알 수 없음';
+    }
   };
 
-  const scheduled = formatDateTime(sessionDetail.scheduledAt);
+  // 문서 Phase 2.2: 간단한 날짜/시간 형식
+  const formatDateTime = (isoString: string) => {
+    const date = new Date(isoString);
+    return date.toLocaleDateString('ko-KR', {
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   return (
     <div className="bg-white rounded-lg border p-4">
-      {/* 일정 정보 */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <div className="flex items-center text-gray-600 mb-1">
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span className="text-sm font-medium">예정 시간</span>
+      {/* 문서 Phase 2.2: 이미지 기준 레이아웃 - 좌측 세션 정보, 우상단 상태 */}
+      <div className="flex justify-between items-start mb-4">
+        {/* 좌측: 세션 기본 정보 */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{sessionDetail.sessionName}</h3>
+          <p className="text-sm text-gray-600 mb-1">
+            총 {sessionDetail.preview.totalParts}파트 {sessionDetail.preview.totalSets}세트
+          </p>
+          {sessionDetail.seriesName && (
+            <p className="text-xs text-gray-500">프로그램: {sessionDetail.seriesName}</p>
+          )}
+        </div>
+
+        {/* 우상단: 상태 정보 (이미지 기준) */}
+        <div className="text-right text-sm">
+          <div className="mb-1">
+            <span className="text-gray-600">상태</span>
+            <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+              sessionDetail.status === 'scheduled' ? 'bg-gray-100 text-gray-700' :
+              sessionDetail.status === 'started' ? 'bg-blue-100 text-blue-700' :
+              'bg-green-100 text-green-700'
+            }`}>
+              {getStatusText(sessionDetail.status)}
+            </span>
           </div>
-          <div className="ml-6">
-            <p className="text-base font-semibold text-gray-900">{scheduled.date}</p>
-            <p className="text-sm text-gray-600">{scheduled.time}</p>
+
+          <div className="text-xs text-gray-600 mb-1">
+            <span>시작(예정) </span>
+            <span className="font-medium text-gray-900">
+              {formatDateTime(sessionDetail.scheduledAt)}
+            </span>
+          </div>
+
+          <div className="text-xs text-gray-600">
+            <span>종료 </span>
+            <span className="font-medium text-gray-900">
+              {sessionDetail.completedAt ? formatDateTime(sessionDetail.completedAt) : '-'}
+            </span>
           </div>
         </div>
       </div>
-
-      {/* 시리즈 정보 */}
-      {sessionDetail.seriesName && (
-        <div className="flex items-center mb-4">
-          <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14-7l2 2-2 2m-2-2h-14m14 14l2-2-2-2" />
-          </svg>
-          <span className="text-sm text-gray-600 mr-2">프로그램:</span>
-          <span className="text-sm font-medium text-gray-900">{sessionDetail.seriesName}</span>
-        </div>
-      )}
 
       {/* 세션 미리보기 통계 */}
       <div className="grid grid-cols-4 gap-4 pt-4 border-t">

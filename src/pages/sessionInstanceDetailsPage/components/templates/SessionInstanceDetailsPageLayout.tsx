@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSessionDetail } from '../../../../services/workoutService/sessionDetailService';
 import { ROUTES } from '../../../../constants/routes';
+import { useStatePreservation } from '../../hooks/useStatePreservation';
+import { useBidirectionalSync } from '../../hooks/useBidirectionalSync';
+import '../styles/animations.css';
 import {
   SessionDetailTopBar,
   SessionInfoCard,
   SessionDetailTabs,
   WorkoutPlanTab,
-  WorkoutSummaryTab
+  WorkoutSummaryTab,
+  ActionBar
 } from '../organisms';
 
 type Props = {
@@ -16,7 +20,12 @@ type Props = {
 
 export const SessionInstanceDetailsPageLayout: React.FC<Props> = ({ sessionId }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'plan' | 'summary'>('plan');
+
+  // 문서 Phase 3.1: 상태 보존 시스템 적용
+  const { activeTab, setActiveTab } = useStatePreservation(sessionId);
+
+  // 문서 Phase 3.2: 양방향 싱크 기능 적용
+  const { handleExerciseTap } = useBidirectionalSync({ setActiveTab });
 
   const { data: sessionDetail, isLoading, error } = useSessionDetail(sessionId);
 
@@ -114,26 +123,19 @@ export const SessionInstanceDetailsPageLayout: React.FC<Props> = ({ sessionId })
         ) : (
           <WorkoutSummaryTab
             sessionDetail={sessionDetail}
+            onExerciseClick={handleExerciseTap}
           />
         )}
       </div>
 
-      {/* Action Buttons (if needed) */}
-      {sessionDetail.status === 'scheduled' && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
-          <div className="flex space-x-3">
-            <button
-              onClick={handleModifySession}
-              className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              수정하기
-            </button>
-            <button className="flex-1 py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
-              시작하기
-            </button>
-          </div>
-        </div>
-      )}
+      {/* 문서 Phase 3.3: 하단 액션바 동적 동작 */}
+      <ActionBar
+        sessionDetail={sessionDetail}
+        onModifySession={handleModifySession}
+        onStartSession={() => {
+          // TODO: 세션 시작 로직 구현 필요
+        }}
+      />
     </div>
   );
 };
