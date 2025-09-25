@@ -41,14 +41,8 @@ export const ModifySessionTopBar: React.FC<Props> = ({
           )}
         </div>
 
-        {/* Save Button */}
-        <button
-          onClick={onSave}
-          disabled={!isModified || isSaving}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          {isSaving ? '저장 중...' : '저장'}
-        </button>
+        {/* 우측 여백 유지를 위한 빈 공간 */}
+        <div className="w-10"></div>
       </div>
     </div>
   );

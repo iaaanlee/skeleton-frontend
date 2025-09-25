@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { ExerciseEditCard } from './ExerciseEditCard';
 import type { EffectiveSetBlueprint, EffectiveExerciseBlueprint, PinState } from '../../../../types/workout';
-import { PinWrapper } from '../atoms';
+import { DraggableCard } from '../atoms/DraggableCard';
+import { SortableContainer } from '../atoms/SortableContainer';
+import { SortableItem } from '../atoms/SortableItem';
+import type { DragItem, DropZone } from '../../../../hooks/useDragAndDrop';
+import { PinSystemHelpers } from '../../../../types/workout';
 
 type Props = {
   set: EffectiveSetBlueprint;
@@ -10,6 +14,9 @@ type Props = {
   onUpdateSet: (updatedSet: EffectiveSetBlueprint) => void;
   onDeleteSet: () => void;
   onAddExercise: () => void;
+  // DnD Props
+  partIndex?: number;
+  parentId?: string;
 };
 
 export const SetEditCard: React.FC<Props> = ({
@@ -18,7 +25,9 @@ export const SetEditCard: React.FC<Props> = ({
   pinState,
   onUpdateSet,
   onDeleteSet,
-  onAddExercise
+  onAddExercise,
+  partIndex,
+  parentId
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
@@ -35,6 +44,41 @@ export const SetEditCard: React.FC<Props> = ({
     exercisePin: false
   };
   const activePinState = pinState || defaultPinState;
+
+  // DragItem 생성 (세트용)
+  const dragItem: DragItem = {
+    id: `set-${setIndex}`,
+    type: 'set',
+    data: {
+      name: `세트 ${set.order}`,
+      set: set,
+      setIndex: setIndex
+    },
+    pinState: activePinState,
+    parentId: parentId,
+    level: 'set',
+    indices: {
+      partIndex,
+      setIndex
+    }
+  };
+
+  // 세트 내부 운동 드롭존
+  const exerciseDropZone: DropZone = {
+    id: `set-${setIndex}-exercises`,
+    type: 'container',
+    accepts: ['exercise'],
+    autoExpand: false
+  };
+
+  // Pin System에서 드래그 권한 체크
+  const effectivePin = PinSystemHelpers.getEffectivePinState(activePinState);
+  const canDrag = effectivePin.canDrag;
+
+  // Sortable 운동 목록 생성 (ID 배열)
+  const exerciseIds = set.exercises.map((_, index) =>
+    `exercise-${setIndex}-${index}`
+  );
 
   const handleSaveSettings = () => {
     const updatedSet = {
@@ -92,24 +136,29 @@ export const SetEditCard: React.FC<Props> = ({
   };
 
   return (
-    <PinWrapper
+    <DraggableCard
+      dragItem={dragItem}
       pinState={activePinState}
-      className="bg-gray-50 p-3"
+      disabled={!canDrag}
+      className="bg-gray-50 p-3 rounded-lg"
     >
       {/* Set Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-3">
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
             className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-200 transition-colors"
           >
             <svg
-              className={`w-5 h-5 text-gray-600 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+              className={`w-5 h-5 text-gray-600 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
 
@@ -129,20 +178,36 @@ export const SetEditCard: React.FC<Props> = ({
         </div>
 
         <div className="flex items-center space-x-2">
+          {/* ::1.png 참조 - 이동 버튼 (햄버거 메뉴) */}
           <button
-            onClick={() => setIsEditingSettings(!isEditingSettings)}
+            onClick={(e) => {
+              e.stopPropagation();
+              // TODO: 이동 액션 메뉴 또는 드래그 모드 시작
+              console.log('🔄 세트 이동 버튼 클릭:', dragItem);
+            }}
+            className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 transition-colors text-gray-600"
+            title="세트 이동"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+            </svg>
+          </button>
+
+          {/* 기존 버튼들 - 축소하여 유지 */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsEditingSettings(!isEditingSettings);
+            }}
             className="px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
           >
             {isEditingSettings ? '취소' : '설정'}
           </button>
           <button
-            onClick={onAddExercise}
-            className="px-2 py-1 text-xs font-medium text-green-600 bg-green-50 rounded hover:bg-green-100 transition-colors"
-          >
-            + 운동
-          </button>
-          <button
-            onClick={handleDeleteSet}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteSet();
+            }}
             className="flex items-center justify-center w-8 h-8 rounded hover:bg-red-100 transition-colors text-red-600"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -223,43 +288,60 @@ export const SetEditCard: React.FC<Props> = ({
       )}
 
       {/* Exercises List */}
-      {(isExpanded || set.exercises.length > 0) && (
-        <div className="space-y-2">
+      {isExpanded && set.exercises.length > 0 && (
+        <SortableContainer
+          items={exerciseIds}
+          dropZone={exerciseDropZone}
+          strategy="vertical"
+          className="space-y-2"
+          showDropIndicator={true}
+        >
           {set.exercises.map((exercise, exerciseIndex) => (
-            <ExerciseEditCard
-              key={`${exercise.exerciseTemplateId}-${exerciseIndex}`}
-              exercise={exercise}
-              exerciseIndex={exerciseIndex}
+            <SortableItem
+              key={exerciseIds[exerciseIndex]}
+              sortableId={exerciseIds[exerciseIndex]}
+              dragItem={{
+                id: exerciseIds[exerciseIndex],
+                type: 'exercise',
+                data: {
+                  name: exercise.exerciseTemplateId,
+                  exercise: exercise,
+                  exerciseIndex: exerciseIndex
+                },
+                pinState: activePinState,
+                parentId: dragItem.id,
+                level: 'exercise',
+                indices: {
+                  partIndex,
+                  setIndex,
+                  exerciseIndex
+                }
+              }}
               pinState={activePinState}
-              onUpdate={(updatedExercise) => handleUpdateExercise(exerciseIndex, updatedExercise)}
-              onDelete={() => handleDeleteExercise(exerciseIndex)}
-            />
+              disabled={!canDrag}
+            >
+              <ExerciseEditCard
+                exercise={exercise}
+                exerciseIndex={exerciseIndex}
+                pinState={activePinState}
+                onUpdate={(updatedExercise) => handleUpdateExercise(exerciseIndex, updatedExercise)}
+                onDelete={() => handleDeleteExercise(exerciseIndex)}
+                partIndex={partIndex}
+                setIndex={setIndex}
+                parentId={dragItem.id}
+              />
+            </SortableItem>
           ))}
+        </SortableContainer>
+      )}
 
-          {set.exercises.length === 0 && (
-            <div className="text-center py-4 text-gray-500 bg-white rounded-lg border border-dashed">
-              <p className="text-sm mb-2">이 세트에는 운동이 없습니다.</p>
-              <button
-                onClick={onAddExercise}
-                className="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-              >
-                첫 번째 운동 추가
-              </button>
-            </div>
-          )}
+      {set.exercises.length === 0 && (
+        <div className="text-center py-4 text-gray-500 bg-white rounded-lg border border-dashed">
+          <p className="text-sm">이 세트에는 운동이 없습니다.</p>
+          <p className="text-xs text-gray-400 mt-1">우하단 + 버튼으로 운동을 추가하세요</p>
         </div>
       )}
 
-      {!isExpanded && set.exercises.length > 0 && (
-        <div className="mt-2">
-          <button
-            onClick={() => setIsExpanded(true)}
-            className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
-          >
-            운동 {set.exercises.length}개 보기
-          </button>
-        </div>
-      )}
-    </PinWrapper>
+    </DraggableCard>
   );
 };

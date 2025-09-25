@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import type { EffectiveExerciseBlueprint, ExerciseSpec, PinState } from '../../../../types/workout';
 import { PinWrapper } from '../atoms';
+import { DraggableCard } from '../atoms/DraggableCard';
+import type { DragItem } from '../../../../hooks/useDragAndDrop';
+import { PinSystemHelpers } from '../../../../types/workout';
+import { ExerciseName } from '../../../sessionInstanceDetailsPage/components/molecules/ExerciseName';
 
 type Props = {
   exercise: EffectiveExerciseBlueprint;
@@ -8,9 +12,22 @@ type Props = {
   pinState?: PinState;
   onUpdate: (updatedExercise: EffectiveExerciseBlueprint) => void;
   onDelete: () => void;
+  // DnD Props
+  partIndex?: number;
+  setIndex?: number;
+  parentId?: string;
 };
 
-export const ExerciseEditCard: React.FC<Props> = ({ exercise, exerciseIndex, pinState, onUpdate, onDelete }) => {
+export const ExerciseEditCard: React.FC<Props> = ({
+  exercise,
+  exerciseIndex,
+  pinState,
+  onUpdate,
+  onDelete,
+  partIndex,
+  setIndex,
+  parentId
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingSpec, setEditingSpec] = useState<ExerciseSpec>(exercise.spec);
   // PRD PAGES 요구사항: "모든 동일한 운동에 일괄 적용" 토글
@@ -24,6 +41,29 @@ export const ExerciseEditCard: React.FC<Props> = ({ exercise, exerciseIndex, pin
     exercisePin: false
   };
   const activePinState = pinState || defaultPinState;
+
+  // DragItem 생성
+  const dragItem: DragItem = {
+    id: `exercise-${exerciseIndex}-${exercise.exerciseTemplateId}`,
+    type: 'exercise',
+    data: {
+      name: exercise.exerciseTemplateId,
+      exercise: exercise,
+      exerciseIndex: exerciseIndex
+    },
+    pinState: activePinState,
+    parentId: parentId,
+    level: 'exercise',
+    indices: {
+      partIndex,
+      setIndex,
+      exerciseIndex
+    }
+  };
+
+  // Pin System에서 드래그 권한 체크
+  const effectivePin = PinSystemHelpers.getEffectivePinState(activePinState);
+  const canDrag = effectivePin.canDrag;
 
   const handleSave = () => {
     const updatedExercise = {
@@ -67,15 +107,16 @@ export const ExerciseEditCard: React.FC<Props> = ({ exercise, exerciseIndex, pin
 
   if (!isEditing) {
     return (
-      <PinWrapper
+      <DraggableCard
+        dragItem={dragItem}
         pinState={activePinState}
-        onClick={() => setIsEditing(true)}
-        className="bg-white p-3 border"
+        disabled={!canDrag}
+        className="bg-white p-3 border rounded-lg"
       >
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <h5 className="font-medium text-gray-900 mb-1">
-              {exercise.exerciseTemplateId} ({exercise.order}번째)
+              <ExerciseName exerciseTemplateId={exercise.exerciseTemplateId} /> ({exercise.order}번째)
             </h5>
             <div className="text-sm text-gray-600 space-y-1">
               <div>
@@ -95,17 +136,42 @@ export const ExerciseEditCard: React.FC<Props> = ({ exercise, exerciseIndex, pin
           </div>
 
           <div className="flex items-center space-x-2">
+            {/* ::1.png 참조 - 이동 버튼 (햄버거 메뉴) */}
             <button
-              onClick={() => setIsEditing(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                // TODO: 이동 액션 메뉴 또는 드래그 모드 시작
+                console.log('🔄 운동 이동 버튼 클릭:', dragItem);
+              }}
               className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 transition-colors text-gray-600"
+              title="운동 이동"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+              </svg>
+            </button>
+
+            {/* ⚙️ 설정 버튼 (편집) */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsEditing(true);
+              }}
+              className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 transition-colors text-gray-600"
+              title="운동 설정"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </button>
             <button
-              onClick={onDelete}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
               className="flex items-center justify-center w-8 h-8 rounded hover:bg-red-100 transition-colors text-red-600"
+              title="운동 삭제"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -113,7 +179,7 @@ export const ExerciseEditCard: React.FC<Props> = ({ exercise, exerciseIndex, pin
             </button>
           </div>
         </div>
-      </PinWrapper>
+      </DraggableCard>
     );
   }
 

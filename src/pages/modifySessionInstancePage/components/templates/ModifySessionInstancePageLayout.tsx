@@ -4,10 +4,14 @@ import { useSessionDetail } from '../../../../services/workoutService/sessionDet
 import { useModifySession } from '../../../../services/workoutService/sessionModificationService';
 import {
   ModifySessionTopBar,
-  SessionInfoEditor,
   WorkoutPlanEditor
 } from '../organisms';
-import type { ModifySessionRequest } from '../../../../types/workout';
+import { ExerciseSelectionBottomSheet } from '../molecules';
+import { SessionInfoCard, ExerciseAddFAB } from '../atoms';
+import { DndContextProvider } from '../../../../contexts/DndContextProvider';
+import type { ModifySessionRequest, PartModification, SetModification, ExerciseModification } from '../../../../types/workout';
+import type { DragEndEvent } from '@dnd-kit/core';
+import type { DragEventCallback } from '../../../../hooks/useDragAndDrop';
 
 type Props = {
   sessionId: string;
@@ -17,6 +21,8 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
   const navigate = useNavigate();
   const [isModified, setIsModified] = useState(false);
   const [pendingChanges, setPendingChanges] = useState<ModifySessionRequest>({});
+  const [isDragActive, setIsDragActive] = useState(false);
+  const [showExerciseSelection, setShowExerciseSelection] = useState(false);
 
   const { data: sessionDetail, isLoading, error } = useSessionDetail(sessionId);
   const modifySessionMutation = useModifySession();
@@ -50,6 +56,352 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
   const handleChanges = (changes: Partial<ModifySessionRequest>) => {
     setPendingChanges(prev => ({ ...prev, ...changes }));
     setIsModified(true);
+  };
+
+  // DnD 핸들러
+  const handleDragStart = () => {
+    setIsDragActive(true);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    console.log('드래그 종료:', event);
+    setIsDragActive(false);
+    // 드래그 앤 드롭 이벤트는 useDragAndDrop 훅의 콜백에서 처리됨
+  };
+
+
+  // FAB 핸들러
+  const handleAddExercise = () => {
+    setShowExerciseSelection(true);
+  };
+
+  const handleCloseExerciseSelection = () => {
+    setShowExerciseSelection(false);
+  };
+
+  const handleExerciseSelected = (exercise: any) => {
+    console.log('운동 선택됨:', exercise);
+    // TODO: 실제 운동 추가 로직 구현 필요 (활성 상태에 따른 위치 결정)
+    alert(`"${exercise.exerciseName}" 운동이 선택되었습니다. 실제 추가 기능은 다음 단계에서 구현됩니다.`);
+    setShowExerciseSelection(false);
+  };
+
+  // DnD 콜백 구현
+  const dragCallbacks: DragEventCallback = {
+    onItemMove: (moveData) => {
+      console.log('아이템 이동:', moveData);
+
+      const { itemType, fromIndices, toIndices } = moveData;
+
+      if (itemType === 'exercise') {
+        // 운동 이동
+        const fromPartIndex = fromIndices.partIndex ?? 0;
+        const fromSetIndex = fromIndices.setIndex ?? 0;
+        const toPartIndex = toIndices.partIndex ?? fromPartIndex;
+        const toSetIndex = toIndices.setIndex ?? fromSetIndex;
+
+        // 같은 세트 내에서의 순서 변경인지, 다른 세트로의 이동인지 확인
+        if (fromPartIndex === toPartIndex && fromSetIndex === toSetIndex) {
+          // 같은 세트 내 순서 변경
+          const exerciseModification: ExerciseModification = {
+            exerciseTemplateId: 'to-be-moved', // 실제로는 운동 ID 필요
+            action: 'modify',
+            order: toIndices.exerciseIndex ?? 0
+          };
+
+          const setModification: SetModification = {
+            setSeedId: sessionDetail?.effectiveBlueprint[fromPartIndex]?.sets[fromSetIndex]?.setSeedId,
+            action: 'modify',
+            exerciseModifications: [exerciseModification]
+          };
+
+          const partModification: PartModification = {
+            partSeedId: sessionDetail?.effectiveBlueprint[fromPartIndex]?.partSeedId,
+            action: 'modify',
+            setModifications: [setModification]
+          };
+
+          handleChanges({
+            partModifications: [partModification]
+          });
+        } else {
+          // 다른 세트로 이동 (삭제 + 추가)
+          const originalExercise = sessionDetail?.effectiveBlueprint[fromPartIndex]?.sets[fromSetIndex]?.exercises[fromIndices.exerciseIndex ?? 0];
+
+          if (originalExercise) {
+            // 기존 위치에서 삭제
+            const deleteExerciseModification: ExerciseModification = {
+              exerciseTemplateId: originalExercise.exerciseTemplateId,
+              action: 'delete'
+            };
+
+            // 새 위치에 추가
+            const addExerciseModification: ExerciseModification = {
+              exerciseTemplateId: originalExercise.exerciseTemplateId,
+              action: 'add',
+              order: toIndices.exerciseIndex ?? 1,
+              spec: originalExercise.spec
+            };
+
+            const fromSetModification: SetModification = {
+              setSeedId: sessionDetail?.effectiveBlueprint[fromPartIndex]?.sets[fromSetIndex]?.setSeedId,
+              action: 'modify',
+              exerciseModifications: [deleteExerciseModification]
+            };
+
+            const toSetModification: SetModification = {
+              setSeedId: sessionDetail?.effectiveBlueprint[toPartIndex]?.sets[toSetIndex]?.setSeedId,
+              action: 'modify',
+              exerciseModifications: [addExerciseModification]
+            };
+
+            const partModifications: PartModification[] = [];
+
+            if (fromPartIndex === toPartIndex) {
+              // 같은 파트 내에서 다른 세트로 이동
+              partModifications.push({
+                partSeedId: sessionDetail?.effectiveBlueprint[fromPartIndex]?.partSeedId,
+                action: 'modify',
+                setModifications: [fromSetModification, toSetModification]
+              });
+            } else {
+              // 다른 파트의 다른 세트로 이동
+              partModifications.push({
+                partSeedId: sessionDetail?.effectiveBlueprint[fromPartIndex]?.partSeedId,
+                action: 'modify',
+                setModifications: [fromSetModification]
+              });
+              partModifications.push({
+                partSeedId: sessionDetail?.effectiveBlueprint[toPartIndex]?.partSeedId,
+                action: 'modify',
+                setModifications: [toSetModification]
+              });
+            }
+
+            handleChanges({
+              partModifications
+            });
+          }
+        }
+
+      } else if (itemType === 'set') {
+        // 세트 이동 (같은 파트 내에서만 가능)
+        const partIndex = fromIndices.partIndex ?? 0;
+
+        const setModification: SetModification = {
+          setSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.sets[fromIndices.setIndex ?? 0]?.setSeedId,
+          action: 'modify',
+          order: toIndices.setIndex ?? 0
+        };
+
+        const partModification: PartModification = {
+          partSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.partSeedId,
+          action: 'modify',
+          setModifications: [setModification]
+        };
+
+        handleChanges({
+          partModifications: [partModification]
+        });
+
+      } else if (itemType === 'part') {
+        // 파트 순서 변경
+        const partModification: PartModification = {
+          partSeedId: sessionDetail?.effectiveBlueprint[fromIndices.partIndex ?? 0]?.partSeedId,
+          action: 'modify',
+          order: toIndices.partIndex ?? 0
+        };
+
+        handleChanges({
+          partModifications: [partModification]
+        });
+      }
+    },
+
+    onItemDuplicate: (duplicateData) => {
+      console.log('아이템 복제:', duplicateData);
+
+      const { item, targetIndices } = duplicateData;
+
+      if (item.type === 'exercise') {
+        // 운동 복제: 같은 세트 내에 복사본 추가
+        const partIndex = targetIndices.partIndex ?? 0;
+        const setIndex = targetIndices.setIndex ?? 0;
+
+        const duplicateExerciseModification: ExerciseModification = {
+          exerciseTemplateId: item.data.exercise?.exerciseTemplateId || item.data.name || 'unknown',
+          action: 'add',
+          order: (item.indices.exerciseIndex ?? 0) + 1, // 현재 운동 다음에 추가
+          spec: item.data.exercise?.spec
+        };
+
+        const setModification: SetModification = {
+          setSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.sets[setIndex]?.setSeedId,
+          action: 'modify',
+          exerciseModifications: [duplicateExerciseModification]
+        };
+
+        const partModification: PartModification = {
+          partSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.partSeedId,
+          action: 'modify',
+          setModifications: [setModification]
+        };
+
+        handleChanges({
+          partModifications: [partModification]
+        });
+
+      } else if (item.type === 'set') {
+        // 세트 복제: 같은 파트 내에 복사본 추가
+        const partIndex = targetIndices.partIndex ?? 0;
+        const originalSet = sessionDetail?.effectiveBlueprint[partIndex]?.sets[item.indices.setIndex ?? 0];
+
+        if (originalSet) {
+          const duplicateSetModification: SetModification = {
+            action: 'add',
+            order: (item.indices.setIndex ?? 0) + 1,
+            restTime: originalSet.restTime,
+            timeLimit: originalSet.timeLimit,
+            exerciseModifications: originalSet.exercises.map((exercise, index) => ({
+              exerciseTemplateId: exercise.exerciseTemplateId,
+              action: 'add',
+              order: index + 1,
+              spec: exercise.spec
+            }))
+          };
+
+          const partModification: PartModification = {
+            partSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.partSeedId,
+            action: 'modify',
+            setModifications: [duplicateSetModification]
+          };
+
+          handleChanges({
+            partModifications: [partModification]
+          });
+        }
+      }
+    },
+
+    onItemDelete: (deleteData) => {
+      console.log('아이템 삭제:', deleteData);
+
+      const { itemType, indices } = deleteData;
+
+      if (itemType === 'exercise') {
+        // 운동 삭제
+        const partIndex = indices.partIndex ?? 0;
+        const setIndex = indices.setIndex ?? 0;
+
+        const exerciseModification: ExerciseModification = {
+          exerciseTemplateId: 'to-be-deleted', // 실제로는 ID를 사용해야 함
+          action: 'delete'
+        };
+
+        const setModification: SetModification = {
+          setSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.sets[setIndex]?.setSeedId,
+          action: 'modify',
+          exerciseModifications: [exerciseModification]
+        };
+
+        const partModification: PartModification = {
+          partSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.partSeedId,
+          action: 'modify',
+          setModifications: [setModification]
+        };
+
+        handleChanges({
+          partModifications: [partModification]
+        });
+
+      } else if (itemType === 'set') {
+        // 세트 삭제
+        const partIndex = indices.partIndex ?? 0;
+
+        const setModification: SetModification = {
+          setSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.sets[indices.setIndex ?? 0]?.setSeedId,
+          action: 'delete'
+        };
+
+        const partModification: PartModification = {
+          partSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.partSeedId,
+          action: 'modify',
+          setModifications: [setModification]
+        };
+
+        handleChanges({
+          partModifications: [partModification]
+        });
+
+      } else if (itemType === 'part') {
+        // 파트 삭제
+        const partModification: PartModification = {
+          partSeedId: sessionDetail?.effectiveBlueprint[indices.partIndex ?? 0]?.partSeedId,
+          action: 'delete'
+        };
+
+        handleChanges({
+          partModifications: [partModification]
+        });
+      }
+    },
+
+    onContainerCreate: (createData) => {
+      console.log('컨테이너 생성:', createData);
+
+      const { containerType, dragItem, targetIndices } = createData;
+
+      if (containerType === 'part') {
+        // 새 파트 생성
+        const newPartModification: PartModification = {
+          action: 'add',
+          partName: `새 파트 ${(sessionDetail?.effectiveBlueprint.length || 0) + 1}`,
+          order: (targetIndices.partIndex ?? 0) + 1,
+          setModifications: [{
+            action: 'add',
+            order: 1,
+            restTime: 60, // 기본 휴식 시간
+            timeLimit: null,
+            exerciseModifications: [{
+              exerciseTemplateId: dragItem.data.exercise?.exerciseTemplateId || dragItem.data.name || 'unknown',
+              action: 'add',
+              order: 1,
+              spec: dragItem.data.exercise?.spec
+            }]
+          }]
+        };
+
+        handleChanges({
+          partModifications: [newPartModification]
+        });
+
+      } else if (containerType === 'set') {
+        // 새 세트 생성
+        const targetPartIndex = targetIndices.partIndex ?? 0;
+        const newSetModification: SetModification = {
+          action: 'add',
+          order: (targetIndices.setIndex ?? 0) + 1,
+          restTime: 60, // 기본 휴식 시간
+          timeLimit: null,
+          exerciseModifications: [{
+            exerciseTemplateId: dragItem.data.exercise?.exerciseTemplateId || dragItem.data.name || 'unknown',
+            action: 'add',
+            order: 1,
+            spec: dragItem.data.exercise?.spec
+          }]
+        };
+
+        const partModification: PartModification = {
+          partSeedId: sessionDetail?.effectiveBlueprint[targetPartIndex]?.partSeedId,
+          action: 'modify',
+          setModifications: [newSetModification]
+        };
+
+        handleChanges({
+          partModifications: [partModification]
+        });
+      }
+    }
   };
 
   if (isLoading) {
@@ -139,52 +491,70 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Bar */}
-      <ModifySessionTopBar
-        sessionName={sessionDetail.sessionName}
-        isModified={isModified}
-        isSaving={modifySessionMutation.isPending}
-        onBack={handleBack}
-        onSave={handleSave}
-      />
-
-      {/* Session Info Editor */}
-      <div className="p-4">
-        <SessionInfoEditor
-          sessionDetail={sessionDetail}
-          onChange={handleChanges}
+    <DndContextProvider
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      dragCallbacks={dragCallbacks}
+    >
+      <div className="min-h-screen bg-gray-50" data-scroll-container>
+        {/* Top Bar */}
+        <ModifySessionTopBar
+          sessionName={sessionDetail.sessionName}
+          isModified={isModified}
+          isSaving={modifySessionMutation.isPending}
+          onBack={handleBack}
+          onSave={handleSave}
         />
-      </div>
 
-      {/* Workout Plan Editor */}
-      <div className="px-4 pb-20">
-        <WorkoutPlanEditor
-          effectiveBlueprint={sessionDetail.effectiveBlueprint}
-          sessionId={sessionId}
-          onChange={handleChanges}
-        />
-      </div>
-
-      {/* Fixed Save Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
-        <div className="flex space-x-3">
-          <button
-            onClick={handleBack}
-            className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
-            disabled={modifySessionMutation.isPending}
-          >
-            취소
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!isModified || modifySessionMutation.isPending}
-            className="flex-1 py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            {modifySessionMutation.isPending ? '저장 중...' : '저장하기'}
-          </button>
+        {/* Session Info Card (Redesigned) */}
+        <div className="p-4">
+          <SessionInfoCard
+            sessionDetail={sessionDetail}
+          />
         </div>
+
+        {/* Workout Plan Editor */}
+        <div className="px-4 pb-32">
+          <WorkoutPlanEditor
+            effectiveBlueprint={sessionDetail.effectiveBlueprint}
+            sessionId={sessionId}
+            onChange={handleChanges}
+          />
+        </div>
+
+        {/* Exercise Add FAB - PRD Compliant */}
+        <ExerciseAddFAB
+          isVisible={!isDragActive}
+          onClick={handleAddExercise}
+        />
+
+        {/* Fixed Save Button */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
+          <div className="flex space-x-3">
+            <button
+              onClick={handleBack}
+              className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+              disabled={modifySessionMutation.isPending}
+            >
+              취소
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!isModified || modifySessionMutation.isPending}
+              className="flex-1 py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              {modifySessionMutation.isPending ? '저장 중...' : '저장하기'}
+            </button>
+          </div>
+        </div>
+
+        {/* Exercise Selection Bottom Sheet */}
+        <ExerciseSelectionBottomSheet
+          isOpen={showExerciseSelection}
+          onClose={handleCloseExerciseSelection}
+          onSelectExercise={handleExerciseSelected}
+        />
       </div>
-    </div>
+    </DndContextProvider>
   );
 };
