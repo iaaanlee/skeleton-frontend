@@ -93,6 +93,17 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
 
       const { itemType, fromIndices, toIndices } = moveData;
 
+      // 실제 위치 변화가 있는지 확인
+      const hasPositionChanged =
+        fromIndices.partIndex !== toIndices.partIndex ||
+        fromIndices.setIndex !== toIndices.setIndex ||
+        fromIndices.exerciseIndex !== toIndices.exerciseIndex;
+
+      if (!hasPositionChanged) {
+        console.log('같은 위치로 드롭됨 - 변경사항 없음');
+        return; // 변경사항 없으므로 처리하지 않음
+      }
+
       if (itemType === 'exercise') {
         // 운동 이동
         const fromPartIndex = fromIndices.partIndex ?? 0;

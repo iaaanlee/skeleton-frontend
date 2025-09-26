@@ -1,10 +1,47 @@
 import React, { useState } from 'react';
+import { useDraggable } from '@dnd-kit/core';
 import type { EffectiveExerciseBlueprint, ExerciseSpec, PinState, ActiveItem } from '../../../../types/workout';
 import { PinWrapper } from '../atoms';
 import { DraggableCard } from '../atoms/DraggableCard';
 import type { DragItem } from '../../../../hooks/useDragAndDrop';
 import { PinSystemHelpers } from '../../../../types/workout';
 import { ExerciseName } from '../../../sessionInstanceDetailsPage/components/molecules/ExerciseName';
+
+// formatExerciseSpec 함수 - session-instance-details와 동일
+const formatExerciseSpec = (spec: ExerciseSpec) => {
+  const { goal, load, timeLimit } = spec;
+
+  let goalText = '';
+  switch (goal.type) {
+    case 'reps':
+      goalText = `${goal.value}회`;
+      break;
+    case 'time':
+      goalText = `${goal.value}초`;
+      break;
+    case 'distance':
+      goalText = `${goal.value}m`;
+      break;
+    case 'weight':
+      goalText = `${goal.value}kg`;
+      break;
+  }
+
+  let loadText = load.text || '';
+  if (load.type === 'weight' && load.value) {
+    loadText = `${load.value}kg`;
+  } else if (load.type === 'bodyweight') {
+    loadText = '체중';
+  }
+
+  const parts = [goalText, loadText].filter(Boolean);
+
+  if (timeLimit && timeLimit > 0) {
+    parts.push(`제한시간 ${timeLimit}초`);
+  }
+
+  return parts.join(' · ');
+};
 
 type Props = {
   exercise: EffectiveExerciseBlueprint;
@@ -72,6 +109,19 @@ export const ExerciseEditCard: React.FC<Props> = ({
   const effectivePin = PinSystemHelpers.getEffectivePinState(activePinState);
   const canDrag = effectivePin.canDrag;
 
+  // useDraggable 훅 사용
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id: dragItem.id,
+    data: dragItem,
+    disabled: !canDrag
+  });
+
   // ActiveItem 체크 - WorkoutPlanTab 패턴 따라 구현
   const exerciseKey = setSeedId ? `${setSeedId}-${exercise.exerciseTemplateId}-${exercise.order}` : `exercise-${exerciseIndex}-${exercise.exerciseTemplateId}`;
   const isActive = activeItem?.level === 'move' && activeItem.id === exerciseKey;
@@ -121,7 +171,8 @@ export const ExerciseEditCard: React.FC<Props> = ({
       <DraggableCard
         dragItem={dragItem}
         pinState={activePinState}
-        disabled={!canDrag}
+        disabled={true}
+        dragHandle={false}
         className={`p-3 border rounded-lg transition-colors ${
           isActive
             ? 'bg-orange-50 border-orange-300'
@@ -132,43 +183,25 @@ export const ExerciseEditCard: React.FC<Props> = ({
           className="flex items-center justify-between cursor-pointer"
           onClick={() => onExerciseClick?.(exerciseKey)}
         >
-          <div className="flex-1">
-            <h5 className="font-medium text-gray-900 mb-1">
-              <ExerciseName exerciseTemplateId={exercise.exerciseTemplateId} /> ({exercise.order}번째)
-            </h5>
-            <div className="text-sm text-gray-600 space-y-1">
-              <div>
-                목표: {exercise.spec.goal.rule === 'exact' ? '' : exercise.spec.goal.rule === 'min' ? '최소 ' : '최대 '}
-                {exercise.spec.goal.value}
-                {exercise.spec.goal.type === 'reps' ? '회' :
-                 exercise.spec.goal.type === 'time' ? '초' :
-                 exercise.spec.goal.type === 'distance' ? 'm' : 'kg'}
-              </div>
-              {exercise.spec.load.type !== 'none' && (
-                <div>부하: {exercise.spec.load.text}</div>
-              )}
-              {exercise.spec.timeLimit && (
-                <div>시간 제한: {exercise.spec.timeLimit}초</div>
-              )}
+          <div className="flex items-center">
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 ${
+              isActive
+                ? 'bg-orange-100 text-orange-600'
+                : 'bg-blue-100 text-blue-600'
+            }`}>
+              <span className="text-xs font-semibold">{exercise.order + 1}</span>
+            </div>
+            <div>
+              <p className="font-medium text-gray-900 text-sm">
+                <ExerciseName exerciseTemplateId={exercise.exerciseTemplateId} />
+              </p>
+              <p className="text-xs text-gray-600">
+                {formatExerciseSpec(exercise.spec)}
+              </p>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
-            {/* ::1.png 참조 - 이동 버튼 (햄버거 메뉴) */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                // TODO: 이동 액션 메뉴 또는 드래그 모드 시작
-                console.log('🔄 운동 이동 버튼 클릭:', dragItem);
-              }}
-              className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 transition-colors text-gray-600"
-              title="운동 이동"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-
             {/* ⚙️ 설정 버튼 (편집) */}
             <button
               onClick={(e) => {
@@ -183,16 +216,16 @@ export const ExerciseEditCard: React.FC<Props> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </button>
+
+            {/* 드래그 핸들 */}
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="flex items-center justify-center w-8 h-8 rounded hover:bg-red-100 transition-colors text-red-600"
-              title="운동 삭제"
+              {...(canDrag ? { ...attributes, ...listeners } : {})}
+              className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing"
+              title="운동 이동"
+              disabled={!canDrag}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
           </div>
@@ -223,16 +256,6 @@ export const ExerciseEditCard: React.FC<Props> = ({
               className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
             >
               저장
-            </button>
-            {/* PRD PAGES 요구사항: 삭제 버튼 (우상단 휴지통) */}
-            <button
-              onClick={onDelete}
-              className="flex items-center justify-center w-8 h-8 rounded hover:bg-red-100 transition-colors text-red-600"
-              title="운동 삭제"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
             </button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ExerciseSelectionBottomSheet, SetEditCard } from '../molecules';
 import type { EffectivePartBlueprint, ModifySessionRequest, PartModification, ExerciseTemplate, EffectiveSetBlueprint, PinState, ActiveItem } from '../../../../types/workout';
 import { DraggableCard } from '../atoms';
@@ -6,6 +6,7 @@ import type { DragItem } from '../../../../hooks/useDragAndDrop';
 import { ExerciseName } from '../../../sessionInstanceDetailsPage/components/molecules/ExerciseName';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import { useStatePreservation } from '../../../sessionInstanceDetailsPage/hooks/useStatePreservation';
 
 type Props = {
   effectiveBlueprint: EffectivePartBlueprint[];
@@ -49,13 +50,24 @@ const PartDragButton: React.FC<{ partDragItem: DragItem }> = ({ partDragItem }) 
 };
 
 export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, sessionId, onChange }) => {
-  const [expandedParts, setExpandedParts] = useState<Set<string>>(
-    new Set(effectiveBlueprint.length > 0 ? [effectiveBlueprint[0].partSeedId] : [])
-  );
+  // 토글 상태 인계 시스템 적용
+  const { expandedParts, expandedSets, togglePartExpansion, toggleSetExpansion, initializeToggleStates } = useStatePreservation(sessionId);
+
   const [activeItem, setActiveItem] = useState<ActiveItem>(null);
   // TODO: pendingModifications will be used in state management phase
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [pendingModifications, setPendingModifications] = useState<PartModification[]>([]);
+
+  // 첫 파트와 첫 세트 자동 펼치기 초기화
+  useEffect(() => {
+    if (effectiveBlueprint.length > 0) {
+      const firstPartId = effectiveBlueprint[0].partSeedId;
+      const firstSetId = effectiveBlueprint[0].sets.length > 0
+        ? effectiveBlueprint[0].sets[0].setSeedId
+        : undefined;
+      initializeToggleStates(firstPartId, firstSetId);
+    }
+  }, [effectiveBlueprint, initializeToggleStates]);
 
   // Default Pin State (no pins active) - will be replaced with actual Pin detection in next phase
   const defaultPinState: PinState = {
@@ -70,15 +82,7 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
   const [showExerciseSelection, setShowExerciseSelection] = useState(false);
   const [selectedPartIndex, setSelectedPartIndex] = useState<number | null>(null);
 
-  const togglePartExpansion = (partSeedId: string) => {
-    const newExpanded = new Set(expandedParts);
-    if (expandedParts.has(partSeedId)) {
-      newExpanded.delete(partSeedId);
-    } else {
-      newExpanded.add(partSeedId);
-    }
-    setExpandedParts(newExpanded);
-  };
+  // togglePartExpansion은 useStatePreservation에서 가져옴
 
   // ActiveItem 핸들러들 추가
   const handlePartClick = (partSeedId: string) => {
@@ -209,32 +213,7 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
             >
             {/* Part Header */}
             <div className="px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              <div
-                className="flex items-center flex-1 cursor-pointer"
-                onClick={() => handlePartClick(part.partSeedId)}
-              >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                  isActive ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  <span className="text-sm font-semibold">{partIndex + 1}</span>
-                </div>
-                <div className="text-left">
-                  <h3 className="font-semibold text-gray-900">{part.partName}</h3>
-                  <p className="text-sm text-gray-500">
-                    <PartSummaryText part={part} />
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                {/* <button
-                  className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
-                  title="파트 설정"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                  </svg>
-                </button> */}
-                <PartDragButton partDragItem={partDragItem} />
+              <div className="flex items-center space-x-3">
                 <button
                   onClick={() => togglePartExpansion(part.partSeedId)}
                   className="p-1 hover:bg-gray-200 rounded transition-colors"
@@ -250,6 +229,33 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
+                <div
+                  className="flex items-center flex-1 cursor-pointer"
+                  onClick={() => handlePartClick(part.partSeedId)}
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                    isActive ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    <span className="text-sm font-semibold">{partIndex + 1}</span>
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold text-gray-900">{part.partName}</h3>
+                    <p className="text-sm text-gray-500">
+                      <PartSummaryText part={part} />
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                {/* <button
+                  className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+                  title="파트 설정"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                  </svg>
+                </button> */}
+                <PartDragButton partDragItem={partDragItem} />
               </div>
             </div>
 
@@ -261,6 +267,8 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
                     key={set.setSeedId}
                     set={set}
                     setIndex={setIndex}
+                    partIndex={partIndex}
+                    parentId={partDragItem.id}
                     pinState={defaultPinState}
                     activeItem={activeItem}
                     onSetClick={handleSetClick}
@@ -268,6 +276,8 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
                     onUpdateSet={(updatedSet) => handleUpdateSet(partIndex, setIndex, updatedSet)}
                     onDeleteSet={() => handleDeleteSet(partIndex, setIndex)}
                     onAddExercise={() => handleAddExercise(partIndex)}
+                    isExpanded={expandedSets.has(set.setSeedId)}
+                    onToggle={toggleSetExpansion}
                   />
                 ))}
 

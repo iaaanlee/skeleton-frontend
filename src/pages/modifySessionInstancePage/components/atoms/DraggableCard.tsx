@@ -78,7 +78,7 @@ export const DraggableCard: React.FC<Props> = ({
 
           {/* 드래그 핸들이 필요한 경우 별도의 드래그 핸들 생성 */}
           {dragHandle && !disabled && (
-            <div className="absolute top-1/2 -translate-y-1/2 right-12 z-10">
+            <div className="absolute top-1/2 -translate-y-1/2 right-3 z-10">
               <DragHandleButton
                 dragItem={dragItem}
                 attributes={attributes}
@@ -118,12 +118,12 @@ const DragHandleButton: React.FC<{
       style={handleStyle}
       {...attributes}
       {...listeners}
-      className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing bg-white shadow-lg border-2 border-gray-300"
+      className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing bg-white shadow-sm border border-gray-300"
       title={`${dragItem.type} 이동`}
       onClick={(e) => e.stopPropagation()}
     >
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
       </svg>
     </div>
   );
