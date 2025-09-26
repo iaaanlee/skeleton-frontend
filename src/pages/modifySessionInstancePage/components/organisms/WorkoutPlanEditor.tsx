@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { ExerciseSelectionBottomSheet, SetEditCard } from '../molecules';
-import type { EffectivePartBlueprint, ModifySessionRequest, PartModification, ExerciseTemplate, EffectiveSetBlueprint, PinState } from '../../../../types/workout';
+import type { EffectivePartBlueprint, ModifySessionRequest, PartModification, ExerciseTemplate, EffectiveSetBlueprint, PinState, ActiveItem } from '../../../../types/workout';
 import { DraggableCard } from '../atoms';
 import type { DragItem } from '../../../../hooks/useDragAndDrop';
+import { ExerciseName } from '../../../sessionInstanceDetailsPage/components/molecules/ExerciseName';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -41,14 +42,17 @@ const PartDragButton: React.FC<{ partDragItem: DragItem }> = ({ partDragItem }) 
       onClick={(e) => e.stopPropagation()}
     >
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
       </svg>
     </button>
   );
 };
 
 export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, sessionId, onChange }) => {
-  const [expandedParts, setExpandedParts] = useState<Record<number, boolean>>({});
+  const [expandedParts, setExpandedParts] = useState<Set<string>>(
+    new Set(effectiveBlueprint.length > 0 ? [effectiveBlueprint[0].partSeedId] : [])
+  );
+  const [activeItem, setActiveItem] = useState<ActiveItem>(null);
   // TODO: pendingModifications will be used in state management phase
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [pendingModifications, setPendingModifications] = useState<PartModification[]>([]);
@@ -66,11 +70,27 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
   const [showExerciseSelection, setShowExerciseSelection] = useState(false);
   const [selectedPartIndex, setSelectedPartIndex] = useState<number | null>(null);
 
-  const togglePartExpansion = (partIndex: number) => {
-    setExpandedParts(prev => ({
-      ...prev,
-      [partIndex]: !prev[partIndex]
-    }));
+  const togglePartExpansion = (partSeedId: string) => {
+    const newExpanded = new Set(expandedParts);
+    if (expandedParts.has(partSeedId)) {
+      newExpanded.delete(partSeedId);
+    } else {
+      newExpanded.add(partSeedId);
+    }
+    setExpandedParts(newExpanded);
+  };
+
+  // ActiveItem 핸들러들 추가
+  const handlePartClick = (partSeedId: string) => {
+    setActiveItem({ level: 'part', id: partSeedId });
+  };
+
+  const handleSetClick = (setSeedId: string) => {
+    setActiveItem({ level: 'set', id: setSeedId });
+  };
+
+  const handleExerciseClick = (exerciseId: string) => {
+    setActiveItem({ level: 'move', id: exerciseId });
   };
 
   const handleAddExercise = (partIndex: number) => {
@@ -108,6 +128,46 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
     alert('세트 추가 기능은 상태 관리 구현 후 활성화됩니다.');
   };
 
+  // 파트 헤더 요약 텍스트를 위한 유틸리티 함수들
+  const getPartSummary = (part: EffectivePartBlueprint) => {
+    const totalSets = part.sets.length;
+    const exerciseTemplateIds = new Map<string, number>();
+
+    // 각 운동별로 등장 횟수 카운트
+    part.sets.forEach(set => {
+      set.exercises.forEach(exercise => {
+        const templateId = exercise.exerciseTemplateId.toString();
+        exerciseTemplateIds.set(templateId, (exerciseTemplateIds.get(templateId) || 0) + 1);
+      });
+    });
+
+    return {
+      totalSets,
+      exerciseTemplateIds
+    };
+  };
+
+  // 파트 요약을 렌더링하는 컴포넌트
+  const PartSummaryText: React.FC<{ part: EffectivePartBlueprint }> = ({ part }) => {
+    const { totalSets, exerciseTemplateIds } = getPartSummary(part);
+
+    if (exerciseTemplateIds.size === 0) {
+      return <span>총 {totalSets}세트</span>;
+    }
+
+    return (
+      <span>
+        총 {totalSets}세트 · {' '}
+        {Array.from(exerciseTemplateIds.entries()).map(([templateId, count], index) => (
+          <span key={templateId}>
+            {index > 0 && ', '}
+            <ExerciseName exerciseTemplateId={templateId} /> x {count}
+          </span>
+        ))}
+      </span>
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -133,60 +193,68 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
             }
           };
 
+          // ActiveItem 체크
+          const isActive = activeItem?.level === 'part' && activeItem.id === part.partSeedId;
+          const isExpanded = expandedParts.has(part.partSeedId);
+
           return (
             <DraggableCard
               key={part.partSeedId}
               dragItem={partDragItem}
               pinState={defaultPinState}
-              className="bg-white border rounded-lg"
+              className={`bg-white border rounded-lg transition-all duration-200 ${
+                isActive ? 'border-orange-400 shadow-md' : 'border-gray-200'
+              }`}
               disabled={true}
             >
             {/* Part Header */}
-            <div className="p-4 border-b">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => togglePartExpansion(partIndex)}
-                    className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <svg
-                      className={`w-5 h-5 text-gray-600 transition-transform ${
-                        expandedParts[partIndex] ? 'rotate-180' : ''
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      {part.partName} ({part.order}번째)
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {part.sets.length}개 세트
-                    </p>
-                  </div>
+            <div className="px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+              <div
+                className="flex items-center flex-1 cursor-pointer"
+                onClick={() => handlePartClick(part.partSeedId)}
+              >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                  isActive ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  <span className="text-sm font-semibold">{partIndex + 1}</span>
                 </div>
-
-                <div className="flex items-center space-x-2">
-                  <button
-                    className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
-                    title="파트 설정"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                    </svg>
-                  </button>
-                  <PartDragButton partDragItem={partDragItem} />
+                <div className="text-left">
+                  <h3 className="font-semibold text-gray-900">{part.partName}</h3>
+                  <p className="text-sm text-gray-500">
+                    <PartSummaryText part={part} />
+                  </p>
                 </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                {/* <button
+                  className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+                  title="파트 설정"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                  </svg>
+                </button> */}
+                <PartDragButton partDragItem={partDragItem} />
+                <button
+                  onClick={() => togglePartExpansion(part.partSeedId)}
+                  className="p-1 hover:bg-gray-200 rounded transition-colors"
+                >
+                  <svg
+                    className={`w-5 h-5 text-gray-400 transition-transform ${
+                      isExpanded ? 'rotate-90' : ''
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
               </div>
             </div>
 
             {/* Part Content (Collapsible) */}
-            {expandedParts[partIndex] && (
+            {isExpanded && (
               <div className="p-4 space-y-3">
                 {part.sets.map((set, setIndex) => (
                   <SetEditCard
@@ -194,6 +262,9 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
                     set={set}
                     setIndex={setIndex}
                     pinState={defaultPinState}
+                    activeItem={activeItem}
+                    onSetClick={handleSetClick}
+                    onExerciseClick={handleExerciseClick}
                     onUpdateSet={(updatedSet) => handleUpdateSet(partIndex, setIndex, updatedSet)}
                     onDeleteSet={() => handleDeleteSet(partIndex, setIndex)}
                     onAddExercise={() => handleAddExercise(partIndex)}

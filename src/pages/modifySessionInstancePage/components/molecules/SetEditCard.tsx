@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ExerciseEditCard } from './ExerciseEditCard';
-import type { EffectiveSetBlueprint, EffectiveExerciseBlueprint, PinState } from '../../../../types/workout';
+import type { EffectiveSetBlueprint, EffectiveExerciseBlueprint, PinState, ActiveItem } from '../../../../types/workout';
 import { DraggableCard } from '../atoms/DraggableCard';
 import { SortableContainer } from '../atoms/SortableContainer';
 import { SortableItem } from '../atoms/SortableItem';
@@ -17,6 +17,10 @@ type Props = {
   // DnD Props
   partIndex?: number;
   parentId?: string;
+  // ActiveItem Props
+  activeItem?: ActiveItem;
+  onSetClick?: (setSeedId: string) => void;
+  onExerciseClick?: (exerciseId: string) => void;
 };
 
 export const SetEditCard: React.FC<Props> = ({
@@ -27,7 +31,10 @@ export const SetEditCard: React.FC<Props> = ({
   onDeleteSet,
   onAddExercise,
   partIndex,
-  parentId
+  parentId,
+  activeItem,
+  onSetClick,
+  onExerciseClick
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
@@ -74,6 +81,9 @@ export const SetEditCard: React.FC<Props> = ({
   // Pin System에서 드래그 권한 체크
   const effectivePin = PinSystemHelpers.getEffectivePinState(activePinState);
   const canDrag = effectivePin.canDrag;
+
+  // ActiveItem 체크
+  const isActive = activeItem?.level === 'set' && activeItem.id === set.setSeedId;
 
   // Sortable 운동 목록 생성 (ID 배열)
   const exerciseIds = set.exercises.map((_, index) =>
@@ -140,10 +150,17 @@ export const SetEditCard: React.FC<Props> = ({
       dragItem={dragItem}
       pinState={activePinState}
       disabled={!canDrag}
-      className="bg-gray-50 p-3 rounded-lg"
+      className={`p-3 rounded-lg transition-colors ${
+        isActive
+          ? 'bg-orange-50 border border-orange-400'
+          : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
+      }`}
     >
       {/* Set Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div
+        className="flex items-center justify-between mb-3 cursor-pointer"
+        onClick={() => onSetClick?.(set.setSeedId)}
+      >
         <div className="flex items-center space-x-3">
           <button
             onClick={(e) => {
@@ -189,7 +206,7 @@ export const SetEditCard: React.FC<Props> = ({
             title="세트 이동"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
 
@@ -324,6 +341,9 @@ export const SetEditCard: React.FC<Props> = ({
                 exercise={exercise}
                 exerciseIndex={exerciseIndex}
                 pinState={activePinState}
+                activeItem={activeItem}
+                onExerciseClick={onExerciseClick}
+                setSeedId={set.setSeedId}
                 onUpdate={(updatedExercise) => handleUpdateExercise(exerciseIndex, updatedExercise)}
                 onDelete={() => handleDeleteExercise(exerciseIndex)}
                 partIndex={partIndex}

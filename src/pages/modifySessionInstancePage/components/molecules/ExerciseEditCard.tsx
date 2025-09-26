@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { EffectiveExerciseBlueprint, ExerciseSpec, PinState } from '../../../../types/workout';
+import type { EffectiveExerciseBlueprint, ExerciseSpec, PinState, ActiveItem } from '../../../../types/workout';
 import { PinWrapper } from '../atoms';
 import { DraggableCard } from '../atoms/DraggableCard';
 import type { DragItem } from '../../../../hooks/useDragAndDrop';
@@ -16,6 +16,10 @@ type Props = {
   partIndex?: number;
   setIndex?: number;
   parentId?: string;
+  // ActiveItem Props
+  activeItem?: ActiveItem;
+  onExerciseClick?: (exerciseId: string) => void;
+  setSeedId?: string;
 };
 
 export const ExerciseEditCard: React.FC<Props> = ({
@@ -26,7 +30,10 @@ export const ExerciseEditCard: React.FC<Props> = ({
   onDelete,
   partIndex,
   setIndex,
-  parentId
+  parentId,
+  activeItem,
+  onExerciseClick,
+  setSeedId
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingSpec, setEditingSpec] = useState<ExerciseSpec>(exercise.spec);
@@ -64,6 +71,10 @@ export const ExerciseEditCard: React.FC<Props> = ({
   // Pin System에서 드래그 권한 체크
   const effectivePin = PinSystemHelpers.getEffectivePinState(activePinState);
   const canDrag = effectivePin.canDrag;
+
+  // ActiveItem 체크 - WorkoutPlanTab 패턴 따라 구현
+  const exerciseKey = setSeedId ? `${setSeedId}-${exercise.exerciseTemplateId}-${exercise.order}` : `exercise-${exerciseIndex}-${exercise.exerciseTemplateId}`;
+  const isActive = activeItem?.level === 'move' && activeItem.id === exerciseKey;
 
   const handleSave = () => {
     const updatedExercise = {
@@ -111,9 +122,16 @@ export const ExerciseEditCard: React.FC<Props> = ({
         dragItem={dragItem}
         pinState={activePinState}
         disabled={!canDrag}
-        className="bg-white p-3 border rounded-lg"
+        className={`p-3 border rounded-lg transition-colors ${
+          isActive
+            ? 'bg-orange-50 border-orange-300'
+            : 'bg-white border-gray-200 hover:bg-gray-50'
+        }`}
       >
-        <div className="flex items-center justify-between">
+        <div
+          className="flex items-center justify-between cursor-pointer"
+          onClick={() => onExerciseClick?.(exerciseKey)}
+        >
           <div className="flex-1">
             <h5 className="font-medium text-gray-900 mb-1">
               <ExerciseName exerciseTemplateId={exercise.exerciseTemplateId} /> ({exercise.order}번째)
@@ -147,7 +165,7 @@ export const ExerciseEditCard: React.FC<Props> = ({
               title="운동 이동"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
 
