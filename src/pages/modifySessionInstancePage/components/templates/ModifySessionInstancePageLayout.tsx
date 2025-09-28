@@ -540,7 +540,7 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
         />
 
         {/* Fixed Save Button */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-30">
           <div className="flex space-x-3">
             <button
               onClick={handleBack}

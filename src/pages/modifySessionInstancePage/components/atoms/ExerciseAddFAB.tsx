@@ -19,7 +19,7 @@ export const ExerciseAddFAB: React.FC<Props> = ({
     <button
       onClick={onClick}
       className={`
-        fixed bottom-24 right-6 z-50
+        fixed bottom-24 right-6 z-40
         w-14 h-14 rounded-full
         bg-blue-600 hover:bg-blue-700
         text-white shadow-lg hover:shadow-xl

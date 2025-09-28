@@ -50,7 +50,7 @@ export const ExerciseSelectionBottomSheet: React.FC<Props> = ({ isOpen, onClose,
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end">
+    <div className="fixed inset-0 z-[8000] flex items-end">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black bg-opacity-50"

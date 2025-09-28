@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { useDraggable } from '@dnd-kit/core';
 import type { EffectiveExerciseBlueprint, ExerciseSpec, PinState, ActiveItem } from '../../../../types/workout';
 import { PinWrapper } from '../atoms';
@@ -6,6 +7,7 @@ import { DraggableCard } from '../atoms/DraggableCard';
 import type { DragItem } from '../../../../hooks/useDragAndDrop';
 import { PinSystemHelpers } from '../../../../types/workout';
 import { ExerciseName } from '../../../sessionInstanceDetailsPage/components/molecules/ExerciseName';
+import { ExerciseEditBottomSheet } from './ExerciseEditBottomSheet';
 
 // formatExerciseSpec 함수 - session-instance-details와 동일
 const formatExerciseSpec = (spec: ExerciseSpec) => {
@@ -77,6 +79,9 @@ export const ExerciseEditCard: React.FC<Props> = ({
   // PRD PAGES 요구사항: "모든 동일한 운동에 일괄 적용" 토글
   const [applyToAllSame, setApplyToAllSame] = useState(false);
 
+  // Phase 3: ExerciseEditBottomSheet 모달 상태
+  const [exerciseModalOpen, setExerciseModalOpen] = useState(false);
+
   // Default Pin State (no pins active)
   const defaultPinState: PinState = {
     sessionPin: false,
@@ -113,9 +118,9 @@ export const ExerciseEditCard: React.FC<Props> = ({
   const {
     attributes,
     listeners,
-    setNodeRef,
-    transform,
-    isDragging,
+    // setNodeRef,
+    // transform,
+    // isDragging,
   } = useDraggable({
     id: dragItem.id,
     data: dragItem,
@@ -152,6 +157,29 @@ export const ExerciseEditCard: React.FC<Props> = ({
     setIsEditing(false);
   };
 
+  // Phase 3: ExerciseEditBottomSheet 저장 핸들러
+  const handleExerciseModalSave = (updatedSpec: ExerciseSpec, applyToAll: boolean) => {
+    // 기존 handleSave 패턴과 동일하게 처리
+    const updatedExercise = {
+      ...exercise,
+      spec: updatedSpec
+    };
+
+    // PRD 요구사항: 일괄 적용 토글 처리 (기존 로직 재사용)
+    if (applyToAll) {
+      console.log('일괄 적용 모드: 세션 내 모든 동일한 운동에 변경 사항 적용', {
+        exerciseTemplateId: exercise.exerciseTemplateId,
+        newSpec: updatedSpec
+      });
+      // 실제 구현은 상위 컴포넌트에서 전체 세션 데이터에 접근해서 처리해야 함
+    }
+
+    // 로컬 state도 업데이트 (기존 인라인 편집과 동기화)
+    setEditingSpec(updatedSpec);
+
+    onUpdate(updatedExercise);
+  };
+
   const updateGoal = (updates: Partial<ExerciseSpec['goal']>) => {
     setEditingSpec(prev => ({
       ...prev,
@@ -168,7 +196,8 @@ export const ExerciseEditCard: React.FC<Props> = ({
 
   if (!isEditing) {
     return (
-      <DraggableCard
+      <>
+        <DraggableCard
         dragItem={dragItem}
         pinState={activePinState}
         disabled={true}
@@ -206,7 +235,7 @@ export const ExerciseEditCard: React.FC<Props> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setIsEditing(true);
+                setExerciseModalOpen(true);
               }}
               className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 transition-colors text-gray-600"
               title="운동 설정"
@@ -230,15 +259,31 @@ export const ExerciseEditCard: React.FC<Props> = ({
             </button>
           </div>
         </div>
-      </DraggableCard>
+
+        </DraggableCard>
+
+        {/* Phase 3: ExerciseEditBottomSheet 바텀시트 - Portal로 body에 렌더링 */}
+        {ReactDOM.createPortal(
+          <ExerciseEditBottomSheet
+            isOpen={exerciseModalOpen}
+            onClose={() => setExerciseModalOpen(false)}
+            exercise={exercise}
+            onSave={handleExerciseModalSave}
+            onDelete={onDelete}
+            recentRecord={undefined}
+          />,
+          document.body
+        )}
+      </>
     );
   }
 
   return (
-    <PinWrapper
-      pinState={activePinState}
-      className="bg-white p-4 border border-blue-200"
-    >
+    <>
+      <PinWrapper
+        pinState={activePinState}
+        className="bg-white p-4 border border-blue-200"
+      >
       <div className="space-y-4">
         <div className="flex items-center justify-between mb-4">
           <h5 className="font-medium text-gray-900">
@@ -397,6 +442,21 @@ export const ExerciseEditCard: React.FC<Props> = ({
           )}
         </div>
       </div>
+
     </PinWrapper>
+
+    {/* Phase 3: ExerciseEditBottomSheet 바텀시트 - Portal로 body에 렌더링 */}
+    {ReactDOM.createPortal(
+      <ExerciseEditBottomSheet
+        isOpen={exerciseModalOpen}
+        onClose={() => setExerciseModalOpen(false)}
+        exercise={exercise}
+        onSave={handleExerciseModalSave}
+        onDelete={onDelete}
+        recentRecord={undefined} // TODO: 실제 최근 기록 데이터 연결
+      />,
+      document.body
+    )}
+    </>
   );
 };

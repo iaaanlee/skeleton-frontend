@@ -7,6 +7,8 @@ import { SortableContainer } from '../atoms/SortableContainer';
 import { SortableItem } from '../atoms/SortableItem';
 import type { DragItem, DropZone } from '../../../../hooks/useDragAndDrop';
 import { PinSystemHelpers } from '../../../../types/workout';
+import { RestTimeEditBottomSheet } from './RestTimeEditBottomSheet';
+import { TimeLimitEditBottomSheet } from './TimeLimitEditBottomSheet';
 
 type Props = {
   set: EffectiveSetBlueprint;
@@ -52,6 +54,14 @@ export const SetEditCard: React.FC<Props> = ({
   // PRD PAGES 요구사항: "동일 세트 패턴 일괄 적용" 토글
   const [applyToSimilarSets, setApplyToSimilarSets] = useState(false);
 
+  // Phase 2: RestTimeEditBottomSheet 모달 상태
+  const [restTimeModalOpen, setRestTimeModalOpen] = useState(false);
+
+  // Phase 4: TimeLimitEditBottomSheet 모달 상태
+  const [timeLimitModalOpen, setTimeLimitModalOpen] = useState(false);
+
+  // Phase 1 완료: BaseEditBottomSheet 기반 구축 완료
+
   // Default Pin State (no pins active)
   const defaultPinState: PinState = {
     sessionPin: false,
@@ -95,9 +105,9 @@ export const SetEditCard: React.FC<Props> = ({
   const {
     attributes,
     listeners,
-    setNodeRef,
-    transform,
-    isDragging,
+    // setNodeRef,
+    // transform,
+    // isDragging,
   } = useDraggable({
     id: dragItem.id,
     data: dragItem,
@@ -139,6 +149,52 @@ export const SetEditCard: React.FC<Props> = ({
     setEditingTimeLimit(set.timeLimit);
     setApplyToSimilarSets(false); // 토글도 초기화
     setIsEditingSettings(false);
+  };
+
+  // Phase 2: RestTimeEditBottomSheet 저장 핸들러
+  const handleRestTimeModalSave = (restTime: number, applyToAll: boolean) => {
+    // 기존 handleSaveSettings 패턴과 동일하게 처리
+    const updatedSet = {
+      ...set,
+      restTime: restTime
+    };
+
+    // PRD 요구사항: 일괄 적용 토글 처리 (기존 로직 재사용)
+    if (applyToAll) {
+      console.log('일괄 적용 모드: 세션 내 모든 휴식에 변경 사항 적용', {
+        restTime: restTime,
+        exerciseCount: set.exercises.length
+      });
+      // 실제 구현은 상위 컴포넌트에서 전체 세션 데이터에 접근해서 처리해야 함
+    }
+
+    // 로컬 state도 업데이트 (기존 인라인 편집과 동기화)
+    setEditingRestTime(restTime);
+
+    onUpdateSet(updatedSet);
+  };
+
+  // Phase 4: TimeLimitEditBottomSheet 저장 핸들러
+  const handleTimeLimitModalSave = (timeLimit: number | null, applyToAll: boolean) => {
+    // 기존 handleSaveSettings 패턴과 동일하게 처리
+    const updatedSet = {
+      ...set,
+      timeLimit: timeLimit
+    };
+
+    // PRD 요구사항: 일괄 적용 토글 처리 (기존 로직 재사용)
+    if (applyToAll) {
+      console.log('일괄 적용 모드: 세션 내 모든 시간 제한에 변경 사항 적용', {
+        timeLimit: timeLimit,
+        exerciseCount: set.exercises.length
+      });
+      // 실제 구현은 상위 컴포넌트에서 전체 세션 데이터에 접근해서 처리해야 함
+    }
+
+    // 로컬 state도 업데이트 (기존 인라인 편집과 동기화)
+    setEditingTimeLimit(timeLimit);
+
+    onUpdateSet(updatedSet);
   };
 
   const handleUpdateExercise = (exerciseIndex: number, updatedExercise: EffectiveExerciseBlueprint) => {
@@ -245,8 +301,7 @@ export const SetEditCard: React.FC<Props> = ({
               className="inline-block px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
-                // TODO: 시간제한 개별 수정 모달/UI
-                console.log('⚙️ 시간제한 수정');
+                setTimeLimitModalOpen(true);
               }}
               title="클릭하여 시간제한 수정"
             >
@@ -386,8 +441,7 @@ export const SetEditCard: React.FC<Props> = ({
                 className="flex items-center py-2 px-3 rounded border bg-gray-50 border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
-                  // TODO: 휴식시간 개별 수정 모달/UI
-                  console.log('⚙️ 휴식시간 수정');
+                  setRestTimeModalOpen(true);
                 }}
                 title="클릭하여 휴식시간 수정"
               >
@@ -417,6 +471,24 @@ export const SetEditCard: React.FC<Props> = ({
           )}
         </>
       )}
+
+      {/* Phase 2: RestTimeEditBottomSheet 모달 */}
+      <RestTimeEditBottomSheet
+        isOpen={restTimeModalOpen}
+        onClose={() => setRestTimeModalOpen(false)}
+        currentRestTime={set.restTime}
+        partName={`파트${(partIndex ?? 0) + 1}`}
+        setIndex={setIndex}
+        onSave={handleRestTimeModalSave}
+      />
+
+      {/* Phase 4: TimeLimitEditBottomSheet 모달 */}
+      <TimeLimitEditBottomSheet
+        isOpen={timeLimitModalOpen}
+        onClose={() => setTimeLimitModalOpen(false)}
+        currentTimeLimit={set.timeLimit}
+        onSave={handleTimeLimitModalSave}
+      />
 
     </DraggableCard>
   );
