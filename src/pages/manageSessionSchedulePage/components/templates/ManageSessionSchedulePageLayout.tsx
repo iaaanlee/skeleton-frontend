@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { CalendarMode } from '../../../../types/workout';
+import React from 'react';
 import {
   TopNavigationBar,
   PageNavigationTabs,
@@ -7,17 +6,20 @@ import {
   CalendarBar,
   SessionCardList
 } from '../organisms';
+import { useDatePreservation } from '../../hooks';
 
 type Props = {
   profileId: string;
 };
 
 export const ManageSessionSchedulePageLayout: React.FC<Props> = ({ profileId }) => {
-  const [calendarMode, setCalendarMode] = useState<CalendarMode>('week');
-  const [selectedDate, setSelectedDate] = useState<string>(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0]; // YYYY-MM-DD
-  });
+  // 날짜 선택 상태 보존 Hook
+  const {
+    selectedDate,
+    setSelectedDate,
+    calendarMode,
+    setCalendarMode
+  } = useDatePreservation(profileId);
 
   const handleCalendarModeToggle = () => {
     setCalendarMode(prev => prev === 'week' ? 'month' : 'week');

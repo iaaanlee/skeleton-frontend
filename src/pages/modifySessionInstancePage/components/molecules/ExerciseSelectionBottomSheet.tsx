@@ -152,16 +152,67 @@ export const ExerciseSelectionBottomSheet: React.FC<Props> = ({ isOpen, onClose,
         <div className="flex-1 overflow-y-auto px-4 pb-6">
           {activeTab === 'recent' && (
             <div className="space-y-2">
-              {recentExercises?.exercises.map((exercise) => (
-                <ExerciseCard
-                  key={exercise._id}
-                  exercise={exercise}
-                  onSelect={handleExerciseSelect}
-                />
-              ))}
-              {(!recentExercises?.exercises || recentExercises.exercises.length === 0) && (
+              {/* 테스트용 기본 운동 목록 추가 */}
+              {(!recentExercises?.exercises || recentExercises.exercises.length === 0) && !isSearching ? (
+                <>
+                  <ExerciseCard
+                    exercise={{
+                      _id: 'push-up',
+                      exerciseName: '푸시업',
+                      description: '가슴, 어깨, 삼두근을 단련하는 운동',
+                      category: '가슴',
+                      difficulty: 'beginner',
+                      targetMuscles: ['가슴', '어깨', '삼두근'],
+                      equipment: [],
+                      isActive: true,
+                      createdAt: '2024-01-01T00:00:00.000Z',
+                      updatedAt: '2024-01-01T00:00:00.000Z'
+                    }}
+                    onSelect={handleExerciseSelect}
+                  />
+                  <ExerciseCard
+                    exercise={{
+                      _id: 'squat',
+                      exerciseName: '스쿼트',
+                      description: '하체 전체를 단련하는 기본 운동',
+                      category: '하체',
+                      difficulty: 'beginner',
+                      targetMuscles: ['대퇴사두근', '대둔근'],
+                      equipment: [],
+                      isActive: true,
+                      createdAt: '2024-01-01T00:00:00.000Z',
+                      updatedAt: '2024-01-01T00:00:00.000Z'
+                    }}
+                    onSelect={handleExerciseSelect}
+                  />
+                  <ExerciseCard
+                    exercise={{
+                      _id: 'pull-up',
+                      exerciseName: '풀업',
+                      description: '등과 팔 근육을 단련하는 운동',
+                      category: '등',
+                      difficulty: 'intermediate',
+                      targetMuscles: ['광배근', '이두근'],
+                      equipment: ['풀업바'],
+                      isActive: true,
+                      createdAt: '2024-01-01T00:00:00.000Z',
+                      updatedAt: '2024-01-01T00:00:00.000Z'
+                    }}
+                    onSelect={handleExerciseSelect}
+                  />
+                </>
+              ) : (
+                recentExercises?.exercises.map((exercise) => (
+                  <ExerciseCard
+                    key={exercise._id}
+                    exercise={exercise}
+                    onSelect={handleExerciseSelect}
+                  />
+                ))
+              )}
+              {(!recentExercises?.exercises || recentExercises.exercises.length === 0) && isSearching && (
                 <div className="text-center py-8 text-gray-500">
-                  <p>최근 사용한 운동이 없습니다.</p>
+                  <p>최근 사용한 운동을 불러오는 중...</p>
                 </div>
               )}
             </div>

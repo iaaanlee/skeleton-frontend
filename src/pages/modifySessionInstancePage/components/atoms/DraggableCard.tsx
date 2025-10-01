@@ -12,7 +12,7 @@ type Props = {
   className?: string;
   disabled?: boolean;
   dragHandle?: boolean; // 드래그 핸들 사용 여부
-};
+} & Record<string, any>; // 추가 data 속성들을 위한 확장
 
 /**
  * Draggable Card Component - Stage 4B
@@ -24,7 +24,8 @@ export const DraggableCard: React.FC<Props> = ({
   pinState,
   className = '',
   disabled = false,
-  dragHandle = false
+  dragHandle = false,
+  ...dataAttributes // 추가 data 속성들 (data-part-id, data-collapsed 등)
 }) => {
   const {
     attributes,
@@ -42,6 +43,7 @@ export const DraggableCard: React.FC<Props> = ({
     transform: CSS.Transform.toString(transform),
     opacity: isDragging ? 0.5 : 1,
     touchAction: 'none',
+    pointerEvents: isDragging ? ('none' as const) : ('auto' as const),
   };
 
   // Default Pin State (no pins active)
@@ -57,9 +59,10 @@ export const DraggableCard: React.FC<Props> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`touch-none select-none ${className}`}
+      className={`touch-none select-none ${isDragging ? 'pointer-events-none' : ''} ${className}`}
       data-drag-type={dragItem.type}
       data-drag-id={dragItem.id}
+      {...dataAttributes} // 추가 data 속성들 적용 (data-part-id, data-collapsed 등)
       // dragHandle이 false일 때만 전체 영역에서 드래그 가능
       {...(!dragHandle && !disabled ? { ...attributes, ...listeners } : {})}
     >

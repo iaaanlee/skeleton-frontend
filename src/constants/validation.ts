@@ -52,6 +52,16 @@ export const VALIDATION_CONSTANTS = {
     MIN_MESSAGE: '운동 경력은 0년 이상이어야 합니다',
     MAX_MESSAGE: '운동 경력은 50년 이하여야 합니다',
     RANGE_MESSAGE: '운동 경력은 0년부터 50년 사이여야 합니다.'
+  },
+
+  // 비디오 업로드 관련 (초)
+  VIDEO_UPLOAD: {
+    MAX_DURATION: 10,              // 업로드 가능한 최대 구간 길이 (초)
+    HALF_DURATION: 5,           // 절반 구간 (초) - "중간 5초" 버튼용
+    FRAME_INTERVAL: 0.2,          // 프레임 추출 간격 (초)
+    MAX_DURATION_MESSAGE: '선택된 구간이 10초를 초과합니다. 구간을 조정해주세요.',
+    INSTRUCTION_MESSAGE: '최대 10초 길이의 운동 영상을 업로드하세요.',
+    LIMIT_INFO_MESSAGE: '선택된 구간은 최대 10초로 제한됩니다.'
   }
 } as const;
 

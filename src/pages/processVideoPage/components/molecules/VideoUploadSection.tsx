@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useVideoUploadInit, useVideoFileUpload, useVideoUploadComplete } from '../../../../services/videoUploadService';
 import { useToast } from '../../../../contexts/ToastContext';
+import { VALIDATION_CONSTANTS } from '../../../../constants/validation';
 
 type VideoUploadSectionProps = {
   className?: string;
@@ -17,7 +18,7 @@ export const VideoUploadSection: React.FC<VideoUploadSectionProps> = ({
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoDuration, setVideoDuration] = useState<number>(0);
   const [startTime, setStartTime] = useState<number>(0);
-  const [endTime, setEndTime] = useState<number>(5);
+  const [endTime, setEndTime] = useState<number>(VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION);
   // const [currentTime, setCurrentTime] = useState<number>(0); // 현재 사용하지 않음
   const [isVideoReady, setIsVideoReady] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -57,7 +58,7 @@ export const VideoUploadSection: React.FC<VideoUploadSectionProps> = ({
     if (videoRef.current) {
       const duration = videoRef.current.duration;
       setVideoDuration(duration);
-      setEndTime(Math.min(5, duration)); // 최대 5초 또는 비디오 전체 길이
+      setEndTime(Math.min(VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION, duration));
       setIsVideoReady(true);
     }
   };
@@ -108,8 +109,8 @@ export const VideoUploadSection: React.FC<VideoUploadSectionProps> = ({
       showError('운동 설명을 입력해주세요.');
       return;
     }
-    if (selectedDuration > 5) {
-      showError('선택된 구간이 5초를 초과합니다. 구간을 조정해주세요.');
+    if (selectedDuration > VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION) {
+      showError(VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION_MESSAGE);
       return;
     }
 
@@ -154,7 +155,7 @@ export const VideoUploadSection: React.FC<VideoUploadSectionProps> = ({
       setVideoUrl(null);
       setIsVideoReady(false);
       setStartTime(0);
-      setEndTime(5);
+      setEndTime(VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION);
       
       // 파일 input 리셋
       const fileInput = document.getElementById('video-upload') as HTMLInputElement;
@@ -212,7 +213,7 @@ export const VideoUploadSection: React.FC<VideoUploadSectionProps> = ({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <p className="text-xs text-gray-500 mt-1">
-              최대 5초 길이의 운동 영상을 업로드하세요. (MP4, MOV, AVI 등 지원)
+              {VALIDATION_CONSTANTS.VIDEO_UPLOAD.INSTRUCTION_MESSAGE} (MP4, MOV, AVI 등 지원)
             </p>
           </div>
 
@@ -289,8 +290,8 @@ export const VideoUploadSection: React.FC<VideoUploadSectionProps> = ({
 
                   {/* 선택된 구간 정보 */}
                   <div className={`p-3 rounded-lg border ${
-                    selectedDuration <= 5 
-                      ? 'bg-green-50 border-green-200' 
+                    selectedDuration <= VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION
+                      ? 'bg-green-50 border-green-200'
                       : 'bg-red-50 border-red-200'
                   }`}>
                     <div className="flex justify-between items-center">
@@ -298,11 +299,11 @@ export const VideoUploadSection: React.FC<VideoUploadSectionProps> = ({
                         선택된 구간: {selectedDuration.toFixed(1)}초
                       </span>
                       <span className={`text-xs px-2 py-1 rounded-full ${
-                        selectedDuration <= 5
+                        selectedDuration <= VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION
                           ? 'bg-green-100 text-green-800'
                           : 'bg-red-100 text-red-800'
                       }`}>
-                        {selectedDuration <= 5 ? '✓ 업로드 가능' : '⚠ 5초 초과'}
+                        {selectedDuration <= VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION ? '✓ 업로드 가능' : `⚠ ${VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION}초 초과`}
                       </span>
                     </div>
                     <p className="text-xs text-gray-600 mt-1">
@@ -316,32 +317,32 @@ export const VideoUploadSection: React.FC<VideoUploadSectionProps> = ({
                       type="button"
                       onClick={() => {
                         handleStartTimeChange(0);
-                        handleEndTimeChange(Math.min(5, videoDuration));
+                        handleEndTimeChange(Math.min(VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION, videoDuration));
                       }}
                       className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
                     >
-                      처음 5초
+                      처음 {VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION}초
                     </button>
                     <button
                       type="button"
                       onClick={() => {
                         const middle = videoDuration / 2;
-                        handleStartTimeChange(Math.max(0, middle - 2.5));
-                        handleEndTimeChange(Math.min(videoDuration, middle + 2.5));
+                        handleStartTimeChange(Math.max(0, middle - VALIDATION_CONSTANTS.VIDEO_UPLOAD.HALF_DURATION));
+                        handleEndTimeChange(Math.min(videoDuration, middle + VALIDATION_CONSTANTS.VIDEO_UPLOAD.HALF_DURATION));
                       }}
                       className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
                     >
-                      중간 5초
+                      중간 {VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION}초
                     </button>
                     <button
                       type="button"
                       onClick={() => {
-                        handleStartTimeChange(Math.max(0, videoDuration - 5));
+                        handleStartTimeChange(Math.max(0, videoDuration - VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION));
                         handleEndTimeChange(videoDuration);
                       }}
                       className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
                     >
-                      마지막 5초
+                      마지막 {VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION}초
                     </button>
                   </div>
                 </div>
@@ -366,17 +367,17 @@ export const VideoUploadSection: React.FC<VideoUploadSectionProps> = ({
           <button
             onClick={handleUpload}
             disabled={
-              !selectedVideo || 
-              !exerciseDescription.trim() || 
-              selectedDuration > 5 ||
+              !selectedVideo ||
+              !exerciseDescription.trim() ||
+              selectedDuration > VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION ||
               !isVideoReady ||
               isUploading
             }
             className={`
               w-full px-6 py-3 rounded-lg font-medium transition-colors
-              ${selectedVideo && 
-                exerciseDescription.trim() && 
-                selectedDuration <= 5 && 
+              ${selectedVideo &&
+                exerciseDescription.trim() &&
+                selectedDuration <= VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION &&
                 isVideoReady &&
                 !isUploading
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
@@ -386,10 +387,10 @@ export const VideoUploadSection: React.FC<VideoUploadSectionProps> = ({
           >
             {isUploading
               ? '업로드 중...'
-              : !isVideoReady && selectedVideo 
-              ? '비디오 로딩 중...' 
-              : selectedDuration > 5
-              ? '구간을 5초 이하로 조정해주세요'
+              : !isVideoReady && selectedVideo
+              ? '비디오 로딩 중...'
+              : selectedDuration > VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION
+              ? `구간을 ${VALIDATION_CONSTANTS.VIDEO_UPLOAD.MAX_DURATION}초 이하로 조정해주세요`
               : '비디오 업로드'
             }
           </button>
@@ -401,9 +402,9 @@ export const VideoUploadSection: React.FC<VideoUploadSectionProps> = ({
           <ul className="text-sm text-gray-600 space-y-1">
             <li>• 비디오 파일을 선택하면 프리뷰가 표시됩니다.</li>
             <li>• 슬라이더를 사용하여 원하는 구간을 선택할 수 있습니다.</li>
-            <li>• 선택된 구간은 최대 5초로 제한됩니다.</li>
+            <li>• {VALIDATION_CONSTANTS.VIDEO_UPLOAD.LIMIT_INFO_MESSAGE}</li>
             <li>• 운동의 한 사이클(시작-중간-끝)이 포함된 구간을 선택하는 것이 이상적입니다.</li>
-            <li>• 선택된 구간은 0.2초 간격으로 이미지로 분할되어 분석됩니다.</li>
+            <li>• 선택된 구간은 {VALIDATION_CONSTANTS.VIDEO_UPLOAD.FRAME_INTERVAL}초 간격으로 이미지로 분할되어 분석됩니다.</li>
             <li>• 관절 좌표 분석을 통해 운동의 피크 지점을 자동으로 감지합니다.</li>
           </ul>
         </div>

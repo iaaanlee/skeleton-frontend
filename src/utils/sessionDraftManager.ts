@@ -143,7 +143,6 @@ export class SessionDraftManager {
       clearTimeout(timer);
       // 즉시 저장 실행을 위해 delay 0으로 다시 설정
       setTimeout(() => {
-        const key = `${this.STORAGE_PREFIX}${sessionId}`;
         // 실제 저장 로직은 이미 타이머 콜백에 있으므로 생략
       }, 0);
     });

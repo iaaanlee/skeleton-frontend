@@ -12,9 +12,9 @@ import {
   useSensor,
   useSensors,
   closestCenter,
+  rectIntersection,
   CollisionDetection,
-  pointerWithin,
-  getFirstCollision
+  pointerWithin
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -26,23 +26,15 @@ import type { PinState } from '../types/workout';
 import { PinSystemHelpers } from '../types/workout';
 
 /**
- * 드롭 타겟 ID 파싱 유틸리티
+ * 드롭 타겟 ID 파싱 유틸리티 (일관된 ID 패턴 지원)
  */
 const parseDropTargetId = (targetId: string) => {
-  // 예: "set-1-exercises", "part-0", "exercise-1-2-123"
-  if (targetId.startsWith('set-') && targetId.includes('-exercises')) {
-    const setIndex = parseInt(targetId.split('-')[1]);
-    return {
-      type: 'set',
-      partIndex: undefined,
-      setIndex,
-      exerciseIndex: undefined,
-      parentId: `set-${setIndex}`
-    };
-  }
+  // 새로운 일관된 ID 패턴 파싱
+  // 예: "part-0-partSeedId", "set-0-1-setSeedId", "exercise-0-1-2-templateId"
 
   if (targetId.startsWith('part-')) {
-    const partIndex = parseInt(targetId.split('-')[1]);
+    const parts = targetId.split('-');
+    const partIndex = parseInt(parts[1]);
     return {
       type: 'part',
       partIndex,
@@ -52,17 +44,59 @@ const parseDropTargetId = (targetId: string) => {
     };
   }
 
+  if (targetId.startsWith('set-')) {
+    const parts = targetId.split('-');
+    const partIndex = parseInt(parts[1]);
+    const setIndex = parseInt(parts[2]);
+    return {
+      type: 'set',
+      partIndex,
+      setIndex,
+      exerciseIndex: undefined,
+      parentId: `set-${partIndex}-${setIndex}`
+    };
+  }
+
   if (targetId.startsWith('exercise-')) {
     const parts = targetId.split('-');
-    const setIndex = parseInt(parts[1]);
-    const exerciseIndex = parseInt(parts[2]);
+    const partIndex = parseInt(parts[1]);
+    const setIndex = parseInt(parts[2]);
+    const exerciseIndex = parseInt(parts[3]);
     return {
       type: 'exercise',
-      partIndex: undefined,
+      partIndex,
       setIndex,
       exerciseIndex,
-      parentId: `set-${setIndex}`
+      parentId: `set-${partIndex}-${setIndex}`
     };
+  }
+
+  // 레거시 패턴 지원 (하위 호환성) - 업데이트된 generateSetDragId 패턴 지원
+  if (targetId.includes('-exercises')) {
+    // 새로운 패턴: "set-{partIndex}-{setIndex}-{setSeedId}-exercises"
+    if (targetId.startsWith('set-') && targetId.split('-').length >= 4) {
+      const parts = targetId.split('-');
+      const partIndex = parseInt(parts[1]);
+      const setIndex = parseInt(parts[2]);
+      return {
+        type: 'set',
+        partIndex,
+        setIndex,
+        exerciseIndex: undefined,
+        parentId: `set-${partIndex}-${setIndex}`
+      };
+    }
+    // 기존 레거시 패턴: "set-{setIndex}-exercises"
+    else {
+      const setIndex = parseInt(targetId.split('-')[1]);
+      return {
+        type: 'set',
+        partIndex: undefined,
+        setIndex,
+        exerciseIndex: undefined,
+        parentId: `set-${setIndex}`
+      };
+    }
   }
 
   return null;
@@ -147,7 +181,7 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
   const pointerSensor = useSensor(PointerSensor, {
     // 마우스 드래그: 클릭 후 바로 시작
     activationConstraint: {
-      distance: 1,
+      distance: 0,  // 0으로 변경 - 즉시 드래그 시작
     },
   });
 
@@ -172,14 +206,23 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
    * 포인터 기반 충돌 감지: 드래그 버튼 위치만 고려
    */
   const customCollisionDetection: CollisionDetection = useCallback((args) => {
-    // 드래그 시작 후 매우 짧은 시간만 원형 드롭존 비활성화 (실수 방지)
-    const timeSinceDragStart = Date.now() - dragStartTimeRef.current;
-    const isInitialDragPhase = timeSinceDragStart < 100; // 실제 사용자 손가락 속도에 맞춤
+    console.log('🔥 [COLLISION] 함수 호출됨!', { activeId: args.active.id });
 
-    if (isInitialDragPhase) {
+    try {
+      // 드래그 시작 후 매우 짧은 시간만 원형 드롭존 비활성화 (실수 방지)
+      const timeSinceDragStart = Date.now() - dragStartTimeRef.current;
+      const isInitialDragPhase = timeSinceDragStart < 100; // 실제 사용자 손가락 속도에 맞춤
+
+      if (isInitialDragPhase) {
       // 초기 단계에서는 원형 드롭존을 제외하고 collision detection 실행
       const { droppableContainers } = args;
-      const filteredContainers = Array.from(droppableContainers.values()).filter(container => {
+
+      console.log('🔍 [Initial Phase] droppableContainers:', {
+        total: droppableContainers.length,
+        ids: droppableContainers.map(c => c.id)
+      });
+
+      const filteredContainers = droppableContainers.filter(container => {
         const idStr = typeof container.id === 'string' ? container.id : String(container.id);
         return !idStr.startsWith('circular-drop-');
       });
@@ -195,15 +238,27 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
     // 100ms 후: 포인터 기반 + closestCenter 하이브리드 접근
     const { droppableContainers } = args;
 
+    console.log('🔍 [Collision Detection] 전체 droppableContainers:', {
+      total: droppableContainers.length,
+      ids: droppableContainers.map(c => c.id),
+      activeId: args.active.id
+    });
+
     // 원형 드롭존과 일반 컨테이너 분리
-    const circularDropZones = Array.from(droppableContainers.values()).filter(container => {
+    const circularDropZones = droppableContainers.filter(container => {
       const idStr = typeof container.id === 'string' ? container.id : String(container.id);
       return idStr.startsWith('circular-drop-');
     });
 
-    const regularContainers = Array.from(droppableContainers.values()).filter(container => {
+    const regularContainers = droppableContainers.filter(container => {
       const idStr = typeof container.id === 'string' ? container.id : String(container.id);
       return !idStr.startsWith('circular-drop-');
+    });
+
+    console.log('🔍 [Collision Detection] 분류 결과:', {
+      circularCount: circularDropZones.length,
+      regularCount: regularContainers.length,
+      regularIds: regularContainers.map(c => c.id)
     });
 
     // 원형 드롭존: 포인터 기반 collision detection
@@ -224,15 +279,26 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       }
     }
 
-    // 일반 컨테이너: 기존 closestCenter 방식
+    // 일반 컨테이너: rectIntersection 방식 (세트→파트 드래그 감지 개선)
     if (regularContainers.length > 0) {
-      return closestCenter({
+      const result = rectIntersection({
         ...args,
         droppableContainers: regularContainers
       });
+
+      console.log('🔍 [Collision Detection] rectIntersection 결과:', {
+        resultCount: result.length,
+        resultIds: result.map(r => r.id)
+      });
+
+      return result;
     }
 
     return [];
+    } catch (error) {
+      console.error('❌ [COLLISION] 에러 발생:', error);
+      return [];
+    }
   }, []);
 
   /**
@@ -292,6 +358,24 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
   }, []);
 
   /**
+   * PRD 요구사항: 닫힌 세트 위 1초 머무르면 자동 펼침
+   */
+  const handleAutoExpandSet = useCallback((setSeedId: string) => {
+    if (autoExpandTimerRef.current) {
+      clearTimeout(autoExpandTimerRef.current);
+    }
+
+    autoExpandTimerRef.current = setTimeout(() => {
+      // 세트 펼침 이벤트 발생
+      const expandEvent = new CustomEvent('auto-expand-set', {
+        detail: { setSeedId }
+      });
+      document.dispatchEvent(expandEvent);
+      console.log('🔄 세트 자동 펼침 이벤트 발생:', setSeedId);
+    }, DND_CONFIG.AUTO_EXPAND_DELAY);
+  }, []);
+
+  /**
    * Pin System과 연동한 드래그 권한 검사
    */
   const canDrag = useCallback((item: DragItem): boolean => {
@@ -330,10 +414,11 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
    * 드래그 중 핸들러 (오토스크롤 + 자동펼침 + 원형드롭존 감지)
    */
   const handleDragOver = useCallback((event: DragOverEvent) => {
+    console.log('🔥 [DRAG OVER] 호출됨!', { overId: event.over?.id, activeItem: activeItem?.id });
+
     if (!activeItem) return;
 
     const overId = event.over?.id;
-    console.log('🔄 드래그 오버:', overId);
 
     // 원형 드롭존 호버 감지
     if (overId && typeof overId === 'string' && overId.startsWith('circular-drop-')) {
@@ -346,13 +431,189 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       handleAutoScroll(pointerEvent.activatorEvent.clientY);
     }
 
-    // 닫힌 파트 위 호버링 감지
-    if (overId && typeof overId === 'string' && overId.startsWith('part-')) {
-      const partElement = document.querySelector(`[data-part-id="${overId}"]`);
-      const isCollapsed = partElement?.getAttribute('data-collapsed') === 'true';
+    // 닫힌 파트/세트 위 호버링 감지
+    if (overId && typeof overId === 'string') {
+      // 세트 드래그 시 디버깅
+      if (activeItem?.type === 'set') {
+        console.log('🔧 [세트 드래그] overId 감지:', {
+          overId,
+          activeItemId: activeItem?.id,
+          startsWithPart: overId.startsWith('part-'),
+          startsWithSet: overId.startsWith('set-'),
+          startsWithExercise: overId.startsWith('exercise-')
+        });
+      }
 
-      if (isCollapsed) {
-        handleAutoExpandPart(overId);
+      // 운동 위에 hover했을 때 → 부모 세트 & 부모 파트 자동 확장
+      if (overId.startsWith('exercise-')) {
+        // exercise-{partIndex}-{setIndex}-{exerciseIndex}-{templateId}
+        const parts = overId.split('-');
+        const exercisePartIndex = parts[1];
+        const exerciseSetIndex = parts[2];
+
+        // 1. 부모 파트 찾기 & 자동 확장
+        const partId = `part-${exercisePartIndex}`;
+        const parentPart = document.querySelector(`[data-part-id="${partId}"]`);
+
+        if (parentPart) {
+          const partIsCollapsed = parentPart.getAttribute('data-collapsed') === 'true';
+
+          console.log('📦 운동 hover 감지 - 부모 파트 확인:', {
+            exerciseId: overId,
+            exercisePartIndex,
+            partId,
+            partIsCollapsed
+          });
+
+          if (partIsCollapsed) {
+            // 파트 ID를 overId 형식으로 변환 (part-{partIndex}-{seedId})
+            // DOM에서는 data-part-id="part-0" 형태
+            // 실제 파트 dragItem.id는 part-{partIndex}-{seedId} 형태
+            // 모든 파트를 찾아서 partIndex가 일치하는 것을 찾기
+            const allParts = Array.from(document.querySelectorAll('[data-part-id]'));
+            for (const p of allParts) {
+              const pId = p.getAttribute('data-part-id');
+              if (pId === partId) {
+                console.log('✅ 부모 파트 자동 확장 타이머 시작:', partId);
+                // handleAutoExpandPart는 full ID (part-{partIndex}-{seedId})를 받지만
+                // 여기서는 partId만 전달하므로 이벤트에서 partId로 찾아야 함
+                handleAutoExpandPart(partId);
+                break;
+              }
+            }
+          }
+        }
+
+        // 2. 부모 세트 찾기 & 자동 확장
+        const parentSet = document.querySelector(
+          `[data-part-index="${exercisePartIndex}"][data-set-index="${exerciseSetIndex}"]`
+        );
+
+        if (parentSet) {
+          const setSeedId = parentSet.getAttribute('data-set-id');
+          const isCollapsed = parentSet.getAttribute('data-collapsed') === 'true';
+
+          console.log('📦 운동 hover 감지 - 부모 세트 확인:', {
+            exerciseId: overId,
+            exercisePartIndex,
+            exerciseSetIndex,
+            setSeedId,
+            isCollapsed
+          });
+
+          if (isCollapsed && setSeedId) {
+            console.log('✅ 부모 세트 자동 확장 타이머 시작:', setSeedId);
+            handleAutoExpandSet(setSeedId);
+          }
+        }
+      } else if (overId.startsWith('set-')) {
+        // 세트 위에 hover했을 때 → 부모 파트 자동 확장
+        // set-{partIndex}-{setIndex}-{setSeedId} 또는 set-{partIndex}-{setIndex}-{setSeedId}-exercises
+        let overIdStr = overId;
+
+        // "-exercises" 접미사 제거
+        if (overIdStr.endsWith('-exercises')) {
+          overIdStr = overIdStr.slice(0, -10);
+        }
+
+        const parts = overIdStr.split('-');
+        const setPartIndex = parts[1];
+
+        // 부모 파트 찾기 & 자동 확장
+        const partId = `part-${setPartIndex}`;
+        const parentPart = document.querySelector(`[data-part-id="${partId}"]`);
+
+        if (parentPart) {
+          const partIsCollapsed = parentPart.getAttribute('data-collapsed') === 'true';
+
+          console.log('📦 세트 hover 감지 - 부모 파트 확인:', {
+            setId: overId,
+            setPartIndex,
+            partId,
+            partIsCollapsed
+          });
+
+          if (partIsCollapsed) {
+            console.log('✅ 부모 파트 자동 확장 타이머 시작 (세트 hover):', partId);
+            handleAutoExpandPart(partId);
+          }
+        }
+
+        // 세트 자체 자동 확장 (기존 로직)
+        const setSeedId = parts.slice(3).join('-');
+        const setElement = document.querySelector(`[data-set-id="${setSeedId}"]`);
+        const isCollapsed = setElement?.getAttribute('data-collapsed') === 'true';
+
+        if (isCollapsed) {
+          console.log('✅ 세트 자동 확장 타이머 시작:', setSeedId);
+          handleAutoExpandSet(setSeedId);
+        }
+      } else if (overId.startsWith('part-')) {
+        // overId는 "part-0-seedId" 형태, data-part-id는 "part-0" 형태
+        // 파트 인덱스만 추출해서 매칭
+        const parts = overId.split('-');
+        const partIndex = parts[1];
+        const dataPartId = `part-${partIndex}`;
+
+        const partElement = document.querySelector(`[data-part-id="${dataPartId}"]`);
+        const isCollapsed = partElement?.getAttribute('data-collapsed') === 'true';
+
+        console.log('📦 파트 상태 상세:', {
+          partElement: !!partElement,
+          dataPartId,
+          isCollapsed,
+          overId,
+          domSelector: `[data-part-id="${dataPartId}"]`,
+          allPartsInDOM: Array.from(document.querySelectorAll('[data-part-id]')).map(el => el.getAttribute('data-part-id')),
+          elementFound: partElement ? {
+            tagName: partElement.tagName,
+            className: partElement.className,
+            dataPartId: partElement.getAttribute('data-part-id'),
+            dataCollapsed: partElement.getAttribute('data-collapsed')
+          } : null
+        });
+
+        if (isCollapsed) {
+          console.log('✅ 파트 자동 확장 타이머 시작:', overId);
+          handleAutoExpandPart(overId);
+        }
+      } else if (overId.startsWith('set-')) {
+        // overId는 두 가지 형태:
+        // 1. 닫힌 세트 헤더: "set-0-1-seedId"
+        // 2. 펼쳐진 세트 SortableContainer: "set-0-1-seedId-exercises"
+        let overIdStr = overId;
+
+        // "-exercises" 접미사 제거 (펼쳐진 세트의 경우)
+        if (overIdStr.endsWith('-exercises')) {
+          overIdStr = overIdStr.slice(0, -10); // "-exercises" 길이만큼 제거
+        }
+
+        const parts = overIdStr.split('-');
+        const setSeedId = parts.slice(3).join('-'); // "set-0-1-abc-123" → "abc-123"
+
+        const setElement = document.querySelector(`[data-set-id="${setSeedId}"]`);
+        const isCollapsed = setElement?.getAttribute('data-collapsed') === 'true';
+
+        console.log('📦 세트 상태 상세:', {
+          setElement: !!setElement,
+          setSeedId,
+          isCollapsed,
+          overId,
+          overIdCleaned: overIdStr,
+          domSelector: `[data-set-id="${setSeedId}"]`,
+          allSetsInDOM: Array.from(document.querySelectorAll('[data-set-id]')).map(el => el.getAttribute('data-set-id')),
+          elementFound: setElement ? {
+            tagName: setElement.tagName,
+            className: setElement.className,
+            dataSetId: setElement.getAttribute('data-set-id'),
+            dataCollapsed: setElement.getAttribute('data-collapsed')
+          } : null
+        });
+
+        if (isCollapsed) {
+          console.log('✅ 세트 자동 확장 타이머 시작:', setSeedId);
+          handleAutoExpandSet(setSeedId);
+        }
       }
     } else {
       // 다른 영역으로 이동하면 타이머 취소
@@ -361,7 +622,7 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
         autoExpandTimerRef.current = undefined;
       }
     }
-  }, [activeItem, handleAutoScroll, handleAutoExpandPart]);
+  }, [activeItem, handleAutoScroll, handleAutoExpandPart, handleAutoExpandSet]);
 
   /**
    * 드롭 좌표 계산 유틸리티

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useDraggable } from '@dnd-kit/core';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { ExerciseEditCard } from './ExerciseEditCard';
 import type { EffectiveSetBlueprint, EffectiveExerciseBlueprint, PinState, ActiveItem } from '../../../../types/workout';
 import { DraggableCard } from '../atoms/DraggableCard';
@@ -7,6 +7,7 @@ import { SortableContainer } from '../atoms/SortableContainer';
 import { SortableItem } from '../atoms/SortableItem';
 import type { DragItem, DropZone } from '../../../../hooks/useDragAndDrop';
 import { PinSystemHelpers } from '../../../../types/workout';
+import { generateExerciseDragId, generateSetDragId } from '../../../../utils/dragIdGenerator';
 import { RestTimeEditBottomSheet } from './RestTimeEditBottomSheet';
 import { TimeLimitEditBottomSheet } from './TimeLimitEditBottomSheet';
 
@@ -71,9 +72,11 @@ export const SetEditCard: React.FC<Props> = ({
   };
   const activePinState = pinState || defaultPinState;
 
-  // DragItem 생성 (세트용)
+  // DragItem 생성 (ID 충돌 방지를 위한 고유 ID)
+  const dragId = generateSetDragId(partIndex || 0, setIndex, set.setSeedId);
+
   const dragItem: DragItem = {
-    id: `set-${setIndex}`,
+    id: dragId,
     type: 'set',
     data: {
       name: `세트 ${setIndex + 1}`,
@@ -89,9 +92,9 @@ export const SetEditCard: React.FC<Props> = ({
     }
   };
 
-  // 세트 내부 운동 드롭존
+  // 세트 내부 운동 드롭존 (ID 충돌 방지)
   const exerciseDropZone: DropZone = {
-    id: `set-${setIndex}-exercises`,
+    id: generateSetDragId(partIndex || 0, setIndex, set.setSeedId) + '-exercises',
     type: 'container',
     accepts: ['exercise'],
     autoExpand: false
@@ -105,9 +108,9 @@ export const SetEditCard: React.FC<Props> = ({
   const {
     attributes,
     listeners,
-    // setNodeRef,
-    // transform,
-    // isDragging,
+    setNodeRef,
+    transform,
+    isDragging,
   } = useDraggable({
     id: dragItem.id,
     data: dragItem,
@@ -117,10 +120,24 @@ export const SetEditCard: React.FC<Props> = ({
   // ActiveItem 체크
   const isActive = activeItem?.level === 'set' && activeItem.id === set.setSeedId;
 
-  // Sortable 운동 목록 생성 (ID 배열)
-  const exerciseIds = set.exercises.map((_, index) =>
-    `exercise-${setIndex}-${index}`
+  // Sortable 운동 목록 생성 (ID 충돌 방지를 위한 고유 ID)
+  const exerciseIds = set.exercises.map((exercise, index) =>
+    generateExerciseDragId(partIndex || 0, setIndex, index, exercise.exerciseTemplateId)
   );
+
+  // 세트가 닫혀있을 때 세트 헤더를 드롭존으로 만들기
+  const setHeaderDropZone: DropZone = {
+    id: dragItem.id, // set-{partIndex}-{setIndex}-{setSeedId}
+    type: 'container',
+    accepts: ['exercise'],
+    autoExpand: false
+  };
+
+  const { setNodeRef: setHeaderDropRef, isOver: isHeaderOver } = useDroppable({
+    id: setHeaderDropZone.id,
+    data: setHeaderDropZone,
+    disabled: isExpanded // 펼쳐져 있으면 드롭존 비활성화
+  });
 
   const handleSaveSettings = () => {
     const updatedSet = {
@@ -217,7 +234,6 @@ export const SetEditCard: React.FC<Props> = ({
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDeleteSet = () => {
     if (window.confirm('이 세트를 삭제하시겠습니까? 포함된 모든 운동이 함께 삭제됩니다.')) {
       onDeleteSet();
@@ -235,9 +251,18 @@ export const SetEditCard: React.FC<Props> = ({
           ? 'border-orange-400 bg-orange-50'
           : 'border-gray-200 bg-white hover:bg-gray-50'
       }`}
+      data-set-id={set.setSeedId}
+      data-collapsed={!isExpanded}
+      data-part-index={partIndex}
+      data-set-index={setIndex}
     >
       {/* 세트 헤더 - session-details 스타일 */}
-      <div className={`px-3 pt-3 ${isExpanded ? 'pb-2' : 'pb-3'}`}>
+      <div
+        ref={setHeaderDropRef}
+        className={`px-3 pt-3 ${isExpanded ? 'pb-2' : 'pb-3'} ${
+          isHeaderOver ? 'bg-blue-50' : ''
+        }`}
+      >
         <div className="flex items-center justify-between">
           {/* 왼쪽: 토글 + 세트 정보 */}
           <div className="flex items-center">
@@ -276,9 +301,25 @@ export const SetEditCard: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* 오른쪽: 드래그 핸들 */}
-          <div className="flex items-center">
+          {/* 오른쪽: 삭제 버튼 + 드래그 핸들 */}
+          <div className="flex items-center space-x-1">
+            {/* 🗑️ 삭제 버튼 */}
             <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteSet();
+              }}
+              className="flex items-center justify-center w-8 h-8 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-600"
+              title="세트 삭제"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+
+            {/* 드래그 핸들 */}
+            <button
+              ref={setNodeRef}
               {...(canDrag ? { ...attributes, ...listeners } : {})}
               className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing"
               title="세트 이동"

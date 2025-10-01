@@ -4,14 +4,16 @@ import type { EffectivePartBlueprint, ModifySessionRequest, PartModification, Ex
 import { DraggableCard } from '../atoms';
 import type { DragItem } from '../../../../hooks/useDragAndDrop';
 import { ExerciseName } from '../../../sessionInstanceDetailsPage/components/molecules/ExerciseName';
-import { useDraggable } from '@dnd-kit/core';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useStatePreservation } from '../../../sessionInstanceDetailsPage/hooks/useStatePreservation';
+import { generatePartDragId } from '../../../../utils/dragIdGenerator';
 
 type Props = {
   effectiveBlueprint: EffectivePartBlueprint[];
   sessionId: string;
   onChange: (changes: Partial<ModifySessionRequest>) => void;
+  onActiveItemChange?: (activeItem: ActiveItem) => void;
 };
 
 // 파트 드래그 버튼 컴포넌트 (인라인)
@@ -49,7 +51,239 @@ const PartDragButton: React.FC<{ partDragItem: DragItem }> = ({ partDragItem }) 
   );
 };
 
-export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, sessionId, onChange }) => {
+// 파트 카드 컴포넌트 Props
+type PartCardProps = {
+  part: EffectivePartBlueprint;
+  partIndex: number;
+  isExpanded: boolean;
+  isActive: boolean;
+  expandedSets: Set<string>;
+  defaultPinState: PinState;
+  activeItem: ActiveItem;
+  onPartClick: (partSeedId: string) => void;
+  onSetClick: (setSeedId: string) => void;
+  onExerciseClick: (exerciseId: string) => void;
+  onUpdateSet: (partIndex: number, setIndex: number, updatedSet: EffectiveSetBlueprint) => void;
+  onDeleteSet: (partIndex: number, setIndex: number) => void;
+  onAddExercise: (partIndex: number) => void;
+  togglePartExpansion: (partSeedId: string) => void;
+  toggleSetExpansion: (setSeedId: string) => void;
+};
+
+// 파트 카드 컴포넌트 - WorkoutPlanEditor 외부로 이동하여 안정화
+const PartCard: React.FC<PartCardProps> = ({
+  part,
+  partIndex,
+  isExpanded,
+  isActive,
+  expandedSets,
+  defaultPinState,
+  activeItem,
+  onPartClick,
+  onSetClick,
+  onExerciseClick,
+  onUpdateSet,
+  onDeleteSet,
+  onAddExercise,
+  togglePartExpansion,
+  toggleSetExpansion,
+}) => {
+  // 파트 DragItem 생성
+  const partDragItem: DragItem = {
+    id: generatePartDragId(partIndex, part.partSeedId),
+    type: 'part',
+    data: {
+      name: part.partName,
+      part: part,
+      partIndex: partIndex
+    },
+    pinState: defaultPinState,
+    parentId: 'session',
+    level: 'part',
+    indices: {
+      partIndex
+    }
+  };
+
+  // 파트 헤더 드롭존 생성 (세트 해결책과 동일한 패턴)
+  type DropZone = {
+    id: string;
+    type: string;
+    accepts: string[];
+    autoExpand: boolean;
+  };
+
+  const partHeaderDropZone: DropZone = {
+    id: partDragItem.id, // part-{partIndex}-{partSeedId}
+    type: 'container',
+    accepts: ['exercise', 'set'],
+    autoExpand: false
+  };
+
+  const { setNodeRef: partHeaderDropRef, isOver: isHeaderOver, node } = useDroppable({
+    id: partHeaderDropZone.id,
+    data: partHeaderDropZone,
+    disabled: isExpanded // ✨ 펼쳐져 있으면 드롭존 비활성화
+  });
+
+  // useDroppable 등록 확인
+  useEffect(() => {
+    console.log(`🔧 [PartCard ${partIndex}] useDroppable 상태:`, {
+      dropZoneId: partHeaderDropZone.id,
+      disabled: isExpanded,
+      nodeRegistered: !!node,
+      refCallback: !!partHeaderDropRef
+    });
+  }, [partIndex, partHeaderDropZone.id, isExpanded, node, partHeaderDropRef]);
+
+  // PartCard 렌더링 및 드롭존 등록 로그
+  console.log(`🏗️ [PartCard ${partIndex}] 렌더링:`, {
+    partIndex,
+    partSeedId: part.partSeedId,
+    dropZoneId: partHeaderDropZone.id,
+    isExpanded,
+    dropZoneDisabled: isExpanded,
+    accepts: partHeaderDropZone.accepts
+  });
+
+  // 파트 헤더 hover 감지 (디버깅용)
+  useEffect(() => {
+    if (isHeaderOver && !isExpanded) {
+      console.log('🎯 [PartCard] 파트 헤더 hover 감지!', {
+        partIndex,
+        dropZoneId: partHeaderDropZone.id,
+        isExpanded,
+        isHeaderOver
+      });
+    }
+  }, [isHeaderOver, isExpanded, partIndex, partHeaderDropZone.id]);
+
+  // 파트 요약 텍스트
+  const getPartSummary = (part: EffectivePartBlueprint) => {
+    const totalSets = part.sets.length;
+    const exerciseTemplateIds = new Map<string, number>();
+
+    part.sets.forEach(set => {
+      set.exercises.forEach(exercise => {
+        const templateId = exercise.exerciseTemplateId.toString();
+        exerciseTemplateIds.set(templateId, (exerciseTemplateIds.get(templateId) || 0) + 1);
+      });
+    });
+
+    return {
+      totalSets,
+      exerciseTemplateIds
+    };
+  };
+
+  const PartSummaryText: React.FC<{ part: EffectivePartBlueprint }> = ({ part }) => {
+    const { totalSets, exerciseTemplateIds } = getPartSummary(part);
+
+    if (exerciseTemplateIds.size === 0) {
+      return <span>총 {totalSets}세트</span>;
+    }
+
+    return (
+      <span>
+        총 {totalSets}세트 · {' '}
+        {Array.from(exerciseTemplateIds.entries()).map(([templateId, count], index) => (
+          <span key={templateId}>
+            {index > 0 && ', '}
+            <ExerciseName exerciseTemplateId={templateId} /> x {count}
+          </span>
+        ))}
+      </span>
+    );
+  };
+
+  return (
+    <div
+      className={`bg-white border rounded-lg transition-all duration-200 ${
+        isActive ? 'border-orange-400 shadow-md' : 'border-gray-200'
+      }`}
+      data-part-id={`part-${partIndex}`}
+      data-collapsed={!isExpanded}
+    >
+      {/* Part Header */}
+      <div
+        ref={partHeaderDropRef}
+        className={`px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors ${
+          isHeaderOver ? 'bg-blue-50' : ''
+        }`}
+      >
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => togglePartExpansion(part.partSeedId)}
+            className="p-1 hover:bg-gray-200 rounded transition-colors"
+          >
+            <svg
+              className={`w-5 h-5 text-gray-400 transition-transform ${
+                isExpanded ? 'rotate-90' : ''
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+          <div
+            className="flex items-center flex-1 cursor-pointer"
+            onClick={() => onPartClick(part.partSeedId)}
+          >
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+              isActive ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'
+            }`}>
+              <span className="text-sm font-semibold">{partIndex + 1}</span>
+            </div>
+            <div className="text-left">
+              <h3 className="font-semibold text-gray-900">{part.partName}</h3>
+              <p className="text-sm text-gray-500">
+                <PartSummaryText part={part} />
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <PartDragButton partDragItem={partDragItem} />
+        </div>
+      </div>
+
+      {/* Part Content (Collapsible) */}
+      {isExpanded && (
+        <div className="p-4 space-y-3">
+          {part.sets.map((set, setIndex) => (
+            <SetEditCard
+              key={set.setSeedId}
+              set={set}
+              setIndex={setIndex}
+              partIndex={partIndex}
+              parentId={partDragItem.id}
+              pinState={defaultPinState}
+              activeItem={activeItem}
+              onSetClick={onSetClick}
+              onExerciseClick={onExerciseClick}
+              onUpdateSet={(updatedSet) => onUpdateSet(partIndex, setIndex, updatedSet)}
+              onDeleteSet={() => onDeleteSet(partIndex, setIndex)}
+              onAddExercise={() => onAddExercise(partIndex)}
+              isExpanded={expandedSets.has(set.setSeedId)}
+              onToggle={toggleSetExpansion}
+            />
+          ))}
+
+          {part.sets.length === 0 && (
+            <div className="text-center py-6 text-gray-500">
+              <p>이 파트에는 세트가 없습니다.</p>
+              <p className="text-sm text-gray-400 mt-2">우하단 + 버튼으로 운동을 추가하세요</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, sessionId, onChange, onActiveItemChange }) => {
   // 토글 상태 인계 시스템 적용
   const { expandedParts, expandedSets, togglePartExpansion, toggleSetExpansion, initializeToggleStates } = useStatePreservation(sessionId);
 
@@ -69,6 +303,55 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
     }
   }, [effectiveBlueprint, initializeToggleStates]);
 
+  // 자동 펼침 이벤트 리스너 연결
+  useEffect(() => {
+    const handleAutoExpand = (event: CustomEvent) => {
+      const { partId } = event.detail;
+      console.log('자동 펼침 이벤트 수신:', partId);
+
+      // part-{index} 형태의 ID에서 실제 partSeedId 찾기
+      // partId는 "part-{partIndex}-{partSeedId}" 형태
+      const parts = partId.split('-');
+      const partIndex = parts[1] ? parseInt(parts[1]) : NaN;
+
+      if (!isNaN(partIndex) && partIndex >= 0 && partIndex < effectiveBlueprint.length) {
+        const partSeedId = effectiveBlueprint[partIndex].partSeedId;
+
+        // 현재 펼침 상태 확인 후 닫혀있으면 펼치기
+        if (!expandedParts.has(partSeedId)) {
+          console.log('닫힌 파트 자동 펼침:', partSeedId);
+          togglePartExpansion(partSeedId);
+        }
+      }
+    };
+
+    document.addEventListener('auto-expand-part', handleAutoExpand as EventListener);
+
+    return () => {
+      document.removeEventListener('auto-expand-part', handleAutoExpand as EventListener);
+    };
+  }, [effectiveBlueprint, expandedParts, togglePartExpansion]);
+
+  // 세트 자동 펼침 이벤트 리스너 연결
+  useEffect(() => {
+    const handleAutoExpandSet = (event: CustomEvent) => {
+      const { setSeedId } = event.detail;
+      console.log('세트 자동 펼침 이벤트 수신:', setSeedId);
+
+      // 현재 펼침 상태 확인 후 닫혀있으면 펼치기
+      if (!expandedSets.has(setSeedId)) {
+        console.log('닫힌 세트 자동 펼침:', setSeedId);
+        toggleSetExpansion(setSeedId);
+      }
+    };
+
+    document.addEventListener('auto-expand-set', handleAutoExpandSet as EventListener);
+
+    return () => {
+      document.removeEventListener('auto-expand-set', handleAutoExpandSet as EventListener);
+    };
+  }, [expandedSets, toggleSetExpansion]);
+
   // Default Pin State (no pins active) - will be replaced with actual Pin detection in next phase
   const defaultPinState: PinState = {
     sessionPin: false,
@@ -86,15 +369,21 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
 
   // ActiveItem 핸들러들 추가
   const handlePartClick = (partSeedId: string) => {
-    setActiveItem({ level: 'part', id: partSeedId });
+    const newActiveItem = { level: 'part' as const, id: partSeedId };
+    setActiveItem(newActiveItem);
+    onActiveItemChange?.(newActiveItem);
   };
 
   const handleSetClick = (setSeedId: string) => {
-    setActiveItem({ level: 'set', id: setSeedId });
+    const newActiveItem = { level: 'set' as const, id: setSeedId };
+    setActiveItem(newActiveItem);
+    onActiveItemChange?.(newActiveItem);
   };
 
   const handleExerciseClick = (exerciseId: string) => {
-    setActiveItem({ level: 'move', id: exerciseId });
+    const newActiveItem = { level: 'move' as const, id: exerciseId };
+    setActiveItem(newActiveItem);
+    onActiveItemChange?.(newActiveItem);
   };
 
   const handleAddExercise = (partIndex: number) => {
@@ -104,8 +393,60 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
 
   const handleExerciseSelected = (exercise: ExerciseTemplate) => {
     console.log('Selected exercise:', exercise.exerciseName, 'for part:', selectedPartIndex);
-    // For now, just show an alert. The actual modification logic will be implemented in the next task
-    alert(`"${exercise.exerciseName}" 운동이 선택되었습니다. 실제 추가 기능은 다음 단계에서 구현됩니다.`);
+
+    if (selectedPartIndex === null || selectedPartIndex >= effectiveBlueprint.length) {
+      console.error('유효하지 않은 파트 인덱스');
+      setShowExerciseSelection(false);
+      setSelectedPartIndex(null);
+      return;
+    }
+
+    // 새로운 blueprint 생성 (immutable update)
+    const newBlueprint = [...effectiveBlueprint];
+    const targetPart = { ...newBlueprint[selectedPartIndex] };
+
+    // 첫 번째 세트가 없으면 생성
+    if (targetPart.sets.length === 0) {
+      targetPart.sets = [{
+        setBlueprintId: null,
+        setSeedId: `set-${Date.now()}`,
+        order: 1,
+        restTime: 60,
+        timeLimit: null,
+        exercises: []
+      }];
+    }
+
+    // 첫 번째 세트에 운동 추가
+    const targetSet = { ...targetPart.sets[0] };
+    targetSet.exercises = [...targetSet.exercises, {
+      exerciseTemplateId: exercise._id,
+      order: targetSet.exercises.length + 1,
+      spec: {
+        goal: {
+          type: 'reps',
+          value: 10,
+          rule: 'exact'
+        },
+        load: {
+          type: 'bodyweight',
+          value: null,
+          text: ''
+        },
+        timeLimit: null
+      }
+    }];
+
+    targetPart.sets[0] = targetSet;
+    newBlueprint[selectedPartIndex] = targetPart;
+
+    // partModifications 형태로 변경 알림 (실제 API 호출은 향후 구현)
+    console.log('✅ 운동 추가 완료 - 향후 API 연동 예정:', exercise.exerciseName);
+
+    // 임시로 effectiveBlueprint 직접 업데이트 (개발 테스트용)
+    // 실제로는 partModifications를 통해 백엔드 호출해야 함
+    effectiveBlueprint[selectedPartIndex] = targetPart;
+
     setShowExerciseSelection(false);
     setSelectedPartIndex(null);
   };
@@ -132,46 +473,6 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
     alert('세트 추가 기능은 상태 관리 구현 후 활성화됩니다.');
   };
 
-  // 파트 헤더 요약 텍스트를 위한 유틸리티 함수들
-  const getPartSummary = (part: EffectivePartBlueprint) => {
-    const totalSets = part.sets.length;
-    const exerciseTemplateIds = new Map<string, number>();
-
-    // 각 운동별로 등장 횟수 카운트
-    part.sets.forEach(set => {
-      set.exercises.forEach(exercise => {
-        const templateId = exercise.exerciseTemplateId.toString();
-        exerciseTemplateIds.set(templateId, (exerciseTemplateIds.get(templateId) || 0) + 1);
-      });
-    });
-
-    return {
-      totalSets,
-      exerciseTemplateIds
-    };
-  };
-
-  // 파트 요약을 렌더링하는 컴포넌트
-  const PartSummaryText: React.FC<{ part: EffectivePartBlueprint }> = ({ part }) => {
-    const { totalSets, exerciseTemplateIds } = getPartSummary(part);
-
-    if (exerciseTemplateIds.size === 0) {
-      return <span>총 {totalSets}세트</span>;
-    }
-
-    return (
-      <span>
-        총 {totalSets}세트 · {' '}
-        {Array.from(exerciseTemplateIds.entries()).map(([templateId, count], index) => (
-          <span key={templateId}>
-            {index > 0 && ', '}
-            <ExerciseName exerciseTemplateId={templateId} /> x {count}
-          </span>
-        ))}
-      </span>
-    );
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -180,116 +481,28 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
 
       <div className="space-y-3">
         {effectiveBlueprint.map((part, partIndex) => {
-          // 파트 DragItem 생성
-          const partDragItem: DragItem = {
-            id: `part-${partIndex}`,
-            type: 'part',
-            data: {
-              name: part.partName,
-              part: part,
-              partIndex: partIndex
-            },
-            pinState: defaultPinState,
-            parentId: 'session',
-            level: 'part',
-            indices: {
-              partIndex
-            }
-          };
-
-          // ActiveItem 체크
           const isActive = activeItem?.level === 'part' && activeItem.id === part.partSeedId;
           const isExpanded = expandedParts.has(part.partSeedId);
 
           return (
-            <DraggableCard
+            <PartCard
               key={part.partSeedId}
-              dragItem={partDragItem}
-              pinState={defaultPinState}
-              className={`bg-white border rounded-lg transition-all duration-200 ${
-                isActive ? 'border-orange-400 shadow-md' : 'border-gray-200'
-              }`}
-              disabled={true}
-            >
-            {/* Part Header */}
-            <div className="px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={() => togglePartExpansion(part.partSeedId)}
-                  className="p-1 hover:bg-gray-200 rounded transition-colors"
-                >
-                  <svg
-                    className={`w-5 h-5 text-gray-400 transition-transform ${
-                      isExpanded ? 'rotate-90' : ''
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-                <div
-                  className="flex items-center flex-1 cursor-pointer"
-                  onClick={() => handlePartClick(part.partSeedId)}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                    isActive ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    <span className="text-sm font-semibold">{partIndex + 1}</span>
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-semibold text-gray-900">{part.partName}</h3>
-                    <p className="text-sm text-gray-500">
-                      <PartSummaryText part={part} />
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                {/* <button
-                  className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
-                  title="파트 설정"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                  </svg>
-                </button> */}
-                <PartDragButton partDragItem={partDragItem} />
-              </div>
-            </div>
-
-            {/* Part Content (Collapsible) */}
-            {isExpanded && (
-              <div className="p-4 space-y-3">
-                {part.sets.map((set, setIndex) => (
-                  <SetEditCard
-                    key={set.setSeedId}
-                    set={set}
-                    setIndex={setIndex}
-                    partIndex={partIndex}
-                    parentId={partDragItem.id}
-                    pinState={defaultPinState}
-                    activeItem={activeItem}
-                    onSetClick={handleSetClick}
-                    onExerciseClick={handleExerciseClick}
-                    onUpdateSet={(updatedSet) => handleUpdateSet(partIndex, setIndex, updatedSet)}
-                    onDeleteSet={() => handleDeleteSet(partIndex, setIndex)}
-                    onAddExercise={() => handleAddExercise(partIndex)}
-                    isExpanded={expandedSets.has(set.setSeedId)}
-                    onToggle={toggleSetExpansion}
-                  />
-                ))}
-
-                {part.sets.length === 0 && (
-                  <div className="text-center py-6 text-gray-500">
-                    <p>이 파트에는 세트가 없습니다.</p>
-                    <p className="text-sm text-gray-400 mt-2">우하단 + 버튼으로 운동을 추가하세요</p>
-                  </div>
-                )}
-              </div>
-            )}
-            </DraggableCard>
+              part={part}
+              partIndex={partIndex}
+              isExpanded={isExpanded}
+              isActive={isActive}
+              expandedSets={expandedSets}
+              defaultPinState={defaultPinState}
+              activeItem={activeItem}
+              onPartClick={handlePartClick}
+              onSetClick={handleSetClick}
+              onExerciseClick={handleExerciseClick}
+              onUpdateSet={handleUpdateSet}
+              onDeleteSet={handleDeleteSet}
+              onAddExercise={handleAddExercise}
+              togglePartExpansion={togglePartExpansion}
+              toggleSetExpansion={toggleSetExpansion}
+            />
           );
         })}
 
