@@ -142,6 +142,17 @@ const DND_CONFIG = {
 };
 
 /**
+ * Placeholder 정보 타입
+ */
+export type PlaceholderInfo = {
+  containerId: string;  // 타겟 컨테이너 ID (set-X-Y-seed 또는 part-X-seed)
+  containerType: 'set' | 'part';
+  insertIndex: number;  // 삽입될 인덱스 위치
+  partIndex?: number;
+  setIndex?: number;
+} | null;
+
+/**
  * 드래그 이벤트 콜백 타입
  */
 export type DragEventCallback = {
@@ -166,6 +177,7 @@ export type DragEventCallback = {
     dragItem: DragItem;
     targetIndices: Partial<DragItem['indices']>;
   }) => void;
+  onPlaceholderUpdate?: (placeholderInfo: PlaceholderInfo) => void;
 };
 
 /**
@@ -376,6 +388,133 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
   }, []);
 
   /**
+   * Multi-Container Sortable: 포인터 위치 기반 삽입 위치 계산
+   */
+  const calculateInsertionPosition = useCallback((event: DragOverEvent, overId: string) => {
+    if (!activeItem || !callbacks?.onPlaceholderUpdate) return;
+
+    // 실시간 포인터 좌표 계산
+    // event.active.rect.current.translated는 드래그 중인 아이템의 현재 위치
+    const activeRect = event.active.rect.current.translated;
+
+    if (!activeRect) {
+      console.log('❌ [Insertion Calc] activeRect 없음');
+      return;
+    }
+
+    // 드래그 중인 아이템의 중심 Y 좌표를 포인터 위치로 사용
+    const clientY = activeRect.top + activeRect.height / 2;
+
+    console.log('🎯 [Insertion Calc] 시작:', {
+      overId,
+      activeItemType: activeItem.type,
+      clientY,
+      activeRect: { top: activeRect.top, height: activeRect.height }
+    });
+
+    // 타겟 컨테이너 식별 및 아이템 목록 가져오기
+    let targetContainerId: string | null = null;
+    let containerType: 'set' | 'part' | null = null;
+    let partIndex: number | undefined;
+    let setIndex: number | undefined;
+    let items: HTMLElement[] = [];
+
+    // 1. 운동 위에 hover → 부모 세트가 타겟
+    if (overId.startsWith('exercise-')) {
+      // exercise-{partIndex}-{setIndex}-{exerciseIndex}-{templateId}
+      const parts = overId.split('-');
+      partIndex = parseInt(parts[1]);
+      setIndex = parseInt(parts[2]);
+
+      const parentSet = document.querySelector(
+        `[data-part-index="${partIndex}"][data-set-index="${setIndex}"]`
+      );
+      const setSeedId = parentSet?.getAttribute('data-set-id');
+
+      if (setSeedId) {
+        targetContainerId = `set-${partIndex}-${setIndex}-${setSeedId}`;
+        containerType = 'set';
+
+        // 세트 내 모든 운동 아이템 가져오기
+        items = Array.from(parentSet?.querySelectorAll('[data-drag-type="exercise"]') || []) as HTMLElement[];
+      }
+    }
+    // 2. 세트 위에 hover (또는 세트의 exercises 영역)
+    else if (overId.startsWith('set-')) {
+      let overIdStr = overId;
+      if (overIdStr.endsWith('-exercises')) {
+        overIdStr = overIdStr.slice(0, -10);
+      }
+
+      const parts = overIdStr.split('-');
+      partIndex = parseInt(parts[1]);
+      setIndex = parseInt(parts[2]);
+      const setSeedId = parts.slice(3).join('-');
+
+      targetContainerId = `set-${partIndex}-${setIndex}-${setSeedId}`;
+      containerType = 'set';
+
+      const setElement = document.querySelector(`[data-set-id="${setSeedId}"]`);
+      items = Array.from(setElement?.querySelectorAll('[data-drag-type="exercise"]') || []) as HTMLElement[];
+    }
+    // 3. 파트 위에 hover
+    else if (overId.startsWith('part-')) {
+      const parts = overId.split('-');
+      partIndex = parseInt(parts[1]);
+      const partSeedId = parts.slice(2).join('-');
+
+      targetContainerId = `part-${partIndex}-${partSeedId}`;
+      containerType = 'part';
+
+      const dataPartId = `part-${partIndex}`;
+      const partElement = document.querySelector(`[data-part-id="${dataPartId}"]`);
+      items = Array.from(partElement?.querySelectorAll('[data-drag-type="set"]') || []) as HTMLElement[];
+    }
+
+    if (!targetContainerId || !containerType || items.length === 0) {
+      console.log('❌ [Insertion Calc] 타겟 컨테이너 또는 아이템 없음');
+      callbacks.onPlaceholderUpdate(null);
+      return;
+    }
+
+    // 드래그 중인 아이템 제외
+    const filteredItems = items.filter(item => {
+      const itemId = item.getAttribute('data-drag-id');
+      return itemId !== activeItem.id;
+    });
+
+    // 삽입 위치 계산: 각 아이템과 포인터 Y 좌표 비교
+    let insertIndex = 0;
+
+    for (let i = 0; i < filteredItems.length; i++) {
+      const item = filteredItems[i];
+      const rect = item.getBoundingClientRect();
+      const itemMiddleY = rect.top + rect.height / 2;
+
+      // 상단 50%: 현재 아이템 이전에 삽입
+      if (clientY < rect.top + rect.height * 0.5) {
+        insertIndex = i;
+        break;
+      }
+      // 하단 50%: 다음 아이템으로 이동
+      else {
+        insertIndex = i + 1;
+      }
+    }
+
+    const placeholderInfo: PlaceholderInfo = {
+      containerId: targetContainerId,
+      containerType,
+      insertIndex,
+      partIndex,
+      setIndex
+    };
+
+    console.log('✅ [Insertion Calc] 완료:', placeholderInfo);
+    callbacks.onPlaceholderUpdate(placeholderInfo);
+  }, [activeItem, callbacks]);
+
+  /**
    * Pin System과 연동한 드래그 권한 검사
    */
   const canDrag = useCallback((item: DragItem): boolean => {
@@ -444,8 +583,11 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
         });
       }
 
+      // 자동 펼침은 운동 드래그 시에만 동작
+      const isExerciseDrag = activeItem?.type === 'exercise';
+
       // 운동 위에 hover했을 때 → 부모 세트 & 부모 파트 자동 확장
-      if (overId.startsWith('exercise-')) {
+      if (overId.startsWith('exercise-') && isExerciseDrag) {
         // exercise-{partIndex}-{setIndex}-{exerciseIndex}-{templateId}
         const parts = overId.split('-');
         const exercisePartIndex = parts[1];
@@ -506,8 +648,8 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
             handleAutoExpandSet(setSeedId);
           }
         }
-      } else if (overId.startsWith('set-')) {
-        // 세트 위에 hover했을 때 → 부모 파트 자동 확장
+      } else if (overId.startsWith('set-') && isExerciseDrag) {
+        // 세트 위에 hover했을 때 → 부모 파트 자동 확장 (운동 드래그 시에만)
         // set-{partIndex}-{setIndex}-{setSeedId} 또는 set-{partIndex}-{setIndex}-{setSeedId}-exercises
         let overIdStr = overId;
 
@@ -548,7 +690,7 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
           console.log('✅ 세트 자동 확장 타이머 시작:', setSeedId);
           handleAutoExpandSet(setSeedId);
         }
-      } else if (overId.startsWith('part-')) {
+      } else if (overId.startsWith('part-') && isExerciseDrag) {
         // overId는 "part-0-seedId" 형태, data-part-id는 "part-0" 형태
         // 파트 인덱스만 추출해서 매칭
         const parts = overId.split('-');
@@ -577,52 +719,22 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
           console.log('✅ 파트 자동 확장 타이머 시작:', overId);
           handleAutoExpandPart(overId);
         }
-      } else if (overId.startsWith('set-')) {
-        // overId는 두 가지 형태:
-        // 1. 닫힌 세트 헤더: "set-0-1-seedId"
-        // 2. 펼쳐진 세트 SortableContainer: "set-0-1-seedId-exercises"
-        let overIdStr = overId;
-
-        // "-exercises" 접미사 제거 (펼쳐진 세트의 경우)
-        if (overIdStr.endsWith('-exercises')) {
-          overIdStr = overIdStr.slice(0, -10); // "-exercises" 길이만큼 제거
-        }
-
-        const parts = overIdStr.split('-');
-        const setSeedId = parts.slice(3).join('-'); // "set-0-1-abc-123" → "abc-123"
-
-        const setElement = document.querySelector(`[data-set-id="${setSeedId}"]`);
-        const isCollapsed = setElement?.getAttribute('data-collapsed') === 'true';
-
-        console.log('📦 세트 상태 상세:', {
-          setElement: !!setElement,
-          setSeedId,
-          isCollapsed,
-          overId,
-          overIdCleaned: overIdStr,
-          domSelector: `[data-set-id="${setSeedId}"]`,
-          allSetsInDOM: Array.from(document.querySelectorAll('[data-set-id]')).map(el => el.getAttribute('data-set-id')),
-          elementFound: setElement ? {
-            tagName: setElement.tagName,
-            className: setElement.className,
-            dataSetId: setElement.getAttribute('data-set-id'),
-            dataCollapsed: setElement.getAttribute('data-collapsed')
-          } : null
-        });
-
-        if (isCollapsed) {
-          console.log('✅ 세트 자동 확장 타이머 시작:', setSeedId);
-          handleAutoExpandSet(setSeedId);
-        }
       }
+      // 세트/파트 → 세트/파트 드래그 시에는 자동 펼침 비활성화 (위에서 isExerciseDrag 체크로 처리됨)
+
+      // ========== Multi-Container Sortable: 삽입 위치 계산 ==========
+      // 포인터 위치 기반으로 타겟 컨테이너 내 삽입 위치 계산
+      calculateInsertionPosition(event, overId);
     } else {
       // 다른 영역으로 이동하면 타이머 취소
       if (autoExpandTimerRef.current) {
         clearTimeout(autoExpandTimerRef.current);
         autoExpandTimerRef.current = undefined;
       }
+      // placeholder 정보도 초기화
+      callbacks?.onPlaceholderUpdate?.(null);
     }
-  }, [activeItem, handleAutoScroll, handleAutoExpandPart, handleAutoExpandSet]);
+  }, [activeItem, handleAutoScroll, handleAutoExpandPart, handleAutoExpandSet, calculateInsertionPosition, callbacks]);
 
   /**
    * 드롭 좌표 계산 유틸리티

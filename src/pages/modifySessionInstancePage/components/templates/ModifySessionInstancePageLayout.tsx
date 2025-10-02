@@ -13,7 +13,7 @@ import { SessionInfoCard, ExerciseAddFAB } from '../atoms';
 import { DndContextProvider } from '../../../../contexts/DndContextProvider';
 import type { ModifySessionRequest, PartModification, SetModification, ExerciseModification, ActiveItem } from '../../../../types/workout';
 import type { DragEndEvent } from '@dnd-kit/core';
-import type { DragEventCallback } from '../../../../hooks/useDragAndDrop';
+import type { DragEventCallback, PlaceholderInfo } from '../../../../hooks/useDragAndDrop';
 
 type Props = {
   sessionId: string;
@@ -26,6 +26,7 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
   const [isDragActive, setIsDragActive] = useState(false);
   const [showExerciseSelection, setShowExerciseSelection] = useState(false);
   const [activeItem, setActiveItem] = useState<ActiveItem>(null);
+  const [placeholderInfo, setPlaceholderInfo] = useState<PlaceholderInfo>(null);
 
   const { data: sessionDetail, isLoading, error } = useSessionDetail(sessionId);
   const modifySessionMutation = useModifySession();
@@ -73,6 +74,7 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
   const handleDragEnd = (event: DragEndEvent) => {
     console.log('드래그 종료:', event);
     setIsDragActive(false);
+    setPlaceholderInfo(null); // placeholder 초기화
     // 드래그 앤 드롭 이벤트는 useDragAndDrop 훅의 콜백에서 처리됨
   };
 
@@ -551,6 +553,10 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
           partModifications: [partModification]
         });
       }
+    },
+
+    onPlaceholderUpdate: (info) => {
+      setPlaceholderInfo(info);
     }
   };
 
@@ -670,6 +676,7 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
             sessionId={sessionId}
             onChange={handleChanges}
             onActiveItemChange={setActiveItem}
+            placeholderInfo={placeholderInfo}
           />
         </div>
 

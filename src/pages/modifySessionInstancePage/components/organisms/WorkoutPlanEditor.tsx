@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ExerciseSelectionBottomSheet, SetEditCard } from '../molecules';
 import type { EffectivePartBlueprint, ModifySessionRequest, PartModification, ExerciseTemplate, EffectiveSetBlueprint, PinState, ActiveItem } from '../../../../types/workout';
 import { DraggableCard } from '../atoms';
-import type { DragItem } from '../../../../hooks/useDragAndDrop';
+import type { DragItem, PlaceholderInfo } from '../../../../hooks/useDragAndDrop';
 import { ExerciseName } from '../../../sessionInstanceDetailsPage/components/molecules/ExerciseName';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
@@ -14,6 +14,7 @@ type Props = {
   sessionId: string;
   onChange: (changes: Partial<ModifySessionRequest>) => void;
   onActiveItemChange?: (activeItem: ActiveItem) => void;
+  placeholderInfo?: PlaceholderInfo;
 };
 
 // 파트 드래그 버튼 컴포넌트 (인라인)
@@ -75,6 +76,7 @@ type PartCardProps = {
   onAddExercise: (partIndex: number) => void;
   togglePartExpansion: (partSeedId: string) => void;
   toggleSetExpansion: (setSeedId: string) => void;
+  placeholderInfo?: PlaceholderInfo;
 };
 
 // 파트 카드 컴포넌트 - WorkoutPlanEditor 외부로 이동하여 안정화
@@ -94,6 +96,7 @@ const PartCard: React.FC<PartCardProps> = ({
   onAddExercise,
   togglePartExpansion,
   toggleSetExpansion,
+  placeholderInfo,
 }) => {
   // 드래그 중 상태 추적
   const [isDragging, setIsDragging] = React.useState(false);
@@ -126,47 +129,15 @@ const PartCard: React.FC<PartCardProps> = ({
   const partHeaderDropZone: DropZone = {
     id: partDragItem.id, // part-{partIndex}-{partSeedId}
     type: 'container',
-    accepts: ['exercise', 'set'],
+    accepts: ['exercise'], // 운동만 받음 (세트/파트는 제외)
     autoExpand: false
   };
 
-  const { setNodeRef: partHeaderDropRef, isOver: isHeaderOver, node } = useDroppable({
+  const { setNodeRef: partHeaderDropRef, isOver: isHeaderOver } = useDroppable({
     id: partHeaderDropZone.id,
     data: partHeaderDropZone,
     disabled: isExpanded // ✨ 펼쳐져 있으면 드롭존 비활성화
   });
-
-  // useDroppable 등록 확인
-  useEffect(() => {
-    console.log(`🔧 [PartCard ${partIndex}] useDroppable 상태:`, {
-      dropZoneId: partHeaderDropZone.id,
-      disabled: isExpanded,
-      nodeRegistered: !!node,
-      refCallback: !!partHeaderDropRef
-    });
-  }, [partIndex, partHeaderDropZone.id, isExpanded, node, partHeaderDropRef]);
-
-  // PartCard 렌더링 및 드롭존 등록 로그
-  console.log(`🏗️ [PartCard ${partIndex}] 렌더링:`, {
-    partIndex,
-    partSeedId: part.partSeedId,
-    dropZoneId: partHeaderDropZone.id,
-    isExpanded,
-    dropZoneDisabled: isExpanded,
-    accepts: partHeaderDropZone.accepts
-  });
-
-  // 파트 헤더 hover 감지 (디버깅용)
-  useEffect(() => {
-    if (isHeaderOver && !isExpanded) {
-      console.log('🎯 [PartCard] 파트 헤더 hover 감지!', {
-        partIndex,
-        dropZoneId: partHeaderDropZone.id,
-        isExpanded,
-        isHeaderOver
-      });
-    }
-  }, [isHeaderOver, isExpanded, partIndex, partHeaderDropZone.id]);
 
   // 파트 요약 텍스트
   const getPartSummary = (part: EffectivePartBlueprint) => {
@@ -263,26 +234,78 @@ const PartCard: React.FC<PartCardProps> = ({
       {/* Part Content (Collapsible) */}
       {isExpanded && (
         <div className="p-4 space-y-3">
-          {part.sets.map((set, setIndex) => (
-            <SetEditCard
-              key={set.setSeedId}
-              set={set}
-              setIndex={setIndex}
-              partIndex={partIndex}
-              parentId={partDragItem.id}
-              pinState={defaultPinState}
-              activeItem={activeItem}
-              onSetClick={onSetClick}
-              onExerciseClick={onExerciseClick}
-              onUpdateSet={(updatedSet) => onUpdateSet(partIndex, setIndex, updatedSet)}
-              onDeleteSet={() => onDeleteSet(partIndex, setIndex)}
-              onAddExercise={() => onAddExercise(partIndex)}
-              isExpanded={expandedSets.has(set.setSeedId)}
-              onToggle={toggleSetExpansion}
-            />
-          ))}
+          {part.sets.map((set, setIndex) => {
+            // Placeholder 렌더링 로직: 현재 세트 이전에 삽입되어야 하는지 체크
+            const shouldShowPlaceholderBefore =
+              placeholderInfo &&
+              placeholderInfo.containerType === 'part' &&
+              placeholderInfo.containerId === partDragItem.id &&
+              placeholderInfo.insertIndex === setIndex;
 
-          {part.sets.length === 0 && (
+            return (
+              <React.Fragment key={set.setSeedId}>
+                {/* Placeholder: 세트 이전 위치 */}
+                {shouldShowPlaceholderBefore && (
+                  <div
+                    className="h-24 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out"
+                    style={{ opacity: 0.8 }}
+                  >
+                    <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+                  </div>
+                )}
+
+                <SetEditCard
+                  set={set}
+                  setIndex={setIndex}
+                  partIndex={partIndex}
+                  parentId={partDragItem.id}
+                  pinState={defaultPinState}
+                  activeItem={activeItem}
+                  onSetClick={onSetClick}
+                  onExerciseClick={onExerciseClick}
+                  onUpdateSet={(updatedSet) => onUpdateSet(partIndex, setIndex, updatedSet)}
+                  onDeleteSet={() => onDeleteSet(partIndex, setIndex)}
+                  onAddExercise={() => onAddExercise(partIndex)}
+                  isExpanded={expandedSets.has(set.setSeedId)}
+                  onToggle={toggleSetExpansion}
+                  placeholderInfo={placeholderInfo}
+                />
+              </React.Fragment>
+            );
+          })}
+
+          {/* Placeholder: 마지막 세트 이후 위치 */}
+          {placeholderInfo &&
+            placeholderInfo.containerType === 'part' &&
+            placeholderInfo.containerId === partDragItem.id &&
+            placeholderInfo.insertIndex === part.sets.length && (
+            <div
+              className="h-24 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out"
+              style={{ opacity: 0.8 }}
+            >
+              <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+            </div>
+          )}
+
+          {/* 빈 파트에서도 placeholder 표시 */}
+          {part.sets.length === 0 &&
+            placeholderInfo &&
+            placeholderInfo.containerType === 'part' &&
+            placeholderInfo.containerId === partDragItem.id &&
+            placeholderInfo.insertIndex === 0 && (
+            <div
+              className="h-24 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out"
+              style={{ opacity: 0.8 }}
+            >
+              <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+            </div>
+          )}
+
+          {part.sets.length === 0 &&
+            !(placeholderInfo &&
+              placeholderInfo.containerType === 'part' &&
+              placeholderInfo.containerId === partDragItem.id &&
+              placeholderInfo.insertIndex === 0) && (
             <div className="text-center py-6 text-gray-500">
               <p>이 파트에는 세트가 없습니다.</p>
               <p className="text-sm text-gray-400 mt-2">우하단 + 버튼으로 운동을 추가하세요</p>
@@ -294,7 +317,7 @@ const PartCard: React.FC<PartCardProps> = ({
   );
 };
 
-export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, sessionId, onChange, onActiveItemChange }) => {
+export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, sessionId, onChange, onActiveItemChange, placeholderInfo }) => {
   // 토글 상태 인계 시스템 적용
   const { expandedParts, expandedSets, togglePartExpansion, toggleSetExpansion, initializeToggleStates } = useStatePreservation(sessionId);
 
@@ -513,6 +536,7 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
               onAddExercise={handleAddExercise}
               togglePartExpansion={togglePartExpansion}
               toggleSetExpansion={toggleSetExpansion}
+              placeholderInfo={placeholderInfo}
             />
           );
         })}

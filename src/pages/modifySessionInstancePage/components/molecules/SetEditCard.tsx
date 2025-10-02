@@ -5,7 +5,7 @@ import type { EffectiveSetBlueprint, EffectiveExerciseBlueprint, PinState, Activ
 import { DraggableCard } from '../atoms/DraggableCard';
 import { SortableContainer } from '../atoms/SortableContainer';
 import { SortableItem } from '../atoms/SortableItem';
-import type { DragItem, DropZone } from '../../../../hooks/useDragAndDrop';
+import type { DragItem, DropZone, PlaceholderInfo } from '../../../../hooks/useDragAndDrop';
 import { PinSystemHelpers } from '../../../../types/workout';
 import { generateExerciseDragId, generateSetDragId } from '../../../../utils/dragIdGenerator';
 import { RestTimeEditBottomSheet } from './RestTimeEditBottomSheet';
@@ -28,6 +28,8 @@ type Props = {
   // 토글 상태 인계 Props
   isExpanded?: boolean;
   onToggle?: (setSeedId: string) => void;
+  // Placeholder Props
+  placeholderInfo?: PlaceholderInfo;
 };
 
 export const SetEditCard: React.FC<Props> = ({
@@ -43,7 +45,8 @@ export const SetEditCard: React.FC<Props> = ({
   onSetClick,
   onExerciseClick,
   isExpanded: propIsExpanded,
-  onToggle
+  onToggle,
+  placeholderInfo
 }) => {
   // 토글 상태 인계: props에서 받은 상태 또는 기본값 사용
   const isExpanded = propIsExpanded !== undefined
@@ -318,46 +321,95 @@ export const SetEditCard: React.FC<Props> = ({
                 className="space-y-2"
                 showDropIndicator={true}
               >
-              {set.exercises.map((exercise, exerciseIndex) => (
-                <SortableItem
-                  key={exerciseIds[exerciseIndex]}
-                  sortableId={exerciseIds[exerciseIndex]}
-                  dragItem={{
-                    id: exerciseIds[exerciseIndex],
-                    type: 'exercise',
-                    data: {
-                      name: exercise.exerciseTemplateId,
-                      exercise: exercise,
-                      exerciseIndex: exerciseIndex
-                    },
-                    pinState: activePinState,
-                    parentId: dragItem.id,
-                    level: 'exercise',
-                    indices: {
-                      partIndex,
-                      setIndex,
-                      exerciseIndex
-                    }
-                  }}
-                  pinState={activePinState}
-                  disabled={true}
+              {set.exercises.map((exercise, exerciseIndex) => {
+                // Placeholder 렌더링 로직: 현재 운동 이전에 삽입되어야 하는지 체크
+                const shouldShowPlaceholderBefore =
+                  placeholderInfo &&
+                  placeholderInfo.containerType === 'set' &&
+                  placeholderInfo.containerId === dragId &&
+                  placeholderInfo.insertIndex === exerciseIndex;
+
+                return (
+                  <React.Fragment key={exerciseIds[exerciseIndex]}>
+                    {/* Placeholder: 운동 이전 위치 */}
+                    {shouldShowPlaceholderBefore && (
+                      <div
+                        className="h-16 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out"
+                        style={{ opacity: 0.8 }}
+                      >
+                        <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+                      </div>
+                    )}
+
+                    <SortableItem
+                      sortableId={exerciseIds[exerciseIndex]}
+                      dragItem={{
+                        id: exerciseIds[exerciseIndex],
+                        type: 'exercise',
+                        data: {
+                          name: exercise.exerciseTemplateId,
+                          exercise: exercise,
+                          exerciseIndex: exerciseIndex
+                        },
+                        pinState: activePinState,
+                        parentId: dragItem.id,
+                        level: 'exercise',
+                        indices: {
+                          partIndex,
+                          setIndex,
+                          exerciseIndex
+                        }
+                      }}
+                      pinState={activePinState}
+                      disabled={true}
+                    >
+                      <ExerciseEditCard
+                        exercise={exercise}
+                        exerciseIndex={exerciseIndex}
+                        pinState={activePinState}
+                        activeItem={activeItem}
+                        onExerciseClick={onExerciseClick}
+                        setSeedId={set.setSeedId}
+                        onUpdate={(updatedExercise) => handleUpdateExercise(exerciseIndex, updatedExercise)}
+                        onDelete={() => handleDeleteExercise(exerciseIndex)}
+                        partIndex={partIndex}
+                        setIndex={setIndex}
+                        parentId={dragItem.id}
+                      />
+                    </SortableItem>
+                  </React.Fragment>
+                );
+              })}
+
+              {/* Placeholder: 마지막 운동 이후 위치 */}
+              {placeholderInfo &&
+                placeholderInfo.containerType === 'set' &&
+                placeholderInfo.containerId === dragId &&
+                placeholderInfo.insertIndex === set.exercises.length && (
+                <div
+                  className="h-16 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out"
+                  style={{ opacity: 0.8 }}
                 >
-                  <ExerciseEditCard
-                    exercise={exercise}
-                    exerciseIndex={exerciseIndex}
-                    pinState={activePinState}
-                    activeItem={activeItem}
-                    onExerciseClick={onExerciseClick}
-                    setSeedId={set.setSeedId}
-                    onUpdate={(updatedExercise) => handleUpdateExercise(exerciseIndex, updatedExercise)}
-                    onDelete={() => handleDeleteExercise(exerciseIndex)}
-                    partIndex={partIndex}
-                    setIndex={setIndex}
-                    parentId={dragItem.id}
-                  />
-                </SortableItem>
-              ))}
+                  <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+                </div>
+              )}
               </SortableContainer>
+            </div>
+          )}
+
+          {/* 빈 세트에서도 placeholder 표시 */}
+          {set.exercises.length === 0 &&
+            placeholderInfo &&
+            placeholderInfo.containerType === 'set' &&
+            placeholderInfo.containerId === dragId &&
+            placeholderInfo.insertIndex === 0 && (
+            <div className="px-3 mb-2">
+              <div
+                className="h-16 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out"
+                style={{ opacity: 0.8 }}
+              >
+                <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+              </div>
             </div>
           )}
 
