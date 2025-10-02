@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useDraggable } from '@dnd-kit/core';
 import type { EffectiveExerciseBlueprint, ExerciseSpec, PinState, ActiveItem } from '../../../../types/workout';
-import { PinWrapper } from '../atoms';
 import { DraggableCard } from '../atoms/DraggableCard';
 import type { DragItem } from '../../../../hooks/useDragAndDrop';
 import { PinSystemHelpers } from '../../../../types/workout';
@@ -75,11 +74,6 @@ export const ExerciseEditCard: React.FC<Props> = ({
   onExerciseClick,
   setSeedId
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingSpec, setEditingSpec] = useState<ExerciseSpec>(exercise.spec);
-  // PRD PAGES 요구사항: "모든 동일한 운동에 일괄 적용" 토글
-  const [applyToAllSame, setApplyToAllSame] = useState(false);
-
   // Phase 3: ExerciseEditBottomSheet 모달 상태
   const [exerciseModalOpen, setExerciseModalOpen] = useState(false);
 
@@ -132,41 +126,14 @@ export const ExerciseEditCard: React.FC<Props> = ({
   const exerciseKey = setSeedId ? `${setSeedId}-${exercise.exerciseTemplateId}-${exercise.order}` : `exercise-${exerciseIndex}-${exercise.exerciseTemplateId}`;
   const isActive = activeItem?.level === 'move' && activeItem.id === exerciseKey;
 
-  const handleSave = () => {
-    const updatedExercise = {
-      ...exercise,
-      spec: editingSpec
-    };
-
-    // PRD PAGES 요구사항: 일괄 적용 토글 처리
-    if (applyToAllSame) {
-      // TODO: Stage 4B 고급 구현에서 세션 내 동일한 exerciseTemplateId를 가진 모든 운동에 스펙 적용
-      console.log('일괄 적용 모드: 동일한 운동에 스펙 적용 예정', {
-        exerciseTemplateId: exercise.exerciseTemplateId,
-        newSpec: editingSpec
-      });
-      // 실제 구현은 상위 컴포넌트에서 전체 세션 데이터에 접근해서 처리해야 함
-    }
-
-    onUpdate(updatedExercise);
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    setEditingSpec(exercise.spec);
-    setApplyToAllSame(false); // 토글도 초기화
-    setIsEditing(false);
-  };
-
   // Phase 3: ExerciseEditBottomSheet 저장 핸들러
   const handleExerciseModalSave = (updatedSpec: ExerciseSpec, applyToAll: boolean) => {
-    // 기존 handleSave 패턴과 동일하게 처리
     const updatedExercise = {
       ...exercise,
       spec: updatedSpec
     };
 
-    // PRD 요구사항: 일괄 적용 토글 처리 (기존 로직 재사용)
+    // PRD 요구사항: 일괄 적용 토글 처리
     if (applyToAll) {
       console.log('일괄 적용 모드: 세션 내 모든 동일한 운동에 변경 사항 적용', {
         exerciseTemplateId: exercise.exerciseTemplateId,
@@ -175,30 +142,12 @@ export const ExerciseEditCard: React.FC<Props> = ({
       // 실제 구현은 상위 컴포넌트에서 전체 세션 데이터에 접근해서 처리해야 함
     }
 
-    // 로컬 state도 업데이트 (기존 인라인 편집과 동기화)
-    setEditingSpec(updatedSpec);
-
     onUpdate(updatedExercise);
   };
 
-  const updateGoal = (updates: Partial<ExerciseSpec['goal']>) => {
-    setEditingSpec(prev => ({
-      ...prev,
-      goal: { ...prev.goal, ...updates }
-    }));
-  };
-
-  const updateLoad = (updates: Partial<ExerciseSpec['load']>) => {
-    setEditingSpec(prev => ({
-      ...prev,
-      load: { ...prev.load, ...updates }
-    }));
-  };
-
-  if (!isEditing) {
-    return (
-      <>
-        <DraggableCard
+  return (
+    <>
+      <DraggableCard
         dragItem={dragItem}
         pinState={activePinState}
         disabled={true}
@@ -293,187 +242,4 @@ export const ExerciseEditCard: React.FC<Props> = ({
         )}
       </>
     );
-  }
-
-  return (
-    <>
-      <PinWrapper
-        pinState={activePinState}
-        className="bg-white p-4 border border-blue-200"
-      >
-      <div className="space-y-4">
-        <div className="flex items-center justify-between mb-4">
-          <h5 className="font-medium text-gray-900">
-            {exercise.exerciseTemplateId} 편집
-          </h5>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={handleCancel}
-              className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 transition-colors"
-            >
-              취소
-            </button>
-            <button
-              onClick={handleSave}
-              className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              저장
-            </button>
-          </div>
-        </div>
-
-        {/* Goal Settings */}
-        <div className="space-y-3">
-          <h6 className="text-sm font-medium text-gray-700">목표 설정</h6>
-
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">목표 타입</label>
-              <select
-                value={editingSpec.goal.type}
-                onChange={(e) => updateGoal({ type: e.target.value as ExerciseSpec['goal']['type'] })}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="reps">횟수</option>
-                <option value="time">시간</option>
-                <option value="distance">거리</option>
-                <option value="weight">무게</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">기준</label>
-              <select
-                value={editingSpec.goal.rule}
-                onChange={(e) => updateGoal({ rule: e.target.value as ExerciseSpec['goal']['rule'] })}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="exact">정확히</option>
-                <option value="min">최소</option>
-                <option value="max">최대</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">값</label>
-              <input
-                type="number"
-                value={editingSpec.goal.value}
-                onChange={(e) => updateGoal({ value: parseInt(e.target.value) || 0 })}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                min="0"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Load Settings */}
-        <div className="space-y-3">
-          <h6 className="text-sm font-medium text-gray-700">부하 설정</h6>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">부하 타입</label>
-              <select
-                value={editingSpec.load.type}
-                onChange={(e) => updateLoad({
-                  type: e.target.value as ExerciseSpec['load']['type'],
-                  value: e.target.value === 'none' ? null : editingSpec.load.value || 0,
-                  text: e.target.value === 'none' ? '없음' : editingSpec.load.text
-                })}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="none">없음</option>
-                <option value="bodyweight">체중</option>
-                <option value="weight">중량</option>
-                <option value="resistance">저항</option>
-              </select>
-            </div>
-
-            {editingSpec.load.type !== 'none' && (
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">설명</label>
-                <input
-                  type="text"
-                  value={editingSpec.load.text}
-                  onChange={(e) => updateLoad({ text: e.target.value })}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="예: 10kg, 중간 저항 등"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Time Limit */}
-        <div>
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="timeLimit"
-              checked={editingSpec.timeLimit !== null}
-              onChange={(e) => setEditingSpec(prev => ({
-                ...prev,
-                timeLimit: e.target.checked ? 60 : null
-              }))}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-            />
-            <label htmlFor="timeLimit" className="text-sm text-gray-700">시간 제한 설정</label>
-          </div>
-
-          {editingSpec.timeLimit !== null && (
-            <div className="mt-2">
-              <input
-                type="number"
-                value={editingSpec.timeLimit}
-                onChange={(e) => setEditingSpec(prev => ({
-                  ...prev,
-                  timeLimit: parseInt(e.target.value) || 60
-                }))}
-                className="w-24 px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                min="1"
-              />
-              <span className="ml-2 text-sm text-gray-600">초</span>
-            </div>
-          )}
-        </div>
-
-        {/* PRD PAGES 요구사항: 일괄 적용 토글 */}
-        <div className="border-t pt-3">
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="applyToAllSame"
-              checked={applyToAllSame}
-              onChange={(e) => setApplyToAllSame(e.target.checked)}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-            />
-            <label htmlFor="applyToAllSame" className="text-sm text-gray-700">
-              이 세션 내 모든 동일한 운동에 일괄 적용
-            </label>
-          </div>
-          {applyToAllSame && (
-            <p className="mt-1 text-xs text-gray-500">
-              같은 운동({exercise.exerciseTemplateId})의 모든 강도와 목표가 함께 수정됩니다
-            </p>
-          )}
-        </div>
-      </div>
-
-    </PinWrapper>
-
-    {/* Phase 3: ExerciseEditBottomSheet 바텀시트 - Portal로 body에 렌더링 */}
-    {ReactDOM.createPortal(
-      <ExerciseEditBottomSheet
-        isOpen={exerciseModalOpen}
-        onClose={() => setExerciseModalOpen(false)}
-        exercise={exercise}
-        onSave={handleExerciseModalSave}
-        onDelete={onDelete}
-        recentRecord={undefined} // TODO: 실제 최근 기록 데이터 연결
-      />,
-      document.body
-    )}
-    </>
-  );
 };

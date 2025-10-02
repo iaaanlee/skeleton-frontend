@@ -41,7 +41,7 @@ export const DraggableCard: React.FC<Props> = ({
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0 : 1,  // 드래그 중일 때 완전히 숨김
     touchAction: 'none',
     pointerEvents: isDragging ? ('none' as const) : ('auto' as const),
   };
@@ -112,7 +112,7 @@ const DragHandleButton: React.FC<{
 
   const handleStyle = {
     transform: CSS.Transform.toString(handleTransform),
-    opacity: handleIsDragging ? 0.5 : 1,
+    opacity: handleIsDragging ? 0 : 1,  // 드래그 중일 때 완전히 숨김
   };
 
   return (

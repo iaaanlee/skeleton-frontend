@@ -17,7 +17,10 @@ type Props = {
 };
 
 // 파트 드래그 버튼 컴포넌트 (인라인)
-const PartDragButton: React.FC<{ partDragItem: DragItem }> = ({ partDragItem }) => {
+const PartDragButton: React.FC<{
+  partDragItem: DragItem;
+  onDraggingChange: (isDragging: boolean) => void;
+}> = ({ partDragItem, onDraggingChange }) => {
   const {
     attributes,
     listeners,
@@ -29,9 +32,13 @@ const PartDragButton: React.FC<{ partDragItem: DragItem }> = ({ partDragItem }) 
     data: partDragItem,
   });
 
+  // isDragging 상태 변경 시 부모에게 알림
+  React.useEffect(() => {
+    onDraggingChange(isDragging);
+  }, [isDragging, onDraggingChange]);
+
   const style = {
     transform: CSS.Transform.toString(transform),
-    opacity: isDragging ? 0.5 : 1,
   };
 
   return (
@@ -88,6 +95,9 @@ const PartCard: React.FC<PartCardProps> = ({
   togglePartExpansion,
   toggleSetExpansion,
 }) => {
+  // 드래그 중 상태 추적
+  const [isDragging, setIsDragging] = React.useState(false);
+
   // 파트 DragItem 생성
   const partDragItem: DragItem = {
     id: generatePartDragId(partIndex, part.partSeedId),
@@ -201,6 +211,7 @@ const PartCard: React.FC<PartCardProps> = ({
       className={`bg-white border rounded-lg transition-all duration-200 ${
         isActive ? 'border-orange-400 shadow-md' : 'border-gray-200'
       }`}
+      style={{ opacity: isDragging ? 0 : 1 }}
       data-part-id={`part-${partIndex}`}
       data-collapsed={!isExpanded}
     >
@@ -245,7 +256,7 @@ const PartCard: React.FC<PartCardProps> = ({
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <PartDragButton partDragItem={partDragItem} />
+          <PartDragButton partDragItem={partDragItem} onDraggingChange={setIsDragging} />
         </div>
       </div>
 

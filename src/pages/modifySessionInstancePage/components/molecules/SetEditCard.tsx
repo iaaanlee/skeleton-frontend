@@ -49,11 +49,6 @@ export const SetEditCard: React.FC<Props> = ({
   const isExpanded = propIsExpanded !== undefined
     ? propIsExpanded
     : (partIndex === 0 && setIndex === 0); // fallback for backward compatibility
-  const [isEditingSettings, setIsEditingSettings] = useState(false);
-  const [editingRestTime, setEditingRestTime] = useState(set.restTime);
-  const [editingTimeLimit, setEditingTimeLimit] = useState(set.timeLimit);
-  // PRD PAGES 요구사항: "동일 세트 패턴 일괄 적용" 토글
-  const [applyToSimilarSets, setApplyToSimilarSets] = useState(false);
 
   // Phase 2: RestTimeEditBottomSheet 모달 상태
   const [restTimeModalOpen, setRestTimeModalOpen] = useState(false);
@@ -109,8 +104,6 @@ export const SetEditCard: React.FC<Props> = ({
     attributes,
     listeners,
     setNodeRef,
-    transform,
-    isDragging,
   } = useDraggable({
     id: dragItem.id,
     data: dragItem,
@@ -139,44 +132,14 @@ export const SetEditCard: React.FC<Props> = ({
     disabled: isExpanded // 펼쳐져 있으면 드롭존 비활성화
   });
 
-  const handleSaveSettings = () => {
-    const updatedSet = {
-      ...set,
-      restTime: editingRestTime,
-      timeLimit: editingTimeLimit
-    };
-
-    // PRD PAGES 요구사항: 일괄 적용 토글 처리
-    if (applyToSimilarSets) {
-      // TODO: Stage 4B 고급 구현에서 세션 내 유사한 패턴의 세트들에 설정 적용
-      console.log('일괄 적용 모드: 유사한 세트에 설정 적용 예정', {
-        restTime: editingRestTime,
-        timeLimit: editingTimeLimit,
-        exerciseCount: set.exercises.length
-      });
-      // 실제 구현은 상위 컴포넌트에서 전체 세션 데이터에 접근해서 처리해야 함
-    }
-
-    onUpdateSet(updatedSet);
-    setIsEditingSettings(false);
-  };
-
-  const handleCancelSettings = () => {
-    setEditingRestTime(set.restTime);
-    setEditingTimeLimit(set.timeLimit);
-    setApplyToSimilarSets(false); // 토글도 초기화
-    setIsEditingSettings(false);
-  };
-
   // Phase 2: RestTimeEditBottomSheet 저장 핸들러
   const handleRestTimeModalSave = (restTime: number, applyToAll: boolean) => {
-    // 기존 handleSaveSettings 패턴과 동일하게 처리
     const updatedSet = {
       ...set,
       restTime: restTime
     };
 
-    // PRD 요구사항: 일괄 적용 토글 처리 (기존 로직 재사용)
+    // PRD 요구사항: 일괄 적용 토글 처리
     if (applyToAll) {
       console.log('일괄 적용 모드: 세션 내 모든 휴식에 변경 사항 적용', {
         restTime: restTime,
@@ -185,21 +148,17 @@ export const SetEditCard: React.FC<Props> = ({
       // 실제 구현은 상위 컴포넌트에서 전체 세션 데이터에 접근해서 처리해야 함
     }
 
-    // 로컬 state도 업데이트 (기존 인라인 편집과 동기화)
-    setEditingRestTime(restTime);
-
     onUpdateSet(updatedSet);
   };
 
   // Phase 4: TimeLimitEditBottomSheet 저장 핸들러
   const handleTimeLimitModalSave = (timeLimit: number | null, applyToAll: boolean) => {
-    // 기존 handleSaveSettings 패턴과 동일하게 처리
     const updatedSet = {
       ...set,
       timeLimit: timeLimit
     };
 
-    // PRD 요구사항: 일괄 적용 토글 처리 (기존 로직 재사용)
+    // PRD 요구사항: 일괄 적용 토글 처리
     if (applyToAll) {
       console.log('일괄 적용 모드: 세션 내 모든 시간 제한에 변경 사항 적용', {
         timeLimit: timeLimit,
@@ -207,9 +166,6 @@ export const SetEditCard: React.FC<Props> = ({
       });
       // 실제 구현은 상위 컴포넌트에서 전체 세션 데이터에 접근해서 처리해야 함
     }
-
-    // 로컬 state도 업데이트 (기존 인라인 편집과 동기화)
-    setEditingTimeLimit(timeLimit);
 
     onUpdateSet(updatedSet);
   };
@@ -351,76 +307,6 @@ export const SetEditCard: React.FC<Props> = ({
                 : `운동 시간 제한 ${set.timeLimit}초`}
             </div>
           </div>
-
-      {/* Set Settings Editor */}
-      {isEditingSettings && (
-        <div className="bg-white rounded-lg p-3 mb-3 border">
-          <div className="space-y-3">
-            <h5 className="text-sm font-medium text-gray-900">세트 설정</h5>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">휴식 시간 (초)</label>
-                <input
-                  type="number"
-                  value={editingRestTime}
-                  onChange={(e) => setEditingRestTime(parseInt(e.target.value) || 0)}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  min="0"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">시간 제한 (초, 선택사항)</label>
-                <input
-                  type="number"
-                  value={editingTimeLimit || ''}
-                  onChange={(e) => setEditingTimeLimit(e.target.value ? parseInt(e.target.value) : null)}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  min="1"
-                  placeholder="제한 없음"
-                />
-              </div>
-            </div>
-
-            {/* PRD PAGES 요구사항: 일괄 적용 토글 */}
-            <div className="border-t pt-3">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="applyToSimilarSets"
-                  checked={applyToSimilarSets}
-                  onChange={(e) => setApplyToSimilarSets(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                />
-                <label htmlFor="applyToSimilarSets" className="text-sm text-gray-700">
-                  이 세션 내 동일 세트 패턴 일괄 적용
-                </label>
-              </div>
-              {applyToSimilarSets && (
-                <p className="mt-1 text-xs text-gray-500">
-                  비슷한 구성의 세트들({set.exercises.length}개 운동)에 동일한 휴식/제한시간이 적용됩니다
-                </p>
-              )}
-            </div>
-
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={handleCancelSettings}
-                className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleSaveSettings}
-                className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
-              >
-                저장
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
           {/* 운동 목록 - session-details 스타일 래퍼 */}
           {set.exercises.length > 0 && (
