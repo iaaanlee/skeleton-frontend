@@ -5,7 +5,6 @@ import { DraggableCard } from '../atoms';
 import type { DragItem, PlaceholderInfo } from '../../../../hooks/useDragAndDrop';
 import { ExerciseName } from '../../../sessionInstanceDetailsPage/components/molecules/ExerciseName';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
 import { useStatePreservation } from '../../../sessionInstanceDetailsPage/hooks/useStatePreservation';
 import { generatePartDragId } from '../../../../utils/dragIdGenerator';
 
@@ -17,47 +16,6 @@ type Props = {
   placeholderInfo?: PlaceholderInfo;
 };
 
-// 파트 드래그 버튼 컴포넌트 (인라인)
-const PartDragButton: React.FC<{
-  partDragItem: DragItem;
-  onDraggingChange: (isDragging: boolean) => void;
-}> = ({ partDragItem, onDraggingChange }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    isDragging,
-  } = useDraggable({
-    id: partDragItem.id,
-    data: partDragItem,
-  });
-
-  // isDragging 상태 변경 시 부모에게 알림
-  React.useEffect(() => {
-    onDraggingChange(isDragging);
-  }, [isDragging, onDraggingChange]);
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-  };
-
-  return (
-    <button
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing"
-      title="파트 이동"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    </button>
-  );
-};
 
 // 파트 카드 컴포넌트 Props
 type PartCardProps = {
@@ -98,9 +56,6 @@ const PartCard: React.FC<PartCardProps> = ({
   toggleSetExpansion,
   placeholderInfo,
 }) => {
-  // 드래그 중 상태 추적
-  const [isDragging, setIsDragging] = React.useState(false);
-
   // 파트 DragItem 생성
   const partDragItem: DragItem = {
     id: generatePartDragId(partIndex, part.partSeedId),
@@ -117,6 +72,20 @@ const PartCard: React.FC<PartCardProps> = ({
       partIndex
     }
   };
+
+  // Pin System에서 드래그 권한 체크
+  const canDrag = true; // 파트는 항상 드래그 가능 (Pin System 미적용)
+
+  // useDraggable 훅 사용 (SetEditCard 패턴)
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+  } = useDraggable({
+    id: partDragItem.id,
+    data: partDragItem,
+    disabled: !canDrag
+  });
 
   // 파트 헤더 드롭존 생성 (세트 해결책과 동일한 패턴)
   type DropZone = {
@@ -178,18 +147,23 @@ const PartCard: React.FC<PartCardProps> = ({
   };
 
   return (
-    <div
-      className={`bg-white border rounded-lg transition-all duration-200 ${
-        isActive ? 'border-orange-400 shadow-md' : 'border-gray-200'
+    <DraggableCard
+      dragItem={partDragItem}
+      pinState={defaultPinState}
+      disabled={true}
+      dragHandle={false}
+      className={`border rounded-lg overflow-hidden transition-colors ${
+        isActive
+          ? 'border-orange-400 bg-orange-50'
+          : 'border-gray-200 bg-white hover:bg-gray-50'
       }`}
-      style={{ opacity: isDragging ? 0 : 1 }}
       data-part-id={`part-${partIndex}`}
       data-collapsed={!isExpanded}
     >
       {/* Part Header */}
       <div
         ref={partHeaderDropRef}
-        className={`px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors ${
+        className={`px-4 py-4 flex items-center justify-between transition-colors ${
           isHeaderOver ? 'bg-blue-50' : ''
         }`}
       >
@@ -227,7 +201,19 @@ const PartCard: React.FC<PartCardProps> = ({
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <PartDragButton partDragItem={partDragItem} onDraggingChange={setIsDragging} />
+          {/* 드래그 핸들 버튼 - SetEditCard 패턴 */}
+          <button
+            ref={setNodeRef}
+            {...(canDrag ? { ...attributes, ...listeners } : {})}
+            className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing"
+            title="파트 이동"
+            disabled={!canDrag}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -313,7 +299,7 @@ const PartCard: React.FC<PartCardProps> = ({
           )}
         </div>
       )}
-    </div>
+    </DraggableCard>
   );
 };
 
