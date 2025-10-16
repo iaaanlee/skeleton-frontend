@@ -108,6 +108,18 @@ const PartCard: React.FC<PartCardProps> = ({
     disabled: isExpanded // ✨ 펼쳐져 있으면 드롭존 비활성화
   });
 
+  // 세트 목록 영역 드롭존 (펼쳤을 때만 활성화) - SetEditCard 패턴
+  const { setNodeRef: partContentDropRef, isOver: isContentOver } = useDroppable({
+    id: partDragItem.id, // 같은 ID 사용
+    data: {
+      id: partDragItem.id,
+      type: 'container',
+      accepts: ['set'], // 세트만 받음
+      autoExpand: false
+    },
+    disabled: !isExpanded // 닫혀있으면 컨텐츠 드롭존 비활성화
+  });
+
   // 파트 요약 텍스트
   const getPartSummary = (part: EffectivePartBlueprint) => {
     const totalSets = part.sets.length;
@@ -209,6 +221,12 @@ const PartCard: React.FC<PartCardProps> = ({
             title="파트 이동"
             disabled={!canDrag}
             onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => {
+              // 🆕 별도 기능: 파트 드래그 시작 전 모든 파트 닫기
+              const collapseEvent = new CustomEvent('drag-start-collapse-parts');
+              document.dispatchEvent(collapseEvent);
+              // 이벤트 전파 계속 (드래그 센서가 처리)
+            }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -217,9 +235,9 @@ const PartCard: React.FC<PartCardProps> = ({
         </div>
       </div>
 
-      {/* Part Content (Collapsible) */}
+      {/* Part Content (Collapsible) - 전체 영역 드롭존 */}
       {isExpanded && (
-        <div className="p-4 space-y-3">
+        <div ref={partContentDropRef} className="p-4 space-y-3">
           {part.sets.map((set, setIndex) => {
             // Placeholder 렌더링 로직: 현재 세트 이전에 삽입되어야 하는지 체크
             const shouldShowPlaceholderBefore =
@@ -305,7 +323,7 @@ const PartCard: React.FC<PartCardProps> = ({
 
 export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, sessionId, onChange, onActiveItemChange, placeholderInfo }) => {
   // 토글 상태 인계 시스템 적용
-  const { expandedParts, expandedSets, togglePartExpansion, toggleSetExpansion, initializeToggleStates } = useStatePreservation(sessionId);
+  const { expandedParts, expandedSets, togglePartExpansion, toggleSetExpansion, initializeToggleStates, collapseAllParts, collapseAllSets } = useStatePreservation(sessionId);
 
   const [activeItem, setActiveItem] = useState<ActiveItem>(null);
   // TODO: pendingModifications will be used in state management phase
@@ -371,6 +389,34 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
       document.removeEventListener('auto-expand-set', handleAutoExpandSet as EventListener);
     };
   }, [expandedSets, toggleSetExpansion]);
+
+  // 🆕 별도 기능: 세트 드래그 시작 시 모든 세트 닫기 이벤트 리스너
+  useEffect(() => {
+    const handleCollapseAllSets = () => {
+      console.log('세트 드래그 시작: 모든 세트 닫기');
+      collapseAllSets();
+    };
+
+    document.addEventListener('drag-start-collapse-sets', handleCollapseAllSets);
+
+    return () => {
+      document.removeEventListener('drag-start-collapse-sets', handleCollapseAllSets);
+    };
+  }, [collapseAllSets]);
+
+  // 🆕 별도 기능: 파트 드래그 시작 시 모든 파트 닫기 이벤트 리스너
+  useEffect(() => {
+    const handleCollapseAllParts = () => {
+      console.log('파트 드래그 시작: 모든 파트 닫기');
+      collapseAllParts();
+    };
+
+    document.addEventListener('drag-start-collapse-parts', handleCollapseAllParts);
+
+    return () => {
+      document.removeEventListener('drag-start-collapse-parts', handleCollapseAllParts);
+    };
+  }, [collapseAllParts]);
 
   // Default Pin State (no pins active) - will be replaced with actual Pin detection in next phase
   const defaultPinState: PinState = {
@@ -504,28 +550,57 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
           const isActive = activeItem?.level === 'part' && activeItem.id === part.partSeedId;
           const isExpanded = expandedParts.has(part.partSeedId);
 
+          // Session-level placeholder 체크
+          const shouldShowPlaceholderBefore =
+            placeholderInfo &&
+            placeholderInfo.containerType === 'session' &&
+            placeholderInfo.insertIndex === partIndex;
+
           return (
-            <PartCard
-              key={part.partSeedId}
-              part={part}
-              partIndex={partIndex}
-              isExpanded={isExpanded}
-              isActive={isActive}
-              expandedSets={expandedSets}
-              defaultPinState={defaultPinState}
-              activeItem={activeItem}
-              onPartClick={handlePartClick}
-              onSetClick={handleSetClick}
-              onExerciseClick={handleExerciseClick}
-              onUpdateSet={handleUpdateSet}
-              onDeleteSet={handleDeleteSet}
-              onAddExercise={handleAddExercise}
-              togglePartExpansion={togglePartExpansion}
-              toggleSetExpansion={toggleSetExpansion}
-              placeholderInfo={placeholderInfo}
-            />
+            <React.Fragment key={part.partSeedId}>
+              {/* Session-level Placeholder: 파트 이전 위치 */}
+              {shouldShowPlaceholderBefore && (
+                <div
+                  className="h-32 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out"
+                  style={{ opacity: 0.8 }}
+                >
+                  <span className="text-blue-600 text-sm font-medium">여기에 파트 삽입</span>
+                </div>
+              )}
+
+              <PartCard
+                part={part}
+                partIndex={partIndex}
+                isExpanded={isExpanded}
+                isActive={isActive}
+                expandedSets={expandedSets}
+                defaultPinState={defaultPinState}
+                activeItem={activeItem}
+                onPartClick={handlePartClick}
+                onSetClick={handleSetClick}
+                onExerciseClick={handleExerciseClick}
+                onUpdateSet={handleUpdateSet}
+                onDeleteSet={handleDeleteSet}
+                onAddExercise={handleAddExercise}
+                togglePartExpansion={togglePartExpansion}
+                toggleSetExpansion={toggleSetExpansion}
+                placeholderInfo={placeholderInfo}
+              />
+            </React.Fragment>
           );
         })}
+
+        {/* Session-level Placeholder: 마지막 파트 이후 위치 */}
+        {placeholderInfo &&
+          placeholderInfo.containerType === 'session' &&
+          placeholderInfo.insertIndex === effectiveBlueprint.length && (
+          <div
+            className="h-32 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out"
+            style={{ opacity: 0.8 }}
+          >
+            <span className="text-blue-600 text-sm font-medium">여기에 파트 삽입</span>
+          </div>
+        )}
 
         {effectiveBlueprint.length === 0 && (
           <div className="bg-white rounded-lg border p-8 text-center">

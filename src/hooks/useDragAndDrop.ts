@@ -145,8 +145,8 @@ const DND_CONFIG = {
  * Placeholder 정보 타입
  */
 export type PlaceholderInfo = {
-  containerId: string;  // 타겟 컨테이너 ID (set-X-Y-seed 또는 part-X-seed)
-  containerType: 'set' | 'part';
+  containerId: string;  // 타겟 컨테이너 ID (set-X-Y-seed, part-X-seed, 또는 'session')
+  containerType: 'set' | 'part' | 'session';
   insertIndex: number;  // 삽입될 인덱스 위치
   partIndex?: number;
   setIndex?: number;
@@ -196,17 +196,19 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
   const lastPlaceholderInfo = useRef<PlaceholderInfo>(null);
 
   // PRD 요구사항: 단순화된 센서 설정 - 충돌 방지
+  // 토글 닫기 애니메이션 대기: 100ms delay
   const pointerSensor = useSensor(PointerSensor, {
-    // 마우스 드래그: 클릭 후 바로 시작
+    // 마우스 드래그: 100ms 지연 (토글 닫기 + DOM 업데이트 완료 대기)
     activationConstraint: {
-      distance: 0,  // 0으로 변경 - 즉시 드래그 시작
+      delay: 100,  // 토글 애니메이션 완료 후 드래그 시작
+      tolerance: 5, // 5px 이동 허용
     },
   });
 
   const touchSensor = useSensor(TouchSensor, {
-    // 터치 드래그: 짧은 지연 후 시작 (스크롤과 구분)
+    // 터치 드래그: 100ms 지연 (토글 닫기 + 스크롤 구분)
     activationConstraint: {
-      delay: 100,  // 100ms - 스크롤과 구분하면서도 반응성 유지
+      delay: 100,  // 토글 애니메이션 완료 후 드래그 시작
       tolerance: 15, // 15px - 더 관대하게
     },
   });
@@ -447,32 +449,35 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
 
     // 타겟 컨테이너 식별 및 아이템 목록 가져오기
     let targetContainerId: string | null = null;
-    let containerType: 'set' | 'part' | null = null;
+    let containerType: 'set' | 'part' | 'session' | null = null;
     let partIndex: number | undefined;
     let setIndex: number | undefined;
     let items: HTMLElement[] = [];
 
-    // 1. 운동 위에 hover → 부모 세트가 타겟
+    // 1. 운동 위에 hover → 부모 세트가 타겟 (운동 드래그 시에만)
     if (overId.startsWith('exercise-')) {
-      // exercise-{partIndex}-{setIndex}-{exerciseIndex}-{templateId}
-      const parts = overId.split('-');
-      partIndex = parseInt(parts[1]);
-      setIndex = parseInt(parts[2]);
+      if (activeItem.type === 'exercise') {
+        // 운동 드래그 → 세트 내부의 운동들 사이
+        const parts = overId.split('-');
+        partIndex = parseInt(parts[1]);
+        setIndex = parseInt(parts[2]);
 
-      const parentSet = document.querySelector(
-        `[data-part-index="${partIndex}"][data-set-index="${setIndex}"]`
-      );
-      const setSeedId = parentSet?.getAttribute('data-set-id');
+        const parentSet = document.querySelector(
+          `[data-part-index="${partIndex}"][data-set-index="${setIndex}"]`
+        );
+        const setSeedId = parentSet?.getAttribute('data-set-id');
 
-      if (setSeedId) {
-        targetContainerId = `set-${partIndex}-${setIndex}-${setSeedId}`;
-        containerType = 'set';
+        if (setSeedId) {
+          targetContainerId = `set-${partIndex}-${setIndex}-${setSeedId}`;
+          containerType = 'set';
 
-        // 세트 내 모든 운동 아이템 가져오기 (SortableItem만 선택, placeholder 제외)
-        items = Array.from(parentSet?.querySelectorAll('[data-sortable-id][data-drag-type="exercise"]') || []) as HTMLElement[];
+          // 세트 내 모든 운동 아이템 가져오기 (SortableItem만 선택, placeholder 제외)
+          items = Array.from(parentSet?.querySelectorAll('[data-sortable-id][data-drag-type="exercise"]') || []) as HTMLElement[];
+        }
       }
+      // 세트/파트 드래그 중 운동 hover는 무시
     }
-    // 2. 세트 위에 hover (또는 세트의 exercises 영역)
+    // 2. 세트 위에 hover (드래그 타입에 따라 다르게 처리)
     else if (overId.startsWith('set-')) {
       let overIdStr = overId;
       if (overIdStr.endsWith('-exercises')) {
@@ -484,24 +489,58 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       setIndex = parseInt(parts[2]);
       const setSeedId = parts.slice(3).join('-');
 
-      targetContainerId = `set-${partIndex}-${setIndex}-${setSeedId}`;
-      containerType = 'set';
+      if (activeItem.type === 'exercise') {
+        // 운동 드래그 → 세트 내부의 운동들 사이
+        targetContainerId = `set-${partIndex}-${setIndex}-${setSeedId}`;
+        containerType = 'set';
 
-      const setElement = document.querySelector(`[data-set-id="${setSeedId}"]`);
-      items = Array.from(setElement?.querySelectorAll('[data-sortable-id][data-drag-type="exercise"]') || []) as HTMLElement[];
+        const setElement = document.querySelector(`[data-set-id="${setSeedId}"]`);
+        items = Array.from(setElement?.querySelectorAll('[data-sortable-id][data-drag-type="exercise"]') || []) as HTMLElement[];
+      } else if (activeItem.type === 'set') {
+        // 세트 드래그 → 부모 파트의 세트들 사이
+        const dataPartId = `part-${partIndex}`;
+        const partElement = document.querySelector(`[data-part-id="${dataPartId}"]`);
+
+        // 파트의 정확한 dragItem.id 가져오기 (DraggableCard가 설정한 data-drag-id 사용)
+        const partDragId = partElement?.getAttribute('data-drag-id');
+
+        if (partDragId) {
+          targetContainerId = partDragId;  // part-{partIndex}-{partSeedId}
+          containerType = 'part';
+          items = Array.from(partElement?.querySelectorAll('[data-sortable-id][data-drag-type="set"]') || []) as HTMLElement[];
+        }
+      }
+      // 파트 드래그 중 세트 hover는 무시
     }
-    // 3. 파트 위에 hover
+    // 3. 파트 위에 hover (드래그 타입에 따라 다르게 처리)
     else if (overId.startsWith('part-')) {
       const parts = overId.split('-');
       partIndex = parseInt(parts[1]);
       const partSeedId = parts.slice(2).join('-');
 
-      targetContainerId = `part-${partIndex}-${partSeedId}`;
-      containerType = 'part';
+      if (activeItem.type === 'exercise') {
+        // 운동 드래그 → 파트의 세트들 중... 어느 세트?
+        // 일단 파트의 첫 번째 세트로 이동 (또는 빈 세트 생성)
+        // TODO: 이 케이스는 나중에 처리
+        targetContainerId = null;
+        containerType = null;
+      } else if (activeItem.type === 'set') {
+        // 세트 드래그 → 파트의 세트들 사이
+        targetContainerId = `part-${partIndex}-${partSeedId}`;
+        containerType = 'part';
 
-      const dataPartId = `part-${partIndex}`;
-      const partElement = document.querySelector(`[data-part-id="${dataPartId}"]`);
-      items = Array.from(partElement?.querySelectorAll('[data-sortable-id][data-drag-type="set"]') || []) as HTMLElement[];
+        const dataPartId = `part-${partIndex}`;
+        const partElement = document.querySelector(`[data-part-id="${dataPartId}"]`);
+        items = Array.from(partElement?.querySelectorAll('[data-sortable-id][data-drag-type="set"]') || []) as HTMLElement[];
+      } else if (activeItem.type === 'part') {
+        // 파트 드래그 → 세션의 파트들 사이
+        targetContainerId = 'session';
+        containerType = 'session';
+
+        // Get all part elements at session level
+        const sessionContainer = document.querySelector('[data-scroll-container]');
+        items = Array.from(sessionContainer?.querySelectorAll('[data-sortable-id][data-drag-type="part"]') || []) as HTMLElement[];
+      }
     }
 
     if (!targetContainerId || !containerType || items.length === 0) {
@@ -592,6 +631,8 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
     dragStartTimeRef.current = Date.now();
     currentPointerY.current = -1;  // 포인터 위치 초기화
     lastPlaceholderInfo.current = null;  // placeholder 정보 초기화
+
+    // 토글 닫기는 드래그 핸들의 onPointerDown에서 이미 처리됨 (100ms 전에)
 
     setActiveItem(dragItem);
     triggerHapticFeedback(); // PRD: 가벼운 햅틱

@@ -218,9 +218,7 @@ export const SetEditCard: React.FC<Props> = ({
       {/* 세트 헤더 - session-details 스타일 */}
       <div
         ref={setHeaderDropRef}
-        className={`px-3 pt-3 ${isExpanded ? 'pb-2' : 'pb-3'} ${
-          isHeaderOver ? 'bg-blue-50' : ''
-        }`}
+        className={`px-3 pt-3 ${isExpanded ? 'pb-2' : 'pb-3'}`}
       >
         <div className="flex items-center justify-between">
           {/* 왼쪽: 토글 + 세트 정보 */}
@@ -283,6 +281,12 @@ export const SetEditCard: React.FC<Props> = ({
               className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing"
               title="세트 이동"
               disabled={!canDrag}
+              onPointerDown={(e) => {
+                // 🆕 별도 기능: 세트 드래그 시작 전 모든 세트 닫기
+                const collapseEvent = new CustomEvent('drag-start-collapse-sets');
+                document.dispatchEvent(collapseEvent);
+                // 이벤트 전파 계속 (드래그 센서가 처리)
+              }}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -296,7 +300,7 @@ export const SetEditCard: React.FC<Props> = ({
       {isExpanded && (
         <div
           ref={setContentDropRef}
-          className={`${isContentOver ? 'bg-blue-50' : ''}`}
+          className=""
         >
           {/* 시간제한 배지 - session-details 스타일 + 클릭 가능 */}
           <div className="px-3 mb-3">

@@ -133,6 +133,22 @@ export const useStatePreservation = (sessionInstanceId: string) => {
     });
   }, []);
 
+  // 모든 파트 닫기 (드래그 시작 시 사용) - 별도 기능
+  const collapseAllParts = useCallback(() => {
+    setToggleStates(prev => ({
+      ...prev,
+      expandedParts: new Set()
+    }));
+  }, []);
+
+  // 모든 세트 닫기 (드래그 시작 시 사용) - 별도 기능
+  const collapseAllSets = useCallback(() => {
+    setToggleStates(prev => ({
+      ...prev,
+      expandedSets: new Set()
+    }));
+  }, []);
+
   // 세션 종료 시 상태 정리 (옵션)
   const clearSessionState = () => {
     localStorage.removeItem(`session-${sessionInstanceId}-activeTab`);
@@ -152,6 +168,9 @@ export const useStatePreservation = (sessionInstanceId: string) => {
     togglePartExpansion,
     toggleSetExpansion,
     initializeToggleStates,
+    // 드래그 시작 시 토글 닫기 (별도 기능)
+    collapseAllParts,
+    collapseAllSets,
     clearSessionState
   };
 };
