@@ -113,18 +113,26 @@ export const SetEditCard: React.FC<Props> = ({
     generateExerciseDragId(partIndex || 0, setIndex, index, exercise.exerciseTemplateId)
   );
 
-  // 세트가 닫혀있을 때 세트 헤더를 드롭존으로 만들기
-  const setHeaderDropZone: DropZone = {
+  // 세트 전체를 드롭존으로 만들기 (닫혔을 때 = 헤더만, 펼쳤을 때 = 운동 목록 영역)
+  const setDropZone: DropZone = {
     id: dragItem.id, // set-{partIndex}-{setIndex}-{setSeedId}
     type: 'container',
     accepts: ['exercise'],
     autoExpand: false
   };
 
+  // 헤더 드롭존 (닫혔을 때만 활성화)
   const { setNodeRef: setHeaderDropRef, isOver: isHeaderOver } = useDroppable({
-    id: setHeaderDropZone.id,
-    data: setHeaderDropZone,
-    disabled: isExpanded // 펼쳐져 있으면 드롭존 비활성화
+    id: setDropZone.id,
+    data: setDropZone,
+    disabled: isExpanded // 펼쳐져 있으면 헤더 드롭존 비활성화
+  });
+
+  // 운동 목록 영역 드롭존 (펼쳤을 때만 활성화)
+  const { setNodeRef: setContentDropRef, isOver: isContentOver } = useDroppable({
+    id: setDropZone.id,
+    data: setDropZone,
+    disabled: !isExpanded // 닫혀있으면 컨텐츠 드롭존 비활성화
   });
 
   // Phase 2: RestTimeEditBottomSheet 저장 핸들러
@@ -284,9 +292,12 @@ export const SetEditCard: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 세트 내용 - 접힘/펼침 */}
+      {/* 세트 내용 - 접힘/펼침 + 전체 영역 드롭존 */}
       {isExpanded && (
-        <>
+        <div
+          ref={setContentDropRef}
+          className={`${isContentOver ? 'bg-blue-50' : ''}`}
+        >
           {/* 시간제한 배지 - session-details 스타일 + 클릭 가능 */}
           <div className="px-3 mb-3">
             <div
@@ -388,24 +399,25 @@ export const SetEditCard: React.FC<Props> = ({
           )}
 
           {/* 빈 세트에서도 placeholder 표시 */}
-          {set.exercises.length === 0 &&
-            placeholderInfo &&
-            placeholderInfo.containerType === 'set' &&
-            placeholderInfo.containerId === dragId &&
-            placeholderInfo.insertIndex === 0 && (
-            <div className="px-3 mb-2">
-              <div
-                className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
-                data-placeholder="true"
-              >
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-2 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg whitespace-nowrap pointer-events-none">
-                  <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+          {set.exercises.length === 0 && (
+            <div className="px-3 mb-2 min-h-[60px]">
+              {placeholderInfo &&
+                placeholderInfo.containerType === 'set' &&
+                placeholderInfo.containerId === dragId &&
+                placeholderInfo.insertIndex === 0 && (
+                <div
+                  className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
+                  data-placeholder="true"
+                >
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-2 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg whitespace-nowrap pointer-events-none">
+                    <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
-          {/* 휴식시간 섹션 - session-details 스타일 + 클릭 가능 */}
+          {/* 휴식시간 섹션 - session-details 스타일 + 클릭 가능 (드롭존 내부!) */}
           {set.restTime && set.restTime > 0 && (
             <div className="px-3 mb-3">
               <div
@@ -432,6 +444,7 @@ export const SetEditCard: React.FC<Props> = ({
             </div>
           )}
 
+          {/* 빈 세트 안내 메시지 (드롭존 내부!) */}
           {set.exercises.length === 0 && (
             <div className="px-3 mb-3">
               <div className="text-center py-4 text-gray-500 bg-white rounded-lg border border-dashed">
@@ -440,7 +453,7 @@ export const SetEditCard: React.FC<Props> = ({
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Phase 2: RestTimeEditBottomSheet 모달 */}
