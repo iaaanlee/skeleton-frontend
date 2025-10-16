@@ -1,6 +1,5 @@
 import React from 'react';
-import { useDraggable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
+import { useDroppable } from '@dnd-kit/core';
 import type { DragItem } from '../../../../hooks/useDragAndDrop';
 import { PinWrapper } from './PinWrapper';
 import type { PinState } from '../../../../types/workout';
@@ -16,7 +15,8 @@ type Props = {
 
 /**
  * Set Draggable Card Component
- * 세트 전용 드래그 카드 - data-sortable-id 포함
+ * DraggableCard와 동일한 역할 - collision detection만 담당
+ * 실제 드래그는 SortableItem에서 처리
  */
 export const SetDraggableCard: React.FC<Props> = ({
   dragItem,
@@ -27,23 +27,20 @@ export const SetDraggableCard: React.FC<Props> = ({
   dragHandle = false,
   ...dataAttributes // 추가 data 속성들 (data-set-id, data-collapsed 등)
 }) => {
+  // useDroppable: collision detection을 위한 droppable 기능만 제공
+  // 실제 드래그는 SortableItem이 처리하므로 useDraggable 제거
   const {
-    attributes,
-    listeners,
     setNodeRef,
-    transform,
-    isDragging,
-  } = useDraggable({
+    isOver
+  } = useDroppable({
     id: dragItem.id,
     data: dragItem,
-    disabled: disabled || dragHandle // dragHandle이 true면 기본 드래그 완전 비활성화
+    disabled: false // 항상 droppable (collision detection을 위해 필수)
   });
 
+  // transform 제거 - SortableItem에서 처리
   const style = {
-    transform: CSS.Transform.toString(transform),
-    opacity: isDragging ? 0 : 1,  // 드래그 중일 때 완전히 숨김
     touchAction: 'none',
-    pointerEvents: isDragging ? ('none' as const) : ('auto' as const),
   };
 
   // Default Pin State (no pins active)
@@ -59,76 +56,20 @@ export const SetDraggableCard: React.FC<Props> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`touch-none select-none ${isDragging ? 'pointer-events-none' : ''} ${className}`}
+      className={`touch-none select-none ${className}`}
       data-sortable-id={dragItem.id}
       data-drag-type={dragItem.type}
       data-drag-id={dragItem.id}
       {...dataAttributes} // 추가 data 속성들 적용 (data-set-id, data-collapsed 등)
-      // dragHandle이 false일 때만 전체 영역에서 드래그 가능
-      {...(!dragHandle && !disabled ? { ...attributes, ...listeners } : {})}
     >
       <PinWrapper
         pinState={activePinState}
-        className={`
-          transition-transform duration-200
-          ${isDragging ? 'scale-105 shadow-xl' : 'shadow-sm'}
-          ${disabled ? 'cursor-not-allowed' : dragHandle ? '' : 'cursor-grab active:cursor-grabbing'}
-        `}
+        className="transition-transform duration-200 shadow-sm"
         showPinIndicator={true}
         pinIndicatorPosition="top-right"
       >
-        <div className="relative">
-          {children}
-
-          {/* 드래그 핸들이 필요한 경우 별도의 드래그 핸들 생성 */}
-          {dragHandle && !disabled && (
-            <div className="absolute top-1/2 -translate-y-1/2 right-3 z-10">
-              <DragHandleButton
-                dragItem={dragItem}
-                attributes={attributes}
-                listeners={listeners}
-              />
-            </div>
-          )}
-        </div>
+        {children}
       </PinWrapper>
-    </div>
-  );
-};
-
-// 별도의 드래그 핸들 버튼 컴포넌트
-const DragHandleButton: React.FC<{
-  dragItem: DragItem;
-  attributes: any;
-  listeners: any;
-}> = ({ dragItem, attributes, listeners }) => {
-  const {
-    setNodeRef: handleNodeRef,
-    transform: handleTransform,
-    isDragging: handleIsDragging,
-  } = useDraggable({
-    id: `handle-${dragItem.id}`,
-    data: dragItem,
-  });
-
-  const handleStyle = {
-    transform: CSS.Transform.toString(handleTransform),
-    opacity: handleIsDragging ? 0 : 1,  // 드래그 중일 때 완전히 숨김
-  };
-
-  return (
-    <div
-      ref={handleNodeRef}
-      style={handleStyle}
-      {...attributes}
-      {...listeners}
-      className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing bg-white shadow-sm border border-gray-300"
-      title={`${dragItem.type} 이동`}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
     </div>
   );
 };

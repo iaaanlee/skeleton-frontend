@@ -64,7 +64,7 @@ export const SortableItem: React.FC<Props> = ({
   const itemClasses = [
     'touch-manipulation',
     'transition-all duration-200',
-    isDragging ? 'scale-105 shadow-xl opacity-50 z-40' : 'shadow-sm',
+    isDragging ? 'scale-105 shadow-xl z-40' : 'shadow-sm',
     isOver ? 'scale-102 shadow-md' : '',
     !canDrag ? 'cursor-not-allowed opacity-60' : 'cursor-grab active:cursor-grabbing',
     className

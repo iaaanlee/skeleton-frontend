@@ -3,7 +3,7 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ExerciseEditCard } from './ExerciseEditCard';
 import type { EffectiveSetBlueprint, EffectiveExerciseBlueprint, PinState, ActiveItem } from '../../../../types/workout';
-import { SetDraggableCard } from '../atoms/SetDraggableCard';
+import { DraggableCard } from '../atoms/DraggableCard';
 import { SortableItem } from '../atoms/SortableItem';
 import type { DragItem, DropZone, PlaceholderInfo } from '../../../../hooks/useDragAndDrop';
 import { PinSystemHelpers } from '../../../../types/workout';
@@ -97,11 +97,12 @@ export const SetEditCard: React.FC<Props> = ({
   const effectivePin = PinSystemHelpers.getEffectivePinState(activePinState);
   const canDrag = effectivePin.canDrag;
 
-  // useDraggable 훅 사용
+  // useDraggable 훅 사용 (드래그 핸들용 - ExerciseEditCard 패턴 따름)
+  // setNodeRef는 사용하지 않음 (DraggableCard에서 처리)
   const {
     attributes,
     listeners,
-    setNodeRef,
+    // setNodeRef,  ← ExerciseEditCard처럼 주석처리 (DraggableCard의 ref와 충돌 방지)
   } = useDraggable({
     id: dragItem.id,
     data: dragItem,
@@ -203,7 +204,7 @@ export const SetEditCard: React.FC<Props> = ({
   };
 
   return (
-    <SetDraggableCard
+    <DraggableCard
       dragItem={dragItem}
       pinState={activePinState}
       disabled={true}
@@ -277,9 +278,8 @@ export const SetEditCard: React.FC<Props> = ({
               </svg>
             </button>
 
-            {/* 드래그 핸들 */}
+            {/* 드래그 핸들 (ExerciseEditCard 패턴: ref 없이 attributes/listeners만 전달) */}
             <button
-              ref={setNodeRef}
               {...(canDrag ? { ...attributes, ...listeners } : {})}
               className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing"
               title="세트 이동"
@@ -403,7 +403,7 @@ export const SetEditCard: React.FC<Props> = ({
                         }
                       }}
                       pinState={activePinState}
-                      disabled={true}
+                      disabled={false}
                     >
                       <ExerciseEditCard
                         exercise={exercise}
@@ -517,6 +517,6 @@ export const SetEditCard: React.FC<Props> = ({
         onSave={handleTimeLimitModalSave}
       />
 
-    </SetDraggableCard>
+    </DraggableCard>
   );
 };

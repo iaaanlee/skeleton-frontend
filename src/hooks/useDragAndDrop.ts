@@ -323,18 +323,11 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       }
     }
 
-    // 일반 컨테이너: 세트 드래그 시 closestCenter, 나머지는 rectIntersection
+    // 일반 컨테이너: 모두 rectIntersection 사용 (운동/세트/파트 통일)
+    // rectIntersection을 사용하면 드래그 중인 아이템의 rect와 타겟의 교차를 판정
+    // → 마우스 위치에 따라 overId가 실시간으로 변경됨
+    // → calculateInsertionPosition이 재호출되어 placeholder가 업데이트됨
     if (regularContainers.length > 0) {
-      // 세트 드래그 시에는 closestCenter 사용 (닫힌 세트의 작은 rect로 인한 문제 해결)
-      if (activeItem?.type === 'set') {
-        const result = closestCenter({
-          ...args,
-          droppableContainers: regularContainers
-        });
-        return result;
-      }
-
-      // 운동/파트 드래그 시에는 rectIntersection 사용
       const result = rectIntersection({
         ...args,
         droppableContainers: regularContainers

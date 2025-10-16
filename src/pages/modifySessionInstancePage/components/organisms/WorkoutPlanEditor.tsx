@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { ExerciseSelectionBottomSheet, SetEditCard } from '../molecules';
 import type { EffectivePartBlueprint, ModifySessionRequest, PartModification, ExerciseTemplate, EffectiveSetBlueprint, PinState, ActiveItem } from '../../../../types/workout';
 import { PartDraggableCard } from '../atoms/PartDraggableCard';
+import { SortableItem } from '../atoms/SortableItem';
 import type { DragItem, PlaceholderInfo } from '../../../../hooks/useDragAndDrop';
 import { ExerciseName } from '../../../sessionInstanceDetailsPage/components/molecules/ExerciseName';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useStatePreservation } from '../../../sessionInstanceDetailsPage/hooks/useStatePreservation';
-import { generatePartDragId } from '../../../../utils/dragIdGenerator';
+import { generatePartDragId, generateSetDragId } from '../../../../utils/dragIdGenerator';
 
 type Props = {
   effectiveBlueprint: EffectivePartBlueprint[];
@@ -78,6 +80,11 @@ const PartCard: React.FC<PartCardProps> = ({
 
   // Pin System에서 드래그 권한 체크
   const canDrag = true; // 파트는 항상 드래그 가능 (Pin System 미적용)
+
+  // Sortable 세트 목록 생성 (ID 충돌 방지를 위한 고유 ID) - Exercise 패턴
+  const setIds = part.sets.map((set, index) =>
+    generateSetDragId(partIndex, index, set.setSeedId)
+  );
 
   // useDraggable 훅 사용 (SetEditCard 패턴)
   const {
@@ -277,47 +284,71 @@ const PartCard: React.FC<PartCardProps> = ({
       {/* Part Content (Collapsible) - 전체 영역 드롭존 */}
       {isExpanded && (
         <div ref={partContentDropRef} className="px-4 pt-4 pb-12 space-y-3">
-          {part.sets.map((set, setIndex) => {
-            // Placeholder 렌더링 로직: 현재 세트 이전에 삽입되어야 하는지 체크
-            const shouldShowPlaceholderBefore =
-              placeholderInfo &&
-              placeholderInfo.containerType === 'part' &&
-              placeholderInfo.containerId === partDragItem.id &&
-              placeholderInfo.insertIndex === setIndex;
+          <SortableContext items={setIds} strategy={verticalListSortingStrategy}>
+            {part.sets.map((set, setIndex) => {
+              // Placeholder 렌더링 로직: 현재 세트 이전에 삽입되어야 하는지 체크
+              const shouldShowPlaceholderBefore =
+                placeholderInfo &&
+                placeholderInfo.containerType === 'part' &&
+                placeholderInfo.containerId === partDragItem.id &&
+                placeholderInfo.insertIndex === setIndex;
 
-            return (
-              <React.Fragment key={set.setSeedId}>
-                {/* Placeholder: 세트 이전 위치 */}
-                {shouldShowPlaceholderBefore && (
-                  <div
-                    className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
-                    data-placeholder="true"
-                  >
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-2 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg whitespace-nowrap pointer-events-none">
-                      <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+              return (
+                <React.Fragment key={set.setSeedId}>
+                  {/* Placeholder: 세트 이전 위치 */}
+                  {shouldShowPlaceholderBefore && (
+                    <div
+                      className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
+                      data-placeholder="true"
+                    >
+                      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-2 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg whitespace-nowrap pointer-events-none">
+                        <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                <SetEditCard
-                  set={set}
-                  setIndex={setIndex}
-                  partIndex={partIndex}
-                  parentId={partDragItem.id}
-                  pinState={defaultPinState}
-                  activeItem={activeItem}
-                  onSetClick={onSetClick}
-                  onExerciseClick={onExerciseClick}
-                  onUpdateSet={(updatedSet) => onUpdateSet(partIndex, setIndex, updatedSet)}
-                  onDeleteSet={() => onDeleteSet(partIndex, setIndex)}
-                  onAddExercise={() => onAddExercise(partIndex)}
-                  isExpanded={expandedSets.has(set.setSeedId)}
-                  onToggle={toggleSetExpansion}
-                  placeholderInfo={placeholderInfo}
-                />
-              </React.Fragment>
-            );
-          })}
+                  <SortableItem
+                    sortableId={setIds[setIndex]}
+                    dragItem={{
+                      id: setIds[setIndex],
+                      type: 'set',
+                      data: {
+                        name: `세트 ${setIndex + 1}`,
+                        set: set,
+                        setIndex: setIndex
+                      },
+                      pinState: defaultPinState,
+                      parentId: partDragItem.id,
+                      level: 'set',
+                      indices: {
+                        partIndex,
+                        setIndex
+                      }
+                    }}
+                    pinState={defaultPinState}
+                    disabled={false}
+                  >
+                    <SetEditCard
+                      set={set}
+                      setIndex={setIndex}
+                      partIndex={partIndex}
+                      parentId={partDragItem.id}
+                      pinState={defaultPinState}
+                      activeItem={activeItem}
+                      onSetClick={onSetClick}
+                      onExerciseClick={onExerciseClick}
+                      onUpdateSet={(updatedSet) => onUpdateSet(partIndex, setIndex, updatedSet)}
+                      onDeleteSet={() => onDeleteSet(partIndex, setIndex)}
+                      onAddExercise={() => onAddExercise(partIndex)}
+                      isExpanded={expandedSets.has(set.setSeedId)}
+                      onToggle={toggleSetExpansion}
+                      placeholderInfo={placeholderInfo}
+                    />
+                  </SortableItem>
+                </React.Fragment>
+              );
+            })}
+          </SortableContext>
 
           {/* Placeholder: 마지막 세트 이후 위치 */}
           {placeholderInfo &&
