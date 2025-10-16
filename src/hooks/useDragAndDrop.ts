@@ -594,12 +594,33 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       }
     }
 
-    console.log('✅ [최종]', { insertIndex, containerId: targetContainerId });
+    // 원본 배열 기준으로 insertIndex 변환
+    // filteredItems는 드래그 중인 아이템을 제외했으므로
+    // 렌더링 시 원본 배열과 인덱스 불일치 발생
+    let insertIndexOriginal = insertIndex;
+
+    // 드래그 중인 아이템의 원래 인덱스 찾기
+    const activeItemOriginalIndex = items.findIndex(item => {
+      const itemId = item.getAttribute('data-sortable-id');
+      return itemId === activeItem.id;
+    });
+
+    // insertIndex가 드래그 아이템의 원래 위치 이상이면 +1
+    if (activeItemOriginalIndex !== -1 && insertIndex >= activeItemOriginalIndex) {
+      insertIndexOriginal = insertIndex + 1;
+    }
+
+    console.log('✅ [최종]', {
+      insertIndex: insertIndexOriginal,
+      filteredIndex: insertIndex,
+      activeOriginalIndex: activeItemOriginalIndex,
+      containerId: targetContainerId
+    });
 
     const placeholderInfo: PlaceholderInfo = {
       containerId: targetContainerId,
       containerType,
-      insertIndex,
+      insertIndex: insertIndexOriginal,
       partIndex,
       setIndex
     };

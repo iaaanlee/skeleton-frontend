@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { useDraggable, useDroppable } from '@dnd-kit/core';
+import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ExerciseEditCard } from './ExerciseEditCard';
 import type { EffectiveSetBlueprint, EffectiveExerciseBlueprint, PinState, ActiveItem } from '../../../../types/workout';
-import { DraggableCard } from '../atoms/DraggableCard';
 import { SortableItem } from '../atoms/SortableItem';
 import type { DragItem, DropZone, PlaceholderInfo } from '../../../../hooks/useDragAndDrop';
 import { PinSystemHelpers } from '../../../../types/workout';
@@ -97,17 +96,7 @@ export const SetEditCard: React.FC<Props> = ({
   const effectivePin = PinSystemHelpers.getEffectivePinState(activePinState);
   const canDrag = effectivePin.canDrag;
 
-  // useDraggable 훅 사용 (드래그 핸들용 - ExerciseEditCard 패턴 따름)
-  // setNodeRef는 사용하지 않음 (DraggableCard에서 처리)
-  const {
-    attributes,
-    listeners,
-    // setNodeRef,  ← ExerciseEditCard처럼 주석처리 (DraggableCard의 ref와 충돌 방지)
-  } = useDraggable({
-    id: dragItem.id,
-    data: dragItem,
-    disabled: !canDrag
-  });
+  // ❌ useDraggable 제거: SortableItem이 이미 드래그 처리함 (이중 훅 충돌 방지)
 
   // ActiveItem 체크
   const isActive = activeItem?.level === 'set' && activeItem.id === set.setSeedId;
@@ -204,11 +193,7 @@ export const SetEditCard: React.FC<Props> = ({
   };
 
   return (
-    <DraggableCard
-      dragItem={dragItem}
-      pinState={activePinState}
-      disabled={true}
-      dragHandle={false}
+    <div
       className={`border rounded-lg overflow-hidden transition-colors ${
         isActive
           ? 'border-orange-400 bg-orange-50'
@@ -278,9 +263,8 @@ export const SetEditCard: React.FC<Props> = ({
               </svg>
             </button>
 
-            {/* 드래그 핸들 (ExerciseEditCard 패턴: ref 없이 attributes/listeners만 전달) */}
+            {/* 드래그 핸들 (SortableItem이 처리하므로 여기서는 collapse만) */}
             <button
-              {...(canDrag ? { ...attributes, ...listeners } : {})}
               className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing"
               title="세트 이동"
               disabled={!canDrag}
@@ -517,6 +501,6 @@ export const SetEditCard: React.FC<Props> = ({
         onSave={handleTimeLimitModalSave}
       />
 
-    </DraggableCard>
+    </div>
   );
 };

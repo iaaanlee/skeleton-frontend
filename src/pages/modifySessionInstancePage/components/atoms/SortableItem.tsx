@@ -43,8 +43,6 @@ export const SortableItem: React.FC<Props> = ({
   });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
     zIndex: isDragging ? 1000 : 1,
   };
 

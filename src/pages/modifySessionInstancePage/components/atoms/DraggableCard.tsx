@@ -40,7 +40,7 @@ export const DraggableCard: React.FC<Props> = ({
   });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: (disabled || dragHandle) ? undefined : CSS.Transform.toString(transform),
     opacity: isDragging ? 0 : 1,  // 드래그 중일 때 완전히 숨김
     touchAction: 'none',
     pointerEvents: isDragging ? ('none' as const) : ('auto' as const),
