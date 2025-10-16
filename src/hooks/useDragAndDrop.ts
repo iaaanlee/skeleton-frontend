@@ -1,7 +1,7 @@
 // DnD Hook for Stage 4B - @dnd-kit integration with Pin System
 // PRD PAGES 요구사항: 롱프레스 150ms, 햅틱 피드백, 24px 오토스크롤
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   DragEndEvent,
   DragOverEvent,
@@ -189,6 +189,12 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
   const autoExpandTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const scrollIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
+  // 실시간 마우스/터치 위치 추적 (정확한 삽입 위치 계산용)
+  const currentPointerY = useRef<number>(-1);
+
+  // 계산된 placeholder 정보 저장 (handleDragEnd에서 사용)
+  const lastPlaceholderInfo = useRef<PlaceholderInfo>(null);
+
   // PRD 요구사항: 단순화된 센서 설정 - 충돌 방지
   const pointerSensor = useSensor(PointerSensor, {
     // 마우스 드래그: 클릭 후 바로 시작
@@ -213,6 +219,30 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
    * 드래그 시작 시간 추적 (즉시 활성화 방지)
    */
   const dragStartTimeRef = useRef<number>(0);
+
+  /**
+   * 실시간 포인터 위치 추적 (드래그 중에만 리스너 등록)
+   * 정확한 마우스 커서 위치로 삽입 위치 계산
+   */
+  useEffect(() => {
+    if (!activeItem) return; // 드래그 중이 아니면 리스너 등록 안 함
+
+    const handlePointerMove = (e: MouseEvent | TouchEvent) => {
+      if (e instanceof MouseEvent) {
+        currentPointerY.current = e.clientY;
+      } else if (e instanceof TouchEvent && e.touches.length > 0) {
+        currentPointerY.current = e.touches[0].clientY;
+      }
+    };
+
+    document.addEventListener('mousemove', handlePointerMove as EventListener);
+    document.addEventListener('touchmove', handlePointerMove as EventListener, { passive: true });
+
+    return () => {
+      document.removeEventListener('mousemove', handlePointerMove as EventListener);
+      document.removeEventListener('touchmove', handlePointerMove as EventListener);
+    };
+  }, [activeItem]);
 
   /**
    * 포인터 기반 충돌 감지: 드래그 버튼 위치만 고려
@@ -402,15 +432,18 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       return;
     }
 
-    // 드래그 중인 아이템의 중심 Y 좌표를 포인터 위치로 사용
-    const clientY = activeRect.top + activeRect.height / 2;
+    // 실제 마우스 커서 위치를 사용 (정확한 삽입 위치 계산)
+    const clientY = currentPointerY.current >= 0
+      ? currentPointerY.current  // ✅ 실제 마우스 위치
+      : activeRect.top + activeRect.height / 2;  // Fallback: 컴포넌트 중심
 
-    console.log('🎯 [Insertion Calc] 시작:', {
-      overId,
-      activeItemType: activeItem.type,
-      clientY,
-      activeRect: { top: activeRect.top, height: activeRect.height }
-    });
+    // console.log('🎯 [Insertion Calc] 시작:', {
+    //   overId,
+    //   activeItemType: activeItem.type,
+    //   clientY,
+    //   source: currentPointerY.current >= 0 ? 'real-pointer' : 'fallback-center',
+    //   activeRect: { top: activeRect.top, height: activeRect.height }
+    // });
 
     // 타겟 컨테이너 식별 및 아이템 목록 가져오기
     let targetContainerId: string | null = null;
@@ -479,26 +512,45 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
 
     // 드래그 중인 아이템 제외
     const filteredItems = items.filter(item => {
-      const itemId = item.getAttribute('data-drag-id');
+      const itemId = item.getAttribute('data-sortable-id');  // ✅ 올바른 속성명 사용
       return itemId !== activeItem.id;
     });
 
     // 삽입 위치 계산: 각 아이템과 포인터 Y 좌표 비교
     let insertIndex = 0;
 
+    console.log('🎯 [삽입 위치 계산 시작]', {
+      clientY,
+      filteredItemsCount: filteredItems.length,
+      containerType,
+      targetContainerId
+    });
+
     for (let i = 0; i < filteredItems.length; i++) {
       const item = filteredItems[i];
       const rect = item.getBoundingClientRect();
       const itemMiddleY = rect.top + rect.height / 2;
+      const itemSortableId = item.getAttribute('data-sortable-id');
 
-      // 상단 50%: 현재 아이템 이전에 삽입
-      if (clientY < rect.top + rect.height * 0.5) {
+      console.log(`  📍 [아이템 ${i}]`, {
+        sortableId: itemSortableId,
+        rect: { top: rect.top, bottom: rect.bottom, middle: itemMiddleY },
+        clientY,
+        comparison: clientY < itemMiddleY ? '위쪽' : '아래쪽'
+      });
+
+      // 마우스가 아이템 중간보다 위 → 아이템 앞에 삽입
+      if (clientY < itemMiddleY) {
         insertIndex = i;
+        console.log(`  ✅ [결정] insertIndex = ${i} (아이템 ${i} 앞)`);
         break;
       }
-      // 하단 50%: 다음 아이템으로 이동
+      // 마우스가 아이템 중간 이상 → 다음 아이템으로 (또는 맨 뒤)
       else {
         insertIndex = i + 1;
+        if (i === filteredItems.length - 1) {
+          console.log(`  ✅ [결정] insertIndex = ${insertIndex} (마지막 아이템 뒤 = 맨 뒤)`);
+        }
       }
     }
 
@@ -510,7 +562,19 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       setIndex
     };
 
-    console.log('✅ [Insertion Calc] 완료:', placeholderInfo);
+    console.log('✅ [Placeholder 최종 계산]:', {
+      containerId: placeholderInfo.containerId,
+      containerType: placeholderInfo.containerType,
+      insertIndex: placeholderInfo.insertIndex,
+      partIndex: placeholderInfo.partIndex,
+      setIndex: placeholderInfo.setIndex,
+      clientYSource: currentPointerY.current >= 0 ? '실제마우스' : '폴백',
+      clientY
+    });
+
+    // placeholder 정보 저장 (handleDragEnd에서 사용)
+    lastPlaceholderInfo.current = placeholderInfo;
+
     callbacks.onPlaceholderUpdate(placeholderInfo);
   }, [activeItem, callbacks]);
 
@@ -542,6 +606,8 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
 
     // 드래그 시작 시간 기록 (즉시 활성화 방지용)
     dragStartTimeRef.current = Date.now();
+    currentPointerY.current = -1;  // 포인터 위치 초기화
+    lastPlaceholderInfo.current = null;  // placeholder 정보 초기화
 
     setActiveItem(dragItem);
     triggerHapticFeedback(); // PRD: 가벼운 햅틱
@@ -904,17 +970,25 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       console.log('📝 컨테이너 내 순서 변경:', {
         from: activeItem.id,
         to: over.id,
-        dragType: activeItem.type
+        dragType: activeItem.type,
+        placeholderInfo: lastPlaceholderInfo.current
       });
 
       // 타겟 정보 파싱
       const targetInfo = parseDropTargetId(over.id.toString());
       if (targetInfo && callbacks?.onItemMove) {
+        // ✅ placeholder의 정확한 insertIndex 사용
         const toIndices = {
           partIndex: targetInfo.partIndex,
           setIndex: targetInfo.setIndex,
-          exerciseIndex: targetInfo.exerciseIndex
+          exerciseIndex: lastPlaceholderInfo.current?.insertIndex ?? targetInfo.exerciseIndex
         };
+
+        console.log('🎯 [드롭 실행]:', {
+          from: activeItem.indices,
+          to: toIndices,
+          insertIndex: lastPlaceholderInfo.current?.insertIndex
+        });
 
         callbacks.onItemMove({
           itemId: activeItem.id,
@@ -931,16 +1005,18 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
         from: activeItem.id,
         to: over.id,
         dragType: activeItem.type,
-        dropType
+        dropType,
+        placeholderInfo: lastPlaceholderInfo.current
       });
 
       // 드롭 대상의 인덱스 정보 추출
       const targetInfo = parseDropTargetId(over.id.toString());
       if (targetInfo && callbacks?.onItemMove) {
+        // ✅ placeholder의 정확한 insertIndex 사용
         const toIndices = {
           partIndex: targetInfo.partIndex,
           setIndex: targetInfo.setIndex,
-          exerciseIndex: targetInfo.exerciseIndex
+          exerciseIndex: lastPlaceholderInfo.current?.insertIndex ?? targetInfo.exerciseIndex
         };
 
         callbacks.onItemMove({
@@ -957,16 +1033,18 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       console.log('🔄 일반 드롭 처리 (타입 없음):', {
         from: activeItem.id,
         to: over.id,
-        dragType: activeItem.type
+        dragType: activeItem.type,
+        placeholderInfo: lastPlaceholderInfo.current
       });
 
       // ID 기반으로 타겟 정보 파싱 시도
       const targetInfo = parseDropTargetId(over.id.toString());
       if (targetInfo && callbacks?.onItemMove) {
+        // ✅ placeholder의 정확한 insertIndex 사용
         const toIndices = {
           partIndex: targetInfo.partIndex,
           setIndex: targetInfo.setIndex,
-          exerciseIndex: targetInfo.exerciseIndex
+          exerciseIndex: lastPlaceholderInfo.current?.insertIndex ?? targetInfo.exerciseIndex
         };
 
         callbacks.onItemMove({

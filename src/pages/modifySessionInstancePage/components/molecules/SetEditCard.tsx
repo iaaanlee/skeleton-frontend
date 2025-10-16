@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ExerciseEditCard } from './ExerciseEditCard';
 import type { EffectiveSetBlueprint, EffectiveExerciseBlueprint, PinState, ActiveItem } from '../../../../types/workout';
 import { DraggableCard } from '../atoms/DraggableCard';
-import { SortableContainer } from '../atoms/SortableContainer';
 import { SortableItem } from '../atoms/SortableItem';
 import type { DragItem, DropZone, PlaceholderInfo } from '../../../../hooks/useDragAndDrop';
 import { PinSystemHelpers } from '../../../../types/workout';
@@ -88,14 +88,6 @@ export const SetEditCard: React.FC<Props> = ({
       partIndex,
       setIndex
     }
-  };
-
-  // 세트 내부 운동 드롭존 (ID 충돌 방지)
-  const exerciseDropZone: DropZone = {
-    id: generateSetDragId(partIndex || 0, setIndex, set.setSeedId) + '-exercises',
-    type: 'container',
-    accepts: ['exercise'],
-    autoExpand: false
   };
 
   // Pin System에서 드래그 권한 체크
@@ -314,13 +306,7 @@ export const SetEditCard: React.FC<Props> = ({
           {/* 운동 목록 - session-details 스타일 래퍼 */}
           {set.exercises.length > 0 && (
             <div className="px-3 space-y-2 mb-2">
-              <SortableContainer
-                items={exerciseIds}
-                dropZone={exerciseDropZone}
-                strategy="vertical"
-                className="space-y-2"
-                showDropIndicator={true}
-              >
+              <SortableContext items={exerciseIds} strategy={verticalListSortingStrategy}>
               {set.exercises.map((exercise, exerciseIndex) => {
                 // Placeholder 렌더링 로직: 현재 운동 이전에 삽입되어야 하는지 체크
                 const shouldShowPlaceholderBefore =
@@ -329,15 +315,26 @@ export const SetEditCard: React.FC<Props> = ({
                   placeholderInfo.containerId === dragId &&
                   placeholderInfo.insertIndex === exerciseIndex;
 
+                if (placeholderInfo && placeholderInfo.containerType === 'set' && placeholderInfo.containerId === dragId) {
+                  console.log(`🎨 [Placeholder 렌더 체크] exerciseIndex=${exerciseIndex}`, {
+                    placeholderInsertIndex: placeholderInfo.insertIndex,
+                    exerciseIndex,
+                    shouldShow: shouldShowPlaceholderBefore,
+                    exerciseName: exercise.exerciseTemplateId
+                  });
+                }
+
                 return (
                   <React.Fragment key={exerciseIds[exerciseIndex]}>
                     {/* Placeholder: 운동 이전 위치 */}
                     {shouldShowPlaceholderBefore && (
                       <div
-                        className="h-16 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out"
-                        style={{ opacity: 0.8 }}
+                        className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
+                        data-placeholder="true"
                       >
-                        <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-2 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg whitespace-nowrap pointer-events-none">
+                          <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+                        </div>
                       </div>
                     )}
 
@@ -382,18 +379,33 @@ export const SetEditCard: React.FC<Props> = ({
               })}
 
               {/* Placeholder: 마지막 운동 이후 위치 */}
-              {placeholderInfo &&
-                placeholderInfo.containerType === 'set' &&
-                placeholderInfo.containerId === dragId &&
-                placeholderInfo.insertIndex === set.exercises.length && (
-                <div
-                  className="h-16 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out"
-                  style={{ opacity: 0.8 }}
-                >
-                  <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
-                </div>
-              )}
-              </SortableContainer>
+              {(() => {
+                const shouldShowPlaceholderAfter =
+                  placeholderInfo &&
+                  placeholderInfo.containerType === 'set' &&
+                  placeholderInfo.containerId === dragId &&
+                  placeholderInfo.insertIndex === set.exercises.length;
+
+                if (placeholderInfo && placeholderInfo.containerType === 'set' && placeholderInfo.containerId === dragId) {
+                  console.log(`🎨 [Placeholder 맨 뒤 체크]`, {
+                    placeholderInsertIndex: placeholderInfo.insertIndex,
+                    exercisesLength: set.exercises.length,
+                    shouldShow: shouldShowPlaceholderAfter
+                  });
+                }
+
+                return shouldShowPlaceholderAfter ? (
+                  <div
+                    className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
+                    data-placeholder="true"
+                  >
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-2 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg whitespace-nowrap pointer-events-none">
+                      <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+              </SortableContext>
             </div>
           )}
 
@@ -405,10 +417,12 @@ export const SetEditCard: React.FC<Props> = ({
             placeholderInfo.insertIndex === 0 && (
             <div className="px-3 mb-2">
               <div
-                className="h-16 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out"
-                style={{ opacity: 0.8 }}
+                className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
+                data-placeholder="true"
               >
-                <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-2 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg whitespace-nowrap pointer-events-none">
+                  <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+                </div>
               </div>
             </div>
           )}
