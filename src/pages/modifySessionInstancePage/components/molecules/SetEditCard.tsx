@@ -136,10 +136,10 @@ export const SetEditCard: React.FC<Props> = ({
 
     // PRD 요구사항: 일괄 적용 토글 처리
     if (applyToAll) {
-      console.log('일괄 적용 모드: 세션 내 모든 휴식에 변경 사항 적용', {
-        restTime: restTime,
-        exerciseCount: set.exercises.length
-      });
+      // console.log('일괄 적용 모드: 세션 내 모든 휴식에 변경 사항 적용', {
+      //   restTime: restTime,
+      //   exerciseCount: set.exercises.length
+      // });
       // 실제 구현은 상위 컴포넌트에서 전체 세션 데이터에 접근해서 처리해야 함
     }
 
@@ -155,10 +155,10 @@ export const SetEditCard: React.FC<Props> = ({
 
     // PRD 요구사항: 일괄 적용 토글 처리
     if (applyToAll) {
-      console.log('일괄 적용 모드: 세션 내 모든 시간 제한에 변경 사항 적용', {
-        timeLimit: timeLimit,
-        exerciseCount: set.exercises.length
-      });
+      // console.log('일괄 적용 모드: 세션 내 모든 시간 제한에 변경 사항 적용', {
+      //   timeLimit: timeLimit,
+      //   exerciseCount: set.exercises.length
+      // });
       // 실제 구현은 상위 컴포넌트에서 전체 세션 데이터에 접근해서 처리해야 함
     }
 
@@ -315,15 +315,6 @@ export const SetEditCard: React.FC<Props> = ({
                   placeholderInfo.containerId === dragId &&
                   placeholderInfo.insertIndex === exerciseIndex;
 
-                if (placeholderInfo && placeholderInfo.containerType === 'set' && placeholderInfo.containerId === dragId) {
-                  console.log(`🎨 [Placeholder 렌더 체크] exerciseIndex=${exerciseIndex}`, {
-                    placeholderInsertIndex: placeholderInfo.insertIndex,
-                    exerciseIndex,
-                    shouldShow: shouldShowPlaceholderBefore,
-                    exerciseName: exercise.exerciseTemplateId
-                  });
-                }
-
                 return (
                   <React.Fragment key={exerciseIds[exerciseIndex]}>
                     {/* Placeholder: 운동 이전 위치 */}
@@ -379,32 +370,19 @@ export const SetEditCard: React.FC<Props> = ({
               })}
 
               {/* Placeholder: 마지막 운동 이후 위치 */}
-              {(() => {
-                const shouldShowPlaceholderAfter =
-                  placeholderInfo &&
-                  placeholderInfo.containerType === 'set' &&
-                  placeholderInfo.containerId === dragId &&
-                  placeholderInfo.insertIndex === set.exercises.length;
-
-                if (placeholderInfo && placeholderInfo.containerType === 'set' && placeholderInfo.containerId === dragId) {
-                  console.log(`🎨 [Placeholder 맨 뒤 체크]`, {
-                    placeholderInsertIndex: placeholderInfo.insertIndex,
-                    exercisesLength: set.exercises.length,
-                    shouldShow: shouldShowPlaceholderAfter
-                  });
-                }
-
-                return shouldShowPlaceholderAfter ? (
-                  <div
-                    className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
-                    data-placeholder="true"
-                  >
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-2 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg whitespace-nowrap pointer-events-none">
-                      <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
-                    </div>
+              {placeholderInfo &&
+                placeholderInfo.containerType === 'set' &&
+                placeholderInfo.containerId === dragId &&
+                placeholderInfo.insertIndex === set.exercises.length && (
+                <div
+                  className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
+                  data-placeholder="true"
+                >
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-2 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg whitespace-nowrap pointer-events-none">
+                    <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
                   </div>
-                ) : null;
-              })()}
+                </div>
+              )}
               </SortableContext>
             </div>
           )}

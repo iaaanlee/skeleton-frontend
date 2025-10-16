@@ -248,7 +248,7 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
    * 포인터 기반 충돌 감지: 드래그 버튼 위치만 고려
    */
   const customCollisionDetection: CollisionDetection = useCallback((args) => {
-    console.log('🔥 [COLLISION] 함수 호출됨!', { activeId: args.active.id });
+    // console.log('🔥 [COLLISION] 함수 호출됨!', { activeId: args.active.id });
 
     try {
       // 드래그 시작 후 매우 짧은 시간만 원형 드롭존 비활성화 (실수 방지)
@@ -259,10 +259,10 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       // 초기 단계에서는 원형 드롭존을 제외하고 collision detection 실행
       const { droppableContainers } = args;
 
-      console.log('🔍 [Initial Phase] droppableContainers:', {
-        total: droppableContainers.length,
-        ids: droppableContainers.map(c => c.id)
-      });
+      // console.log('🔍 [Initial Phase] droppableContainers:', {
+      //   total: droppableContainers.length,
+      //   ids: droppableContainers.map(c => c.id)
+      // });
 
       const filteredContainers = droppableContainers.filter(container => {
         const idStr = typeof container.id === 'string' ? container.id : String(container.id);
@@ -280,11 +280,11 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
     // 100ms 후: 포인터 기반 + closestCenter 하이브리드 접근
     const { droppableContainers } = args;
 
-    console.log('🔍 [Collision Detection] 전체 droppableContainers:', {
-      total: droppableContainers.length,
-      ids: droppableContainers.map(c => c.id),
-      activeId: args.active.id
-    });
+    // console.log('🔍 [Collision Detection] 전체 droppableContainers:', {
+    //   total: droppableContainers.length,
+    //   ids: droppableContainers.map(c => c.id),
+    //   activeId: args.active.id
+    // });
 
     // 원형 드롭존과 일반 컨테이너 분리
     const circularDropZones = droppableContainers.filter(container => {
@@ -297,11 +297,11 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       return !idStr.startsWith('circular-drop-');
     });
 
-    console.log('🔍 [Collision Detection] 분류 결과:', {
-      circularCount: circularDropZones.length,
-      regularCount: regularContainers.length,
-      regularIds: regularContainers.map(c => c.id)
-    });
+    // console.log('🔍 [Collision Detection] 분류 결과:', {
+    //   circularCount: circularDropZones.length,
+    //   regularCount: regularContainers.length,
+    //   regularIds: regularContainers.map(c => c.id)
+    // });
 
     // 원형 드롭존: 포인터 기반 collision detection
     if (circularDropZones.length > 0) {
@@ -328,10 +328,10 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
         droppableContainers: regularContainers
       });
 
-      console.log('🔍 [Collision Detection] rectIntersection 결과:', {
-        resultCount: result.length,
-        resultIds: result.map(r => r.id)
-      });
+      // console.log('🔍 [Collision Detection] rectIntersection 결과:', {
+      //   resultCount: result.length,
+      //   resultIds: result.map(r => r.id)
+      // });
 
       return result;
     }
@@ -413,7 +413,7 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
         detail: { setSeedId }
       });
       document.dispatchEvent(expandEvent);
-      console.log('🔄 세트 자동 펼침 이벤트 발생:', setSeedId);
+      // console.log('🔄 세트 자동 펼침 이벤트 발생:', setSeedId);
     }, DND_CONFIG.AUTO_EXPAND_DELAY);
   }, []);
 
@@ -428,7 +428,7 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
     const activeRect = event.active.rect.current.translated;
 
     if (!activeRect) {
-      console.log('❌ [Insertion Calc] activeRect 없음');
+      // console.log('❌ [Insertion Calc] activeRect 없음');
       return;
     }
 
@@ -468,8 +468,8 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
         targetContainerId = `set-${partIndex}-${setIndex}-${setSeedId}`;
         containerType = 'set';
 
-        // 세트 내 모든 운동 아이템 가져오기
-        items = Array.from(parentSet?.querySelectorAll('[data-drag-type="exercise"]') || []) as HTMLElement[];
+        // 세트 내 모든 운동 아이템 가져오기 (SortableItem만 선택, placeholder 제외)
+        items = Array.from(parentSet?.querySelectorAll('[data-sortable-id][data-drag-type="exercise"]') || []) as HTMLElement[];
       }
     }
     // 2. 세트 위에 hover (또는 세트의 exercises 영역)
@@ -488,7 +488,7 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       containerType = 'set';
 
       const setElement = document.querySelector(`[data-set-id="${setSeedId}"]`);
-      items = Array.from(setElement?.querySelectorAll('[data-drag-type="exercise"]') || []) as HTMLElement[];
+      items = Array.from(setElement?.querySelectorAll('[data-sortable-id][data-drag-type="exercise"]') || []) as HTMLElement[];
     }
     // 3. 파트 위에 hover
     else if (overId.startsWith('part-')) {
@@ -501,11 +501,11 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
 
       const dataPartId = `part-${partIndex}`;
       const partElement = document.querySelector(`[data-part-id="${dataPartId}"]`);
-      items = Array.from(partElement?.querySelectorAll('[data-drag-type="set"]') || []) as HTMLElement[];
+      items = Array.from(partElement?.querySelectorAll('[data-sortable-id][data-drag-type="set"]') || []) as HTMLElement[];
     }
 
     if (!targetContainerId || !containerType || items.length === 0) {
-      console.log('❌ [Insertion Calc] 타겟 컨테이너 또는 아이템 없음');
+      // console.log('❌ [Insertion Calc] 타겟 컨테이너 또는 아이템 없음');
       callbacks.onPlaceholderUpdate(null);
       return;
     }
@@ -516,43 +516,43 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       return itemId !== activeItem.id;
     });
 
+    // 🔍 [DEBUG] 진입점
+    console.log('🎯 [삽입 계산]', {
+      clientY,
+      source: currentPointerY.current >= 0 ? '마우스' : 'fallback',
+      totalItems: items.length,
+      filtered: filteredItems.length,
+      activeId: activeItem.id
+    });
+
     // 삽입 위치 계산: 각 아이템과 포인터 Y 좌표 비교
     let insertIndex = 0;
 
-    console.log('🎯 [삽입 위치 계산 시작]', {
-      clientY,
-      filteredItemsCount: filteredItems.length,
-      containerType,
-      targetContainerId
-    });
-
     for (let i = 0; i < filteredItems.length; i++) {
       const item = filteredItems[i];
+      const itemId = item.getAttribute('data-sortable-id');
       const rect = item.getBoundingClientRect();
       const itemMiddleY = rect.top + rect.height / 2;
-      const itemSortableId = item.getAttribute('data-sortable-id');
 
-      console.log(`  📍 [아이템 ${i}]`, {
-        sortableId: itemSortableId,
-        rect: { top: rect.top, bottom: rect.bottom, middle: itemMiddleY },
-        clientY,
-        comparison: clientY < itemMiddleY ? '위쪽' : '아래쪽'
+      console.log(`  [${i}] ${itemId?.slice(-10)}:`, {
+        top: Math.round(rect.top),
+        mid: Math.round(itemMiddleY),
+        clientY: Math.round(clientY),
+        result: clientY < itemMiddleY ? '위쪽→앞삽입' : '아래쪽→계속'
       });
 
       // 마우스가 아이템 중간보다 위 → 아이템 앞에 삽입
       if (clientY < itemMiddleY) {
         insertIndex = i;
-        console.log(`  ✅ [결정] insertIndex = ${i} (아이템 ${i} 앞)`);
         break;
       }
       // 마우스가 아이템 중간 이상 → 다음 아이템으로 (또는 맨 뒤)
       else {
         insertIndex = i + 1;
-        if (i === filteredItems.length - 1) {
-          console.log(`  ✅ [결정] insertIndex = ${insertIndex} (마지막 아이템 뒤 = 맨 뒤)`);
-        }
       }
     }
+
+    console.log('✅ [최종]', { insertIndex, containerId: targetContainerId });
 
     const placeholderInfo: PlaceholderInfo = {
       containerId: targetContainerId,
@@ -561,16 +561,6 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       partIndex,
       setIndex
     };
-
-    console.log('✅ [Placeholder 최종 계산]:', {
-      containerId: placeholderInfo.containerId,
-      containerType: placeholderInfo.containerType,
-      insertIndex: placeholderInfo.insertIndex,
-      partIndex: placeholderInfo.partIndex,
-      setIndex: placeholderInfo.setIndex,
-      clientYSource: currentPointerY.current >= 0 ? '실제마우스' : '폴백',
-      clientY
-    });
 
     // placeholder 정보 저장 (handleDragEnd에서 사용)
     lastPlaceholderInfo.current = placeholderInfo;
@@ -592,12 +582,6 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const dragItem = event.active.data.current as DragItem;
 
-    console.log('🚀 드래그 시작 이벤트 발생:', {
-      activeId: event.active.id,
-      dragItem: dragItem,
-      eventType: event
-    });
-
     // Pin 시스템 권한 검사
     if (!canDrag(dragItem)) {
       console.warn('❌ 드래그 차단: Pin 보호 영역', dragItem);
@@ -611,24 +595,22 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
 
     setActiveItem(dragItem);
     triggerHapticFeedback(); // PRD: 가벼운 햅틱
-
-    console.log('✅ 드래그 시작 완료 - activeItem 설정됨:', dragItem);
   }, [canDrag, triggerHapticFeedback]);
 
   /**
    * 드래그 중 핸들러 (오토스크롤 + 자동펼침 + 원형드롭존 감지)
    */
   const handleDragOver = useCallback((event: DragOverEvent) => {
-    console.log('🔥 [DRAG OVER] 호출됨!', { overId: event.over?.id, activeItem: activeItem?.id });
+    // console.log('🔥 [DRAG OVER] 호출됨!', { overId: event.over?.id, activeItem: activeItem?.id });
 
     if (!activeItem) return;
 
     const overId = event.over?.id;
 
     // 원형 드롭존 호버 감지
-    if (overId && typeof overId === 'string' && overId.startsWith('circular-drop-')) {
-      console.log('🌀 원형 드롭존 호버 감지:', overId);
-    }
+    // if (overId && typeof overId === 'string' && overId.startsWith('circular-drop-')) {
+    //   console.log('🌀 원형 드롭존 호버 감지:', overId);
+    // }
 
     // 24px 가장자리 오토스크롤
     const pointerEvent = event as any;
@@ -639,15 +621,15 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
     // 닫힌 파트/세트 위 호버링 감지
     if (overId && typeof overId === 'string') {
       // 세트 드래그 시 디버깅
-      if (activeItem?.type === 'set') {
-        console.log('🔧 [세트 드래그] overId 감지:', {
-          overId,
-          activeItemId: activeItem?.id,
-          startsWithPart: overId.startsWith('part-'),
-          startsWithSet: overId.startsWith('set-'),
-          startsWithExercise: overId.startsWith('exercise-')
-        });
-      }
+      // if (activeItem?.type === 'set') {
+      //   console.log('🔧 [세트 드래그] overId 감지:', {
+      //     overId,
+      //     activeItemId: activeItem?.id,
+      //     startsWithPart: overId.startsWith('part-'),
+      //     startsWithSet: overId.startsWith('set-'),
+      //     startsWithExercise: overId.startsWith('exercise-')
+      //   });
+      // }
 
       // 자동 펼침은 운동 드래그 시에만 동작
       const isExerciseDrag = activeItem?.type === 'exercise';
@@ -666,12 +648,12 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
         if (parentPart) {
           const partIsCollapsed = parentPart.getAttribute('data-collapsed') === 'true';
 
-          console.log('📦 운동 hover 감지 - 부모 파트 확인:', {
-            exerciseId: overId,
-            exercisePartIndex,
-            partId,
-            partIsCollapsed
-          });
+          // console.log('📦 운동 hover 감지 - 부모 파트 확인:', {
+          //   exerciseId: overId,
+          //   exercisePartIndex,
+          //   partId,
+          //   partIsCollapsed
+          // });
 
           if (partIsCollapsed) {
             // 파트 ID를 overId 형식으로 변환 (part-{partIndex}-{seedId})
@@ -682,7 +664,7 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
             for (const p of allParts) {
               const pId = p.getAttribute('data-part-id');
               if (pId === partId) {
-                console.log('✅ 부모 파트 자동 확장 타이머 시작:', partId);
+                // console.log('✅ 부모 파트 자동 확장 타이머 시작:', partId);
                 // handleAutoExpandPart는 full ID (part-{partIndex}-{seedId})를 받지만
                 // 여기서는 partId만 전달하므로 이벤트에서 partId로 찾아야 함
                 handleAutoExpandPart(partId);
@@ -701,16 +683,16 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
           const setSeedId = parentSet.getAttribute('data-set-id');
           const isCollapsed = parentSet.getAttribute('data-collapsed') === 'true';
 
-          console.log('📦 운동 hover 감지 - 부모 세트 확인:', {
-            exerciseId: overId,
-            exercisePartIndex,
-            exerciseSetIndex,
-            setSeedId,
-            isCollapsed
-          });
+          // console.log('📦 운동 hover 감지 - 부모 세트 확인:', {
+          //   exerciseId: overId,
+          //   exercisePartIndex,
+          //   exerciseSetIndex,
+          //   setSeedId,
+          //   isCollapsed
+          // });
 
           if (isCollapsed && setSeedId) {
-            console.log('✅ 부모 세트 자동 확장 타이머 시작:', setSeedId);
+            // console.log('✅ 부모 세트 자동 확장 타이머 시작:', setSeedId);
             handleAutoExpandSet(setSeedId);
           }
         }
@@ -734,15 +716,15 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
         if (parentPart) {
           const partIsCollapsed = parentPart.getAttribute('data-collapsed') === 'true';
 
-          console.log('📦 세트 hover 감지 - 부모 파트 확인:', {
-            setId: overId,
-            setPartIndex,
-            partId,
-            partIsCollapsed
-          });
+          // console.log('📦 세트 hover 감지 - 부모 파트 확인:', {
+          //   setId: overId,
+          //   setPartIndex,
+          //   partId,
+          //   partIsCollapsed
+          // });
 
           if (partIsCollapsed) {
-            console.log('✅ 부모 파트 자동 확장 타이머 시작 (세트 hover):', partId);
+            // console.log('✅ 부모 파트 자동 확장 타이머 시작 (세트 hover):', partId);
             handleAutoExpandPart(partId);
           }
         }
@@ -753,7 +735,7 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
         const isCollapsed = setElement?.getAttribute('data-collapsed') === 'true';
 
         if (isCollapsed) {
-          console.log('✅ 세트 자동 확장 타이머 시작:', setSeedId);
+          // console.log('✅ 세트 자동 확장 타이머 시작:', setSeedId);
           handleAutoExpandSet(setSeedId);
         }
       } else if (overId.startsWith('part-') && isExerciseDrag) {
@@ -766,23 +748,23 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
         const partElement = document.querySelector(`[data-part-id="${dataPartId}"]`);
         const isCollapsed = partElement?.getAttribute('data-collapsed') === 'true';
 
-        console.log('📦 파트 상태 상세:', {
-          partElement: !!partElement,
-          dataPartId,
-          isCollapsed,
-          overId,
-          domSelector: `[data-part-id="${dataPartId}"]`,
-          allPartsInDOM: Array.from(document.querySelectorAll('[data-part-id]')).map(el => el.getAttribute('data-part-id')),
-          elementFound: partElement ? {
-            tagName: partElement.tagName,
-            className: partElement.className,
-            dataPartId: partElement.getAttribute('data-part-id'),
-            dataCollapsed: partElement.getAttribute('data-collapsed')
-          } : null
-        });
+        // console.log('📦 파트 상태 상세:', {
+        //   partElement: !!partElement,
+        //   dataPartId,
+        //   isCollapsed,
+        //   overId,
+        //   domSelector: `[data-part-id="${dataPartId}"]`,
+        //   allPartsInDOM: Array.from(document.querySelectorAll('[data-part-id]')).map(el => el.getAttribute('data-part-id')),
+        //   elementFound: partElement ? {
+        //     tagName: partElement.tagName,
+        //     className: partElement.className,
+        //     dataPartId: partElement.getAttribute('data-part-id'),
+        //     dataCollapsed: partElement.getAttribute('data-collapsed')
+        //   } : null
+        // });
 
         if (isCollapsed) {
-          console.log('✅ 파트 자동 확장 타이머 시작:', overId);
+          // console.log('✅ 파트 자동 확장 타이머 시작:', overId);
           handleAutoExpandPart(overId);
         }
       }
@@ -846,28 +828,28 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
    * 드롭 유효성 검사 - 관대한 검사로 수정
    */
   const validateDrop = useCallback((dragItem: DragItem, dropInfo: any) => {
-    console.log('🔍 드롭 유효성 검사:', { dragItem: dragItem.type, dropInfo });
+    // console.log('🔍 드롭 유효성 검사:', { dragItem: dragItem.type, dropInfo });
 
     if (!dropInfo) {
-      console.log('❌ 드롭 위치 정보 없음');
+      // console.log('❌ 드롭 위치 정보 없음');
       return { valid: false, reason: '드롭 위치 정보 없음' };
     }
 
     // Pin 시스템 권한 검사
     const effectivePin = PinSystemHelpers.getEffectivePinState(dragItem.pinState);
     if (!effectivePin.canDrag) {
-      console.log('❌ Pin 보호 영역');
+      // console.log('❌ Pin 보호 영역');
       return { valid: false, reason: 'Pin 보호 영역' };
     }
 
     // 자기 자신으로의 드롭 방지
     if (dragItem.id === dropInfo.dropTarget) {
-      console.log('❌ 동일 위치 드롭 방지');
+      // console.log('❌ 동일 위치 드롭 방지');
       return { valid: false, reason: '동일 위치 드롭 방지' };
     }
 
     // 일반적인 컨테이너 드롭은 대부분 허용 (관대한 정책)
-    console.log('✅ 드롭 허용');
+    // console.log('✅ 드롭 허용');
     return { valid: true, reason: '유효한 드롭' };
   }, []);
 
@@ -877,7 +859,7 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { over } = event;
 
-    console.log('🎯 handleDragEnd 호출:', { over: over?.id, activeItem: activeItem?.id });
+    // console.log('🎯 handleDragEnd 호출:', { over: over?.id, activeItem: activeItem?.id });
 
     // 타이머 정리는 항상 실행
     if (autoExpandTimerRef.current) {
@@ -889,26 +871,26 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
 
     // activeItem 검사를 먼저 (상태 업데이트 전)
     if (!over || !activeItem) {
-      console.log('드롭 취소: 유효한 드롭존 없음', { over: !!over, activeItem: !!activeItem });
+      // console.log('드롭 취소: 유효한 드롭존 없음', { over: !!over, activeItem: !!activeItem });
       setActiveItem(null);
       return;
     }
 
-    console.log('드롭 완료:', {
-      dragItem: activeItem,
-      dropTargetId: over.id
-    });
+    // console.log('드롭 완료:', {
+    //   dragItem: activeItem,
+    //   dropTargetId: over.id
+    // });
 
     // 원형 드롭존 액션 처리 (::a.png 기능) - 우선 처리 (validation 불필요)
-    console.log('🎯 드롭 대상 ID 확인:', over.id, typeof over.id);
+    // console.log('🎯 드롭 대상 ID 확인:', over.id, typeof over.id);
 
     if (over.id.toString().startsWith('circular-drop-')) {
       const action = over.id.toString().replace('circular-drop-', '') as 'duplicate' | 'delete';
-      console.log('🌀 원형 드롭존 액션 감지:', action);
+      // console.log('🌀 원형 드롭존 액션 감지:', action);
 
       switch (action) {
         case 'duplicate':
-          console.log('🔄 복제 액션 실행:', activeItem);
+          // console.log('🔄 복제 액션 실행:', activeItem);
           if (callbacks?.onItemDuplicate) {
             callbacks.onItemDuplicate({
               item: activeItem,
@@ -918,7 +900,7 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
           break;
 
         case 'delete':
-          console.log('🗑️ 삭제 액션 실행:', activeItem);
+          // console.log('🗑️ 삭제 액션 실행:', activeItem);
           if (callbacks?.onItemDelete) {
             callbacks.onItemDelete({
               itemId: activeItem.id,
@@ -930,17 +912,15 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       }
 
       // 원형 드롭존 액션 완료 후 상태 초기화
-      console.log('✅ 원형 드롭존 액션 완료 - 상태 초기화');
+      // console.log('✅ 원형 드롭존 액션 완료 - 상태 초기화');
       setActiveItem(null);
       return;
-    } else {
-      console.log('📝 일반 드롭 처리 진행');
     }
 
     // 기존 드롭 액션 처리 - validation 추가
     const dropInfo = calculateDropPosition(event);
     if (!dropInfo) {
-      console.log('드롭 취소: 위치 계산 실패');
+      // console.log('드롭 취소: 위치 계산 실패');
       setActiveItem(null);
       return;
     }
@@ -948,31 +928,31 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
     // 드롭 유효성 검사
     const validation = validateDrop(activeItem, dropInfo);
     if (!validation.valid) {
-      console.log('드롭 차단:', validation.reason);
+      // console.log('드롭 차단:', validation.reason);
       setActiveItem(null);
       return;
     }
 
-    console.log('🎯 일반 드롭 처리:', {
-      dragItem: activeItem,
-      dropTarget: over.id,
-      dropType: over.data.current?.type
-    });
+    // console.log('🎯 일반 드롭 처리:', {
+    //   dragItem: activeItem,
+    //   dropTarget: over.id,
+    //   dropType: over.data.current?.type
+    // });
 
     // 다양한 드롭 타입 처리 - 관대한 정책으로 확장
     const dropData = over.data.current;
     const dropType = dropData?.type;
 
-    console.log('🎯 드롭 타입 확인:', { dropType, dropData });
+    // console.log('🎯 드롭 타입 확인:', { dropType, dropData });
 
     // 1. 컨테이너 드롭 (기존 로직)
     if (dropType === 'container') {
-      console.log('📝 컨테이너 내 순서 변경:', {
-        from: activeItem.id,
-        to: over.id,
-        dragType: activeItem.type,
-        placeholderInfo: lastPlaceholderInfo.current
-      });
+      // console.log('📝 컨테이너 내 순서 변경:', {
+      //   from: activeItem.id,
+      //   to: over.id,
+      //   dragType: activeItem.type,
+      //   placeholderInfo: lastPlaceholderInfo.current
+      // });
 
       // 타겟 정보 파싱
       const targetInfo = parseDropTargetId(over.id.toString());
@@ -984,11 +964,11 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
           exerciseIndex: lastPlaceholderInfo.current?.insertIndex ?? targetInfo.exerciseIndex
         };
 
-        console.log('🎯 [드롭 실행]:', {
-          from: activeItem.indices,
-          to: toIndices,
-          insertIndex: lastPlaceholderInfo.current?.insertIndex
-        });
+        // console.log('🎯 [드롭 실행]:', {
+        //   from: activeItem.indices,
+        //   to: toIndices,
+        //   insertIndex: lastPlaceholderInfo.current?.insertIndex
+        // });
 
         callbacks.onItemMove({
           itemId: activeItem.id,
@@ -1001,13 +981,13 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
     }
     // 2. 다른 컴포넌트에 드롭 (세트, 파트 등) - 새로운 로직
     else if (dropType && ['set', 'part', 'exercise'].includes(dropType)) {
-      console.log('🔄 다른 컴포넌트로 이동:', {
-        from: activeItem.id,
-        to: over.id,
-        dragType: activeItem.type,
-        dropType,
-        placeholderInfo: lastPlaceholderInfo.current
-      });
+      // console.log('🔄 다른 컴포넌트로 이동:', {
+      //   from: activeItem.id,
+      //   to: over.id,
+      //   dragType: activeItem.type,
+      //   dropType,
+      //   placeholderInfo: lastPlaceholderInfo.current
+      // });
 
       // 드롭 대상의 인덱스 정보 추출
       const targetInfo = parseDropTargetId(over.id.toString());
@@ -1030,12 +1010,12 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
     }
     // 3. 드롭존 타입이 없어도 일반적인 이동으로 처리 (관대한 정책)
     else {
-      console.log('🔄 일반 드롭 처리 (타입 없음):', {
-        from: activeItem.id,
-        to: over.id,
-        dragType: activeItem.type,
-        placeholderInfo: lastPlaceholderInfo.current
-      });
+      // console.log('🔄 일반 드롭 처리 (타입 없음):', {
+      //   from: activeItem.id,
+      //   to: over.id,
+      //   dragType: activeItem.type,
+      //   placeholderInfo: lastPlaceholderInfo.current
+      // });
 
       // ID 기반으로 타겟 정보 파싱 시도
       const targetInfo = parseDropTargetId(over.id.toString());
@@ -1055,17 +1035,17 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
           newParentId: targetInfo.parentId
         });
       } else {
-        console.log('⚠️ 드롭 대상 파싱 실패, 기본 처리');
+        // console.log('⚠️ 드롭 대상 파싱 실패, 기본 처리');
       }
     }
 
     // 새로운 컨테이너 생성 처리
     if (over.data.current?.type === 'new-set' || over.data.current?.type === 'new-part') {
-      console.log('🆕 새 컨테이너 생성:', {
-        dragItem: activeItem,
-        createType: over.data.current.type,
-        position: dropInfo?.insertPosition
-      });
+      // console.log('🆕 새 컨테이너 생성:', {
+      //   dragItem: activeItem,
+      //   createType: over.data.current.type,
+      //   position: dropInfo?.insertPosition
+      // });
 
       const containerType = over.data.current.type === 'new-set' ? 'set' : 'part';
       const targetInfo = parseDropTargetId(over.id.toString());
