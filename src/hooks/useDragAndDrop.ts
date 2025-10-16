@@ -323,8 +323,18 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       }
     }
 
-    // 일반 컨테이너: rectIntersection 방식 (세트→파트 드래그 감지 개선)
+    // 일반 컨테이너: 세트 드래그 시 closestCenter, 나머지는 rectIntersection
     if (regularContainers.length > 0) {
+      // 세트 드래그 시에는 closestCenter 사용 (닫힌 세트의 작은 rect로 인한 문제 해결)
+      if (activeItem?.type === 'set') {
+        const result = closestCenter({
+          ...args,
+          droppableContainers: regularContainers
+        });
+        return result;
+      }
+
+      // 운동/파트 드래그 시에는 rectIntersection 사용
       const result = rectIntersection({
         ...args,
         droppableContainers: regularContainers

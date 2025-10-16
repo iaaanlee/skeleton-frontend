@@ -101,7 +101,7 @@ const PartCard: React.FC<PartCardProps> = ({
   const partHeaderDropZone: DropZone = {
     id: partDragItem.id, // part-{partIndex}-{partSeedId}
     type: 'container',
-    accepts: ['exercise'], // 운동만 받음 (세트/파트는 제외)
+    accepts: ['exercise', 'set'], // 운동과 세트 모두 받음
     autoExpand: false
   };
 
