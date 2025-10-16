@@ -99,7 +99,7 @@ export const DndContextProvider: React.FC<Props> = ({
             }`}
             style={
               dndHook.activeItem.type !== 'exercise'
-                ? { transform: 'translateX(calc(-100% + 40px))' } // 세트/파트: 우측 정렬 (드래그 핸들 40px 고려)
+                ? { transform: 'translateX(-16px)' } // 드래그 핸들 중심 위치 보정
                 : undefined
             }
           >
