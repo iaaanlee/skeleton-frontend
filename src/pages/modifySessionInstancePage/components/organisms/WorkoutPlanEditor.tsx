@@ -56,6 +56,9 @@ const PartCard: React.FC<PartCardProps> = ({
   toggleSetExpansion,
   placeholderInfo,
 }) => {
+  // 드래그 재시작 플래그 (무한 루프 방지)
+  const isDragRestarted = React.useRef(false);
+
   // 파트 DragItem 생성
   const partDragItem: DragItem = {
     id: generatePartDragId(partIndex, part.partSeedId),
@@ -222,10 +225,46 @@ const PartCard: React.FC<PartCardProps> = ({
             disabled={!canDrag}
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => {
-              // 🆕 별도 기능: 파트 드래그 시작 전 모든 파트 닫기
+              // 재시작된 이벤트면 그냥 진행 (무한 루프 방지)
+              if (isDragRestarted.current) {
+                isDragRestarted.current = false;
+                return;
+              }
+
+              // 드래그 시작 전 모든 파트 닫기 - 순차 처리
+              e.preventDefault();
+              e.stopPropagation();
+
+              const target = e.currentTarget;
+              const savedEvent = {
+                clientX: e.clientX,
+                clientY: e.clientY,
+                pointerId: e.pointerId,
+                pointerType: e.pointerType,
+                pressure: e.pressure,
+                button: e.button,
+                buttons: e.buttons,
+              };
+
+              // 1. collapse 이벤트 dispatch
               const collapseEvent = new CustomEvent('drag-start-collapse-parts');
               document.dispatchEvent(collapseEvent);
-              // 이벤트 전파 계속 (드래그 센서가 처리)
+
+              // 2. DOM 업데이트 완전 대기 후 드래그 시작 (더블 RAF)
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  if (!canDrag) return;
+
+                  // 플래그 설정하고 새 이벤트 발행
+                  isDragRestarted.current = true;
+                  const newEvent = new PointerEvent('pointerdown', {
+                    bubbles: true,
+                    cancelable: true,
+                    ...savedEvent,
+                  });
+                  target.dispatchEvent(newEvent);
+                });
+              });
             }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
