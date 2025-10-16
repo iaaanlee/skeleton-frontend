@@ -3,7 +3,7 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ExerciseEditCard } from './ExerciseEditCard';
 import type { EffectiveSetBlueprint, EffectiveExerciseBlueprint, PinState, ActiveItem } from '../../../../types/workout';
-import { DraggableCard } from '../atoms/DraggableCard';
+import { SetDraggableCard } from '../atoms/SetDraggableCard';
 import { SortableItem } from '../atoms/SortableItem';
 import type { DragItem, DropZone, PlaceholderInfo } from '../../../../hooks/useDragAndDrop';
 import { PinSystemHelpers } from '../../../../types/workout';
@@ -203,7 +203,7 @@ export const SetEditCard: React.FC<Props> = ({
   };
 
   return (
-    <DraggableCard
+    <SetDraggableCard
       dragItem={dragItem}
       pinState={activePinState}
       disabled={true}
@@ -517,6 +517,6 @@ export const SetEditCard: React.FC<Props> = ({
         onSave={handleTimeLimitModalSave}
       />
 
-    </DraggableCard>
+    </SetDraggableCard>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ExerciseSelectionBottomSheet, SetEditCard } from '../molecules';
 import type { EffectivePartBlueprint, ModifySessionRequest, PartModification, ExerciseTemplate, EffectiveSetBlueprint, PinState, ActiveItem } from '../../../../types/workout';
-import { DraggableCard } from '../atoms';
+import { PartDraggableCard } from '../atoms/PartDraggableCard';
 import type { DragItem, PlaceholderInfo } from '../../../../hooks/useDragAndDrop';
 import { ExerciseName } from '../../../sessionInstanceDetailsPage/components/molecules/ExerciseName';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
@@ -162,7 +162,7 @@ const PartCard: React.FC<PartCardProps> = ({
   };
 
   return (
-    <DraggableCard
+    <PartDraggableCard
       dragItem={partDragItem}
       pinState={defaultPinState}
       disabled={true}
@@ -276,7 +276,7 @@ const PartCard: React.FC<PartCardProps> = ({
 
       {/* Part Content (Collapsible) - 전체 영역 드롭존 */}
       {isExpanded && (
-        <div ref={partContentDropRef} className="p-4 space-y-3">
+        <div ref={partContentDropRef} className="px-4 pt-4 pb-12 space-y-3">
           {part.sets.map((set, setIndex) => {
             // Placeholder 렌더링 로직: 현재 세트 이전에 삽입되어야 하는지 체크
             const shouldShowPlaceholderBefore =
@@ -290,10 +290,12 @@ const PartCard: React.FC<PartCardProps> = ({
                 {/* Placeholder: 세트 이전 위치 */}
                 {shouldShowPlaceholderBefore && (
                   <div
-                    className="h-24 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out"
-                    style={{ opacity: 0.8 }}
+                    className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
+                    data-placeholder="true"
                   >
-                    <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-2 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg whitespace-nowrap pointer-events-none">
+                      <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+                    </div>
                   </div>
                 )}
 
@@ -323,10 +325,12 @@ const PartCard: React.FC<PartCardProps> = ({
             placeholderInfo.containerId === partDragItem.id &&
             placeholderInfo.insertIndex === part.sets.length && (
             <div
-              className="h-24 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out"
-              style={{ opacity: 0.8 }}
+              className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
+              data-placeholder="true"
             >
-              <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-2 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg whitespace-nowrap pointer-events-none">
+                <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
+              </div>
             </div>
           )}
 
@@ -356,7 +360,7 @@ const PartCard: React.FC<PartCardProps> = ({
           )}
         </div>
       )}
-    </DraggableCard>
+    </PartDraggableCard>
   );
 };
 
