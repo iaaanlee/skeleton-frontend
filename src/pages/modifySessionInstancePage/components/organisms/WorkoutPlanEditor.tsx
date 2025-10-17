@@ -115,7 +115,7 @@ const PartCard: React.FC<PartCardProps> = ({
   const { setNodeRef: partHeaderDropRef, isOver: isHeaderOver } = useDroppable({
     id: partHeaderDropZone.id,
     data: partHeaderDropZone,
-    disabled: isExpanded // ✨ 펼쳐져 있으면 드롭존 비활성화
+    disabled: true // ✅ 항상 비활성화: 파트 활성화 클릭이 작동하도록 함
   });
 
   // 세트 목록 영역 드롭존 (펼쳤을 때만 활성화) - SetEditCard 패턴
@@ -181,10 +181,7 @@ const PartCard: React.FC<PartCardProps> = ({
     >
       {/* Part Header */}
       <div
-        ref={partHeaderDropRef}
-        className={`px-4 py-4 flex items-center justify-between transition-colors ${
-          isHeaderOver ? 'bg-blue-50' : ''
-        }`}
+        className={`px-4 py-4 flex items-center justify-between transition-colors`}
       >
         <div className="flex items-center space-x-3">
           <button
@@ -204,7 +201,15 @@ const PartCard: React.FC<PartCardProps> = ({
           </button>
           <div
             className="flex items-center flex-1 cursor-pointer"
-            onClick={() => onPartClick(part.partSeedId)}
+            onPointerDown={(e) => {
+              // ✅ @dnd-kit 센서보다 먼저 이벤트 캡처
+              console.log('👆 PointerDown 캡처 - @dnd-kit 센서 차단 (파트)');
+              e.stopPropagation();
+            }}
+            onClick={() => {
+              console.log('🟢 파트 클릭됨!', part.partSeedId, 'onPartClick:', !!onPartClick, 'isActive:', isActive);
+              onPartClick(part.partSeedId);
+            }}
           >
             <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
               isActive ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'
@@ -508,17 +513,44 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
 
   // togglePartExpansion은 useStatePreservation에서 가져옴
 
+  // ✅ 디버깅: activeItem state 변경 추적
+  React.useEffect(() => {
+    console.log('🔶 WorkoutPlanEditor activeItem 상태 변경:', {
+      activeItem,
+      timestamp: new Date().toISOString()
+    });
+  }, [activeItem]);
+
   // ActiveItem 핸들러들 추가
   const handlePartClick = (partSeedId: string) => {
+    console.log('🟢 handlePartClick 호출:', partSeedId);
     const newActiveItem = { level: 'part' as const, id: partSeedId };
     setActiveItem(newActiveItem);
     onActiveItemChange?.(newActiveItem);
+    console.log('🟢 activeItem 업데이트 완료:', newActiveItem);
   };
 
   const handleSetClick = (setSeedId: string) => {
+    console.log('🎯🎯🎯 handleSetClick 호출됨!', {
+      setSeedId,
+      oldActiveItem: activeItem,
+      willSetNewActiveItem: { level: 'set', id: setSeedId }
+    });
+
     const newActiveItem = { level: 'set' as const, id: setSeedId };
+
+    console.log('🎯 setActiveItem 호출 직전...');
     setActiveItem(newActiveItem);
-    onActiveItemChange?.(newActiveItem);
+    console.log('🎯 setActiveItem 호출 완료, React가 리렌더링할 것임');
+
+    if (onActiveItemChange) {
+      console.log('🎯 onActiveItemChange 호출 중...', newActiveItem);
+      onActiveItemChange(newActiveItem);
+    } else {
+      console.warn('⚠️ onActiveItemChange prop이 없습니다');
+    }
+
+    console.log('🎯 handleSetClick 완료');
   };
 
   const handleExerciseClick = (exerciseId: string) => {

@@ -110,6 +110,20 @@ export const SetEditCard: React.FC<Props> = ({
   // ActiveItem 체크
   const isActive = activeItem?.level === 'set' && activeItem.id === set.setSeedId;
 
+  // ✅ 디버깅: isActive 계산 확인 + 상세 정보
+  React.useEffect(() => {
+    console.log('🔵 SetEditCard render/update:', {
+      setSeedId: set.setSeedId,
+      activeItem: activeItem,
+      activeItemLevel: activeItem?.level,
+      activeItemId: activeItem?.id,
+      levelMatch: activeItem?.level === 'set',
+      idMatch: activeItem?.id === set.setSeedId,
+      isActive,
+      willShowOrange: isActive ? 'YES - ORANGE' : 'NO - WHITE/GRAY'
+    });
+  }, [activeItem, set.setSeedId, isActive]);
+
   // Sortable 운동 목록 생성 (ID 충돌 방지를 위한 고유 ID)
   const exerciseIds = set.exercises.map((exercise, index) =>
     generateExerciseDragId(partIndex || 0, setIndex, index, exercise.exerciseTemplateId)
@@ -123,11 +137,11 @@ export const SetEditCard: React.FC<Props> = ({
     autoExpand: false
   };
 
-  // 헤더 드롭존 (닫혔을 때만 활성화)
+  // 헤더 드롭존 (클릭 이벤트 간섭 방지를 위해 항상 비활성화)
   const { setNodeRef: setHeaderDropRef, isOver: isHeaderOver } = useDroppable({
     id: setDropZone.id,
     data: setDropZone,
-    disabled: isExpanded // 펼쳐져 있으면 헤더 드롭존 비활성화
+    disabled: true // ✅ 항상 비활성화: 세트 활성화 클릭이 작동하도록 함
   });
 
   // 운동 목록 영역 드롭존 (펼쳤을 때만 활성화)
@@ -203,19 +217,28 @@ export const SetEditCard: React.FC<Props> = ({
 
   return (
     <div
-      className={`border rounded-lg overflow-hidden transition-colors ${
-        isActive
-          ? 'border-orange-400 bg-orange-50'
-          : 'border-gray-200 bg-white hover:bg-gray-50'
-      }`}
+      className={(() => {
+        const activeClasses = 'border-orange-400 bg-orange-50';
+        const inactiveClasses = 'border-gray-200 bg-white hover:bg-gray-50';
+        const finalClasses = `border rounded-lg overflow-hidden transition-colors ${isActive ? activeClasses : inactiveClasses}`;
+
+        console.log('🎨 SetEditCard className 적용:', {
+          setSeedId: set.setSeedId,
+          isActive,
+          appliedClasses: isActive ? activeClasses : inactiveClasses,
+          finalClasses
+        });
+
+        return finalClasses;
+      })()}
       data-set-id={set.setSeedId}
       data-collapsed={!isExpanded}
       data-part-index={partIndex}
       data-set-index={setIndex}
+      data-is-active={isActive}
     >
       {/* 세트 헤더 - session-details 스타일 */}
       <div
-        ref={setHeaderDropRef}
         className={`px-3 pt-3 ${isExpanded ? 'pb-2' : 'pb-3'}`}
       >
         <div className="flex items-center justify-between">
@@ -243,7 +266,15 @@ export const SetEditCard: React.FC<Props> = ({
 
             <div
               className="flex items-center cursor-pointer"
-              onClick={() => onSetClick?.(set.setSeedId)}
+              onPointerDown={(e) => {
+                // ✅ @dnd-kit 센서보다 먼저 이벤트 캡처 (파트 카드 패턴)
+                console.log('👆 PointerDown 캡처 - @dnd-kit 센서 차단 (세트)');
+                e.stopPropagation();
+              }}
+              onClick={() => {
+                console.log('🎯 세트 정보 클릭!', set.setSeedId);
+                onSetClick?.(set.setSeedId);
+              }}
             >
               <span className="text-sm font-medium text-gray-700 mr-2">
                 세트 {setIndex + 1}
@@ -400,20 +431,24 @@ export const SetEditCard: React.FC<Props> = ({
                       }}
                       pinState={activePinState}
                       disabled={false}
+                      useDragHandle={true}
                     >
-                      <ExerciseEditCard
-                        exercise={exercise}
-                        exerciseIndex={exerciseIndex}
-                        pinState={activePinState}
-                        activeItem={activeItem}
-                        onExerciseClick={onExerciseClick}
-                        setSeedId={set.setSeedId}
-                        onUpdate={(updatedExercise) => handleUpdateExercise(exerciseIndex, updatedExercise)}
-                        onDelete={() => handleDeleteExercise(exerciseIndex)}
-                        partIndex={partIndex}
-                        setIndex={setIndex}
-                        parentId={dragItem.id}
-                      />
+                      {(exerciseDragHandleProps) => (
+                        <ExerciseEditCard
+                          exercise={exercise}
+                          exerciseIndex={exerciseIndex}
+                          pinState={activePinState}
+                          activeItem={activeItem}
+                          onExerciseClick={onExerciseClick}
+                          setSeedId={set.setSeedId}
+                          onUpdate={(updatedExercise) => handleUpdateExercise(exerciseIndex, updatedExercise)}
+                          onDelete={() => handleDeleteExercise(exerciseIndex)}
+                          partIndex={partIndex}
+                          setIndex={setIndex}
+                          parentId={dragItem.id}
+                          dragHandleProps={exerciseDragHandleProps}
+                        />
+                      )}
                     </SortableItem>
                   </React.Fragment>
                 );

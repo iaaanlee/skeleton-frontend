@@ -29,6 +29,27 @@ export const PinWrapper: React.FC<Props> = ({
   const effectivePin = PinSystemHelpers.getEffectivePinState(pinState);
   const styleClasses = PinSystemHelpers.getPinStyleClasses(pinState);
 
+  // ✅ 디버깅: effectivePin 상태 확인
+  const hasPointerEventsNone = effectivePin.isProtected && !effectivePin.canEdit;
+  const hasOnClickHandler = !!(onClick || (effectivePin.isProtected && !effectivePin.canEdit));
+
+  React.useEffect(() => {
+    console.log('🔷 PinWrapper render:', {
+      pinState,
+      effectivePin,
+      hasPointerEventsNone,
+      hasOnClickHandler,
+      hasOnClickProp: !!onClick
+    });
+
+    if (hasPointerEventsNone) {
+      console.warn('⚠️ PinWrapper children에 pointer-events-none 적용됨!', {
+        effectivePin,
+        pinState
+      });
+    }
+  }, [pinState, effectivePin, hasPointerEventsNone, hasOnClickHandler, onClick]);
+
   // Position classes for pin indicator
   const indicatorPositionClasses = {
     'top-left': 'top-1 left-1',
@@ -53,9 +74,12 @@ export const PinWrapper: React.FC<Props> = ({
 
   // Handle click events based on pin state
   const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+    console.log('🔷 PinWrapper handleClick 실행, onClick prop:', !!onClick, 'isProtected:', effectivePin.isProtected);
 
+    // ✅ 보호된 상태일 때만 stopPropagation (클릭 활성화 허용)
     if (!effectivePin.canEdit && effectivePin.isProtected) {
+      e.stopPropagation();
+
       // Show protection warning
       const pinType = effectivePin.activePin;
       const messages = {
@@ -71,18 +95,38 @@ export const PinWrapper: React.FC<Props> = ({
       return;
     }
 
-    onClick?.(e);
-  };
-
-  const handleDoubleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    if (!effectivePin.canEdit) {
+    // ✅ onClick prop이 있으면 호출하고 전파 차단
+    if (onClick) {
+      console.log('🔷 PinWrapper onClick prop 호출');
+      e.stopPropagation();
+      onClick(e);
       return;
     }
 
-    onDoubleClick?.(e);
+    // ✅ onClick prop이 없으면 이벤트 전파 허용 - 하지만 React에서는 명시적으로 허용해야 함!
+    console.log('🔷 PinWrapper onClick prop 없음, 이벤트 전파되어야 함');
+    // 아무것도 하지 않음 = 이벤트 계속 버블링
   };
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    // ✅ 편집 불가능한 상태일 때만 stopPropagation
+    if (!effectivePin.canEdit) {
+      e.stopPropagation();
+      return;
+    }
+
+    // ✅ onDoubleClick prop이 있으면 호출하고 전파 차단
+    if (onDoubleClick) {
+      e.stopPropagation();
+      onDoubleClick(e);
+    }
+
+    // ✅ onDoubleClick prop이 없으면 이벤트 전파 허용
+  };
+
+  // ✅ onClick/onDoubleClick이 필요한 경우에만 추가
+  const needsClickHandler = onClick || (effectivePin.isProtected && !effectivePin.canEdit);
+  const needsDoubleClickHandler = onDoubleClick || !effectivePin.canEdit;
 
   return (
     <div
@@ -94,8 +138,8 @@ export const PinWrapper: React.FC<Props> = ({
         ${getCursorStyle()}
         ${className}
       `}
-      onClick={handleClick}
-      onDoubleClick={handleDoubleClick}
+      {...(needsClickHandler && { onClick: handleClick })}
+      {...(needsDoubleClickHandler && { onDoubleClick: handleDoubleClick })}
     >
       {/* Pin Indicator */}
       {showPinIndicator && effectivePin.activePin && (
@@ -108,7 +152,16 @@ export const PinWrapper: React.FC<Props> = ({
       )}
 
       {/* Content */}
-      <div className={effectivePin.isProtected && !effectivePin.canEdit ? 'pointer-events-none' : ''}>
+      <div className={(() => {
+        const className = effectivePin.isProtected && !effectivePin.canEdit ? 'pointer-events-none' : '';
+        if (className) {
+          console.warn('⚠️⚠️⚠️ PinWrapper children div에 pointer-events-none 적용 중!', {
+            effectivePin,
+            pinState
+          });
+        }
+        return className;
+      })()}>
         {children}
       </div>
 

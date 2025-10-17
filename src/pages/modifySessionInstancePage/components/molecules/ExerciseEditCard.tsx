@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
-import { useDraggable } from '@dnd-kit/core';
 import type { EffectiveExerciseBlueprint, ExerciseSpec, PinState, ActiveItem } from '../../../../types/workout';
 import { DraggableCard } from '../atoms/DraggableCard';
 import type { DragItem } from '../../../../hooks/useDragAndDrop';
@@ -8,6 +7,12 @@ import { PinSystemHelpers } from '../../../../types/workout';
 import { generateExerciseDragId } from '../../../../utils/dragIdGenerator';
 import { ExerciseName } from '../../../sessionInstanceDetailsPage/components/molecules/ExerciseName';
 import { ExerciseEditBottomSheet } from './ExerciseEditBottomSheet';
+
+type DragHandleProps = {
+  setActivatorNodeRef: (element: HTMLElement | null) => void;
+  listeners: Record<string, Function> | undefined;
+  attributes: Record<string, any>;
+};
 
 // formatExerciseSpec 함수 - session-instance-details와 동일
 const formatExerciseSpec = (spec: ExerciseSpec) => {
@@ -59,6 +64,8 @@ type Props = {
   activeItem?: ActiveItem;
   onExerciseClick?: (exerciseId: string) => void;
   setSeedId?: string;
+  // Drag Handle Props (from SortableItem render props)
+  dragHandleProps?: DragHandleProps;
 };
 
 export const ExerciseEditCard: React.FC<Props> = ({
@@ -72,7 +79,8 @@ export const ExerciseEditCard: React.FC<Props> = ({
   parentId,
   activeItem,
   onExerciseClick,
-  setSeedId
+  setSeedId,
+  dragHandleProps
 }) => {
   // Phase 3: ExerciseEditBottomSheet 모달 상태
   const [exerciseModalOpen, setExerciseModalOpen] = useState(false);
@@ -109,18 +117,7 @@ export const ExerciseEditCard: React.FC<Props> = ({
   const effectivePin = PinSystemHelpers.getEffectivePinState(activePinState);
   const canDrag = effectivePin.canDrag;
 
-  // useDraggable 훅 사용
-  const {
-    attributes,
-    listeners,
-    // setNodeRef,
-    // transform,
-    // isDragging,
-  } = useDraggable({
-    id: dragItem.id,
-    data: dragItem,
-    disabled: !canDrag
-  });
+  // ❌ useDraggable 제거: SortableItem이 이미 드래그 처리함 (이중 훅 충돌 방지)
 
   // ActiveItem 체크 - WorkoutPlanTab 패턴 따라 구현
   const exerciseKey = setSeedId ? `${setSeedId}-${exercise.exerciseTemplateId}-${exercise.order}` : `exercise-${exerciseIndex}-${exercise.exerciseTemplateId}`;
@@ -212,9 +209,11 @@ export const ExerciseEditCard: React.FC<Props> = ({
               </svg>
             </button>
 
-            {/* 드래그 핸들 */}
+            {/* 드래그 핸들 (SortableItem activator 적용) */}
             <button
-              {...(canDrag ? { ...attributes, ...listeners } : {})}
+              ref={dragHandleProps?.setActivatorNodeRef}
+              {...(dragHandleProps?.attributes || {})}
+              {...(dragHandleProps?.listeners || {})}
               className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing"
               title="운동 이동"
               disabled={!canDrag}
