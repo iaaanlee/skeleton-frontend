@@ -167,6 +167,7 @@ const PartCard: React.FC<PartCardProps> = ({
       }`}
       data-part-id={`part-${partIndex}`}
       data-collapsed={!isExpanded}
+      data-drag-id={partDragItem.id}
     >
       {/* Part Header */}
       <div
