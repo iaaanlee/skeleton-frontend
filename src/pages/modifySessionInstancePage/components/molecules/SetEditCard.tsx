@@ -243,7 +243,7 @@ export const SetEditCard: React.FC<Props> = ({
       >
         <div className="flex items-center justify-between">
           {/* 왼쪽: 토글 + 세트 정보 */}
-          <div className="flex items-center">
+          <div className="flex items-center flex-1">
             {/* 토글 버튼 - 왼쪽으로 이동 */}
             <button
               onClick={(e) => {
@@ -265,7 +265,7 @@ export const SetEditCard: React.FC<Props> = ({
             </button>
 
             <div
-              className="flex items-center cursor-pointer"
+              className="flex items-center flex-1 cursor-pointer"
               onPointerDown={(e) => {
                 // ✅ @dnd-kit 센서보다 먼저 이벤트 캡처 (파트 카드 패턴)
                 console.log('👆 PointerDown 캡처 - @dnd-kit 센서 차단 (세트)');
