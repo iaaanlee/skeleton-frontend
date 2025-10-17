@@ -18,6 +18,13 @@ type Props = {
 };
 
 
+// Drag Handle Props type
+type DragHandleProps = {
+  setActivatorNodeRef: (element: HTMLElement | null) => void;
+  listeners: Record<string, Function> | undefined;
+  attributes: Record<string, any>;
+};
+
 // 파트 카드 컴포넌트 Props
 type PartCardProps = {
   part: EffectivePartBlueprint;
@@ -36,6 +43,8 @@ type PartCardProps = {
   togglePartExpansion: (partSeedId: string) => void;
   toggleSetExpansion: (setSeedId: string) => void;
   placeholderInfo?: PlaceholderInfo;
+  // Drag Handle Props (from SortableItem render props)
+  dragHandleProps?: DragHandleProps;
 };
 
 // 파트 카드 컴포넌트 - WorkoutPlanEditor 외부로 이동하여 안정화
@@ -56,6 +65,7 @@ const PartCard: React.FC<PartCardProps> = ({
   togglePartExpansion,
   toggleSetExpansion,
   placeholderInfo,
+  dragHandleProps,
 }) => {
   // 드래그 재시작 플래그 (무한 루프 방지)
   const isDragRestarted = React.useRef(false);
@@ -210,8 +220,11 @@ const PartCard: React.FC<PartCardProps> = ({
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          {/* 드래그 핸들 버튼 - SortableItem이 드래그 처리, 여기서는 collapse만 */}
+          {/* 드래그 핸들 버튼 (SortableItem activator 적용) */}
           <button
+            ref={dragHandleProps?.setActivatorNodeRef}
+            {...(dragHandleProps?.attributes || {})}
+            {...(dragHandleProps?.listeners || {})}
             className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing"
             title="파트 이동"
             disabled={!canDrag}
@@ -311,23 +324,27 @@ const PartCard: React.FC<PartCardProps> = ({
                     }}
                     pinState={defaultPinState}
                     disabled={false}
+                    useDragHandle={true}
                   >
-                    <SetEditCard
-                      set={set}
-                      setIndex={setIndex}
-                      partIndex={partIndex}
-                      parentId={partDragItem.id}
-                      pinState={defaultPinState}
-                      activeItem={activeItem}
-                      onSetClick={onSetClick}
-                      onExerciseClick={onExerciseClick}
-                      onUpdateSet={(updatedSet) => onUpdateSet(partIndex, setIndex, updatedSet)}
-                      onDeleteSet={() => onDeleteSet(partIndex, setIndex)}
-                      onAddExercise={() => onAddExercise(partIndex)}
-                      isExpanded={expandedSets.has(set.setSeedId)}
-                      onToggle={toggleSetExpansion}
-                      placeholderInfo={placeholderInfo}
-                    />
+                    {(dragHandleProps) => (
+                      <SetEditCard
+                        set={set}
+                        setIndex={setIndex}
+                        partIndex={partIndex}
+                        parentId={partDragItem.id}
+                        pinState={defaultPinState}
+                        activeItem={activeItem}
+                        onSetClick={onSetClick}
+                        onExerciseClick={onExerciseClick}
+                        onUpdateSet={(updatedSet) => onUpdateSet(partIndex, setIndex, updatedSet)}
+                        onDeleteSet={() => onDeleteSet(partIndex, setIndex)}
+                        onAddExercise={() => onAddExercise(partIndex)}
+                        isExpanded={expandedSets.has(set.setSeedId)}
+                        onToggle={toggleSetExpansion}
+                        placeholderInfo={placeholderInfo}
+                        dragHandleProps={dragHandleProps}
+                      />
+                    )}
                   </SortableItem>
                 </React.Fragment>
               );
@@ -656,25 +673,29 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
                 dragItem={partDragItem}
                 pinState={defaultPinState}
                 disabled={false}
+                useDragHandle={true}
               >
-                <PartCard
-                  part={part}
-                  partIndex={partIndex}
-                  isExpanded={isExpanded}
-                  isActive={isActive}
-                  expandedSets={expandedSets}
-                  defaultPinState={defaultPinState}
-                  activeItem={activeItem}
-                  onPartClick={handlePartClick}
-                  onSetClick={handleSetClick}
-                  onExerciseClick={handleExerciseClick}
-                  onUpdateSet={handleUpdateSet}
-                  onDeleteSet={handleDeleteSet}
-                  onAddExercise={handleAddExercise}
-                  togglePartExpansion={togglePartExpansion}
-                  toggleSetExpansion={toggleSetExpansion}
-                  placeholderInfo={placeholderInfo}
-                />
+                {(dragHandleProps) => (
+                  <PartCard
+                    part={part}
+                    partIndex={partIndex}
+                    isExpanded={isExpanded}
+                    isActive={isActive}
+                    expandedSets={expandedSets}
+                    defaultPinState={defaultPinState}
+                    activeItem={activeItem}
+                    onPartClick={handlePartClick}
+                    onSetClick={handleSetClick}
+                    onExerciseClick={handleExerciseClick}
+                    onUpdateSet={handleUpdateSet}
+                    onDeleteSet={handleDeleteSet}
+                    onAddExercise={handleAddExercise}
+                    togglePartExpansion={togglePartExpansion}
+                    toggleSetExpansion={toggleSetExpansion}
+                    placeholderInfo={placeholderInfo}
+                    dragHandleProps={dragHandleProps}
+                  />
+                )}
               </SortableItem>
             </React.Fragment>
           );

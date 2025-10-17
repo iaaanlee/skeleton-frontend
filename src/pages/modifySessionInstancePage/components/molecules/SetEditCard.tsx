@@ -10,6 +10,12 @@ import { generateExerciseDragId, generateSetDragId } from '../../../../utils/dra
 import { RestTimeEditBottomSheet } from './RestTimeEditBottomSheet';
 import { TimeLimitEditBottomSheet } from './TimeLimitEditBottomSheet';
 
+type DragHandleProps = {
+  setActivatorNodeRef: (element: HTMLElement | null) => void;
+  listeners: Record<string, Function> | undefined;
+  attributes: Record<string, any>;
+};
+
 type Props = {
   set: EffectiveSetBlueprint;
   setIndex: number;
@@ -29,6 +35,8 @@ type Props = {
   onToggle?: (setSeedId: string) => void;
   // Placeholder Props
   placeholderInfo?: PlaceholderInfo;
+  // Drag Handle Props (from SortableItem render props)
+  dragHandleProps?: DragHandleProps;
 };
 
 export const SetEditCard: React.FC<Props> = ({
@@ -45,7 +53,8 @@ export const SetEditCard: React.FC<Props> = ({
   onExerciseClick,
   isExpanded: propIsExpanded,
   onToggle,
-  placeholderInfo
+  placeholderInfo,
+  dragHandleProps
 }) => {
   // 토글 상태 인계: props에서 받은 상태 또는 기본값 사용
   const isExpanded = propIsExpanded !== undefined
@@ -263,8 +272,11 @@ export const SetEditCard: React.FC<Props> = ({
               </svg>
             </button>
 
-            {/* 드래그 핸들 (SortableItem이 처리하므로 여기서는 collapse만) */}
+            {/* 드래그 핸들 (SortableItem activator 적용) */}
             <button
+              ref={dragHandleProps?.setActivatorNodeRef}
+              {...(dragHandleProps?.attributes || {})}
+              {...(dragHandleProps?.listeners || {})}
               className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing"
               title="세트 이동"
               disabled={!canDrag}

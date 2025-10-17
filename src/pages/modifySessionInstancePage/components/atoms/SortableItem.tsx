@@ -6,13 +6,20 @@ import { PinWrapper } from './PinWrapper';
 import type { PinState } from '../../../../types/workout';
 import { PinSystemHelpers } from '../../../../types/workout';
 
+type RenderProps = {
+  setActivatorNodeRef: (element: HTMLElement | null) => void;
+  listeners: Record<string, Function> | undefined;
+  attributes: Record<string, any>;
+};
+
 type Props = {
   sortableId: string;
   dragItem: DragItem;
-  children: React.ReactNode;
+  children: React.ReactNode | ((props: RenderProps) => React.ReactNode);
   pinState?: PinState;
   className?: string;
   disabled?: boolean;
+  useDragHandle?: boolean; // 드래그 핸들 사용 여부
 };
 
 /**
@@ -26,12 +33,14 @@ export const SortableItem: React.FC<Props> = ({
   children,
   pinState,
   className = '',
-  disabled = false
+  disabled = false,
+  useDragHandle = false
 }) => {
   const {
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -64,7 +73,7 @@ export const SortableItem: React.FC<Props> = ({
     'transition-all duration-200',
     isDragging ? 'scale-105 shadow-xl z-40' : 'shadow-sm',
     isOver ? 'scale-102 shadow-md' : '',
-    !canDrag ? 'cursor-not-allowed opacity-60' : 'cursor-grab active:cursor-grabbing',
+    !canDrag ? 'cursor-not-allowed opacity-60' : useDragHandle ? '' : 'cursor-grab active:cursor-grabbing',
     className
   ].filter(Boolean).join(' ');
 
@@ -73,8 +82,8 @@ export const SortableItem: React.FC<Props> = ({
       ref={setNodeRef}
       style={style}
       className={itemClasses}
-      {...attributes}
-      {...(canDrag ? listeners : {})}
+      {...(useDragHandle ? {} : attributes)}
+      {...(useDragHandle || !canDrag ? {} : listeners)}
       data-sortable-id={sortableId}
       data-drag-type={dragItem.type}
       data-can-drag={canDrag}
@@ -89,7 +98,9 @@ export const SortableItem: React.FC<Props> = ({
           transition-all duration-150
         `}
       >
-        {children}
+        {typeof children === 'function'
+          ? children({ setActivatorNodeRef, listeners: canDrag ? listeners : undefined, attributes })
+          : children}
       </PinWrapper>
     </div>
   );
