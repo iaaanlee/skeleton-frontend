@@ -137,6 +137,7 @@ export const PinWrapper: React.FC<Props> = ({
         ${styleClasses}
         ${getCursorStyle()}
         ${className}
+        !bg-transparent
       `}
       {...(needsClickHandler && { onClick: handleClick })}
       {...(needsDoubleClickHandler && { onDoubleClick: handleDoubleClick })}
