@@ -183,7 +183,7 @@ const PartCard: React.FC<PartCardProps> = ({
       <div
         className={`px-4 py-4 flex items-center justify-between transition-colors`}
       >
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 flex-1">
           <button
             onClick={() => togglePartExpansion(part.partSeedId)}
             className="p-1 hover:bg-gray-200 rounded transition-colors"
@@ -498,6 +498,21 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
     };
   }, [collapseAllParts]);
 
+  // 🆕 드래그 시작 시 활성화 해제 이벤트 리스너
+  useEffect(() => {
+    const handleClearActive = () => {
+      console.log('드래그 시작: 활성화 해제');
+      setActiveItem(null);
+      onActiveItemChange?.(null);
+    };
+
+    document.addEventListener('drag-start-clear-active', handleClearActive);
+
+    return () => {
+      document.removeEventListener('drag-start-clear-active', handleClearActive);
+    };
+  }, [onActiveItemChange]);
+
   // Default Pin State (no pins active) - will be replaced with actual Pin detection in next phase
   const defaultPinState: PinState = {
     sessionPin: false,
@@ -524,6 +539,15 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
   // ActiveItem 핸들러들 추가
   const handlePartClick = (partSeedId: string) => {
     console.log('🟢 handlePartClick 호출:', partSeedId);
+
+    // 이미 활성화된 파트를 다시 클릭하면 해제 (토글)
+    if (activeItem?.level === 'part' && activeItem.id === partSeedId) {
+      console.log('🟢 이미 활성화된 파트 → 해제');
+      setActiveItem(null);
+      onActiveItemChange?.(null);
+      return;
+    }
+
     const newActiveItem = { level: 'part' as const, id: partSeedId };
     setActiveItem(newActiveItem);
     onActiveItemChange?.(newActiveItem);
@@ -536,6 +560,14 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
       oldActiveItem: activeItem,
       willSetNewActiveItem: { level: 'set', id: setSeedId }
     });
+
+    // 이미 활성화된 세트를 다시 클릭하면 해제 (토글)
+    if (activeItem?.level === 'set' && activeItem.id === setSeedId) {
+      console.log('🎯 이미 활성화된 세트 → 해제');
+      setActiveItem(null);
+      onActiveItemChange?.(null);
+      return;
+    }
 
     const newActiveItem = { level: 'set' as const, id: setSeedId };
 
@@ -554,6 +586,16 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
   };
 
   const handleExerciseClick = (exerciseId: string) => {
+    console.log('🏋️ handleExerciseClick 호출:', exerciseId);
+
+    // 이미 활성화된 운동을 다시 클릭하면 해제 (토글)
+    if (activeItem?.level === 'move' && activeItem.id === exerciseId) {
+      console.log('🏋️ 이미 활성화된 운동 → 해제');
+      setActiveItem(null);
+      onActiveItemChange?.(null);
+      return;
+    }
+
     const newActiveItem = { level: 'move' as const, id: exerciseId };
     setActiveItem(newActiveItem);
     onActiveItemChange?.(newActiveItem);
