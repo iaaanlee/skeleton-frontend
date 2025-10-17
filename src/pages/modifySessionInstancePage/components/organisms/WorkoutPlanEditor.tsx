@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ExerciseSelectionBottomSheet, SetEditCard } from '../molecules';
 import type { EffectivePartBlueprint, ModifySessionRequest, PartModification, ExerciseTemplate, EffectiveSetBlueprint, PinState, ActiveItem } from '../../../../types/workout';
-import { PartDraggableCard } from '../atoms/PartDraggableCard';
 import { SortableItem } from '../atoms/SortableItem';
 import type { DragItem, PlaceholderInfo } from '../../../../hooks/useDragAndDrop';
 import { ExerciseName } from '../../../sessionInstanceDetailsPage/components/molecules/ExerciseName';
-import { useDraggable, useDroppable } from '@dnd-kit/core';
+import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useStatePreservation } from '../../../sessionInstanceDetailsPage/hooks/useStatePreservation';
 import { generatePartDragId, generateSetDragId } from '../../../../utils/dragIdGenerator';
@@ -86,16 +85,7 @@ const PartCard: React.FC<PartCardProps> = ({
     generateSetDragId(partIndex, index, set.setSeedId)
   );
 
-  // useDraggable 훅 사용 (SetEditCard 패턴)
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-  } = useDraggable({
-    id: partDragItem.id,
-    data: partDragItem,
-    disabled: !canDrag
-  });
+  // ❌ useDraggable 제거: SortableItem이 드래그 처리함 (SetEditCard 패턴)
 
   // 파트 헤더 드롭존 생성 (세트 해결책과 동일한 패턴)
   type DropZone = {
@@ -169,11 +159,7 @@ const PartCard: React.FC<PartCardProps> = ({
   };
 
   return (
-    <PartDraggableCard
-      dragItem={partDragItem}
-      pinState={defaultPinState}
-      disabled={true}
-      dragHandle={false}
+    <div
       className={`border rounded-lg overflow-hidden transition-colors ${
         isActive
           ? 'border-orange-400 bg-orange-50'
@@ -223,14 +209,11 @@ const PartCard: React.FC<PartCardProps> = ({
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          {/* 드래그 핸들 버튼 - SetEditCard 패턴 */}
+          {/* 드래그 핸들 버튼 - SortableItem이 드래그 처리, 여기서는 collapse만 */}
           <button
-            ref={setNodeRef}
-            {...(canDrag ? { ...attributes, ...listeners } : {})}
             className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing"
             title="파트 이동"
             disabled={!canDrag}
-            onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => {
               // 재시작된 이벤트면 그냥 진행 (무한 루프 방지)
               if (isDragRestarted.current) {
@@ -391,7 +374,7 @@ const PartCard: React.FC<PartCardProps> = ({
           )}
         </div>
       )}
-    </PartDraggableCard>
+    </div>
   );
 };
 
@@ -613,14 +596,20 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
     alert('세트 추가 기능은 상태 관리 구현 후 활성화됩니다.');
   };
 
+  // Session-level Part ID 목록 생성 (SortableContext용)
+  const partIds = effectiveBlueprint.map((part, index) =>
+    generatePartDragId(index, part.partSeedId)
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">운동 계획</h2>
       </div>
 
-      <div className="space-y-3">
-        {effectiveBlueprint.map((part, partIndex) => {
+      <SortableContext items={partIds} strategy={verticalListSortingStrategy}>
+        <div className="space-y-3">
+          {effectiveBlueprint.map((part, partIndex) => {
           const isActive = activeItem?.level === 'part' && activeItem.id === part.partSeedId;
           const isExpanded = expandedParts.has(part.partSeedId);
 
@@ -630,36 +619,62 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
             placeholderInfo.containerType === 'session' &&
             placeholderInfo.insertIndex === partIndex;
 
+          // Part DragItem 생성 (SortableItem용)
+          const partDragItem: DragItem = {
+            id: partIds[partIndex],
+            type: 'part',
+            data: {
+              name: part.partName,
+              part: part,
+              partIndex: partIndex
+            },
+            pinState: defaultPinState,
+            parentId: 'session',
+            level: 'part',
+            indices: {
+              partIndex
+            }
+          };
+
           return (
             <React.Fragment key={part.partSeedId}>
               {/* Session-level Placeholder: 파트 이전 위치 */}
               {shouldShowPlaceholderBefore && (
                 <div
-                  className="h-32 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out"
-                  style={{ opacity: 0.8 }}
+                  className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
+                  data-placeholder="true"
                 >
-                  <span className="text-blue-600 text-sm font-medium">여기에 파트 삽입</span>
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-2 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg whitespace-nowrap pointer-events-none">
+                    <span className="text-blue-600 text-sm font-medium">여기에 파트 삽입</span>
+                  </div>
                 </div>
               )}
 
-              <PartCard
-                part={part}
-                partIndex={partIndex}
-                isExpanded={isExpanded}
-                isActive={isActive}
-                expandedSets={expandedSets}
-                defaultPinState={defaultPinState}
-                activeItem={activeItem}
-                onPartClick={handlePartClick}
-                onSetClick={handleSetClick}
-                onExerciseClick={handleExerciseClick}
-                onUpdateSet={handleUpdateSet}
-                onDeleteSet={handleDeleteSet}
-                onAddExercise={handleAddExercise}
-                togglePartExpansion={togglePartExpansion}
-                toggleSetExpansion={toggleSetExpansion}
-                placeholderInfo={placeholderInfo}
-              />
+              <SortableItem
+                sortableId={partIds[partIndex]}
+                dragItem={partDragItem}
+                pinState={defaultPinState}
+                disabled={false}
+              >
+                <PartCard
+                  part={part}
+                  partIndex={partIndex}
+                  isExpanded={isExpanded}
+                  isActive={isActive}
+                  expandedSets={expandedSets}
+                  defaultPinState={defaultPinState}
+                  activeItem={activeItem}
+                  onPartClick={handlePartClick}
+                  onSetClick={handleSetClick}
+                  onExerciseClick={handleExerciseClick}
+                  onUpdateSet={handleUpdateSet}
+                  onDeleteSet={handleDeleteSet}
+                  onAddExercise={handleAddExercise}
+                  togglePartExpansion={togglePartExpansion}
+                  toggleSetExpansion={toggleSetExpansion}
+                  placeholderInfo={placeholderInfo}
+                />
+              </SortableItem>
             </React.Fragment>
           );
         })}
@@ -669,10 +684,12 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
           placeholderInfo.containerType === 'session' &&
           placeholderInfo.insertIndex === effectiveBlueprint.length && (
           <div
-            className="h-32 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out"
-            style={{ opacity: 0.8 }}
+            className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
+            data-placeholder="true"
           >
-            <span className="text-blue-600 text-sm font-medium">여기에 파트 삽입</span>
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-2 bg-blue-100 border-2 border-dashed border-blue-400 rounded-lg whitespace-nowrap pointer-events-none">
+              <span className="text-blue-600 text-sm font-medium">여기에 파트 삽입</span>
+            </div>
           </div>
         )}
 
@@ -687,7 +704,8 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
             <p className="text-sm text-gray-400">우하단 + 버튼으로 운동을 추가하세요</p>
           </div>
         )}
-      </div>
+        </div>
+      </SortableContext>
 
       {/* Exercise Selection Bottom Sheet */}
       <ExerciseSelectionBottomSheet
