@@ -696,8 +696,9 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       //   });
       // }
 
-      // 자동 펼침은 운동 드래그 시에만 동작
+      // 자동 펼침: 운동 드래그 시 또는 세트 드래그 시
       const isExerciseDrag = activeItem?.type === 'exercise';
+      const isSetDrag = activeItem?.type === 'set';
 
       // 운동 위에 hover했을 때 → 부모 세트 & 부모 파트 자동 확장
       if (overId.startsWith('exercise-') && isExerciseDrag) {
@@ -803,7 +804,7 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
           // console.log('✅ 세트 자동 확장 타이머 시작:', setSeedId);
           handleAutoExpandSet(setSeedId);
         }
-      } else if (overId.startsWith('part-') && isExerciseDrag) {
+      } else if (overId.startsWith('part-') && (isExerciseDrag || isSetDrag)) {
         // overId는 "part-0-seedId" 형태, data-part-id는 "part-0" 형태
         // 파트 인덱스만 추출해서 매칭
         const parts = overId.split('-');
@@ -833,7 +834,7 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
           handleAutoExpandPart(overId);
         }
       }
-      // 세트/파트 → 세트/파트 드래그 시에는 자동 펼침 비활성화 (위에서 isExerciseDrag 체크로 처리됨)
+      // 파트 → 세트 드래그 시에는 자동 펼침 비활성화 (위에서 isExerciseDrag/isSetDrag 체크로 처리됨)
 
       // ========== Multi-Container Sortable: 삽입 위치 계산 ==========
       // 포인터 위치 기반으로 타겟 컨테이너 내 삽입 위치 계산
