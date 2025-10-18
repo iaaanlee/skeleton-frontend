@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { createContext, useRef, useCallback } from 'react';
 import { DndContext, DragOverlay, DragEndEvent, DragStartEvent, DragOverEvent } from '@dnd-kit/core';
 import { useDragAndDrop, DragEventCallback } from '../hooks/useDragAndDrop';
 import { CircularDropZone } from '../pages/modifySessionInstancePage/components/atoms';
 import { ExerciseName } from '../pages/sessionInstanceDetailsPage/components/molecules/ExerciseName';
 import type { ExerciseSpec } from '../types/workout';
+
+// 🆕 DragHandle Offset Context - 드래그 핸들을 마우스 위치에 정확히 고정
+export const DragHandleOffsetContext = createContext<(x: number, y: number) => void>(() => {});
 
 // formatExerciseSpec 함수 - ExerciseEditCard와 동일
 const formatExerciseSpec = (spec: ExerciseSpec) => {
@@ -62,6 +65,14 @@ export const DndContextProvider: React.FC<Props> = ({
 }) => {
   const dndHook = useDragAndDrop(dragCallbacks);
 
+  // 🆕 드래그 핸들 offset 저장 (Context로 공유)
+  const dragHandleOffsetRef = useRef({ x: 0, y: 0 });
+
+  // 🆕 드래그 핸들 offset setter (Context value)
+  const setDragHandleOffset = useCallback((x: number, y: number) => {
+    dragHandleOffsetRef.current = { x, y };
+  }, []);
+
   // 외부 핸들러와 내부 핸들러 결합
   const handleDragStart = (event: DragStartEvent) => {
     dndHook.onDragStart(event);
@@ -79,45 +90,62 @@ export const DndContextProvider: React.FC<Props> = ({
   };
 
   return (
-    <DndContext
-      sensors={dndHook.sensors}
-      collisionDetection={dndHook.collisionDetection}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-      modifiers={dndHook.modifiers}
-      autoScroll={false}  // 자동 스크롤 비활성화
-    >
-      {children}
+    <DragHandleOffsetContext.Provider value={setDragHandleOffset}>
+      <DndContext
+        sensors={dndHook.sensors}
+        collisionDetection={dndHook.collisionDetection}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        modifiers={dndHook.modifiers}
+        autoScroll={false}  // 자동 스크롤 비활성화
+      >
+        {children}
 
       {/* Drag Overlay for Ghost Image */}
       <DragOverlay>
         {dndHook.activeItem ? (
           <div
             className={`bg-blue-100 rounded-lg shadow-lg border-2 border-blue-300 ${
-              dndHook.activeItem.type === 'exercise' ? 'p-3' : 'w-[calc(100vw-2rem)]'
+              dndHook.activeItem.type === 'exercise' ? '' : 'w-[calc(100vw-2rem)]'
             }`}
-            style={
-              dndHook.activeItem.type !== 'exercise'
-                ? { transform: 'translateX(-16px)' } // 드래그 핸들 중심 위치 보정
-                : undefined
-            }
+            style={{
+              // 🆕 동적 offset 적용 (드래그 핸들을 마우스에 정확히 고정)
+              transform: `translate(${dragHandleOffsetRef.current.x}px, ${dragHandleOffsetRef.current.y}px)`
+            }}
           >
             {dndHook.activeItem.type === 'exercise' && dndHook.activeItem.data?.exercise ? (
-              // 운동 카드 스타일
-              <div className="flex items-center">
-                <div className="w-6 h-6 rounded-full flex items-center justify-center mr-3 bg-blue-200">
-                  <span className="text-xs font-semibold text-blue-700">
-                    {(dndHook.activeItem.data.exercise.order ?? 0) + 1}
-                  </span>
+              // 🆕 운동 카드 스타일 - 드래그 핸들 추가
+              <div className="flex items-center justify-between p-3">
+                {/* 왼쪽: 번호 + 이름 */}
+                <div className="flex items-center">
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center mr-3 bg-blue-200">
+                    <span className="text-xs font-semibold text-blue-700">
+                      {(dndHook.activeItem.data.exercise.order ?? 0) + 1}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-blue-900 text-sm">
+                      <ExerciseName exerciseTemplateId={dndHook.activeItem.data.exercise.exerciseTemplateId} />
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      {formatExerciseSpec(dndHook.activeItem.data.exercise.spec)}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-blue-900 text-sm">
-                    <ExerciseName exerciseTemplateId={dndHook.activeItem.data.exercise.exerciseTemplateId} />
-                  </p>
-                  <p className="text-xs text-blue-700">
-                    {formatExerciseSpec(dndHook.activeItem.data.exercise.spec)}
-                  </p>
+
+                {/* 오른쪽: 삭제 + 드래그 핸들 */}
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-center w-8 h-8 rounded text-red-500">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </div>
+                  <div className="flex items-center justify-center w-8 h-8 rounded text-gray-600">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -202,6 +230,7 @@ export const DndContextProvider: React.FC<Props> = ({
           </div>
         </>
       )}
-    </DndContext>
+      </DndContext>
+    </DragHandleOffsetContext.Provider>
   );
 };

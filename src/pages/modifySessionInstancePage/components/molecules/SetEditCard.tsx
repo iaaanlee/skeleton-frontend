@@ -9,6 +9,7 @@ import { PinSystemHelpers } from '../../../../types/workout';
 import { generateExerciseDragId, generateSetDragId } from '../../../../utils/dragIdGenerator';
 import { RestTimeEditBottomSheet } from './RestTimeEditBottomSheet';
 import { TimeLimitEditBottomSheet } from './TimeLimitEditBottomSheet';
+import { useDragHandleOffset } from '../../../../hooks/useDragHandleOffset';
 
 type DragHandleProps = {
   setActivatorNodeRef: (element: HTMLElement | null) => void;
@@ -69,6 +70,9 @@ export const SetEditCard: React.FC<Props> = ({
 
   // 드래그 재시작 플래그 (무한 루프 방지)
   const isDragRestarted = React.useRef(false);
+
+  // 🆕 드래그 핸들 offset 설정 hook
+  const setDragHandleOffset = useDragHandleOffset();
 
   // Phase 1 완료: BaseEditBottomSheet 기반 구축 완료
 
@@ -316,6 +320,16 @@ export const SetEditCard: React.FC<Props> = ({
                 requestAnimationFrame(() => {
                   requestAnimationFrame(() => {
                     if (!canDrag) return;
+
+                    // ✅ collapse 후 실제 위치 기준으로 offset 계산 (마우스 위치에 정확히 고정)
+                    const rect = target.getBoundingClientRect();
+                    const handleCenterX = rect.left + rect.width / 2;
+                    const handleCenterY = rect.top + rect.height / 2;
+                    const offsetX = savedEvent.clientX - handleCenterX;
+                    const offsetY = savedEvent.clientY - handleCenterY;
+
+                    // Context로 전달
+                    setDragHandleOffset(offsetX, offsetY);
 
                     // 플래그 설정하고 새 이벤트 발행
                     isDragRestarted.current = true;

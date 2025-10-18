@@ -7,6 +7,7 @@ import { PinSystemHelpers } from '../../../../types/workout';
 import { generateExerciseDragId } from '../../../../utils/dragIdGenerator';
 import { ExerciseName } from '../../../sessionInstanceDetailsPage/components/molecules/ExerciseName';
 import { ExerciseEditBottomSheet } from './ExerciseEditBottomSheet';
+import { useDragHandleOffset } from '../../../../hooks/useDragHandleOffset';
 
 type DragHandleProps = {
   setActivatorNodeRef: (element: HTMLElement | null) => void;
@@ -84,6 +85,9 @@ export const ExerciseEditCard: React.FC<Props> = ({
 }) => {
   // Phase 3: ExerciseEditBottomSheet 모달 상태
   const [exerciseModalOpen, setExerciseModalOpen] = useState(false);
+
+  // 🆕 드래그 핸들 offset 설정 hook
+  const setDragHandleOffset = useDragHandleOffset();
 
   // Default Pin State (no pins active)
   const defaultPinState: PinState = {
@@ -217,6 +221,20 @@ export const ExerciseEditCard: React.FC<Props> = ({
               className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing"
               title="운동 이동"
               disabled={!canDrag}
+              onPointerDown={(e) => {
+                // ✅ 드래그 핸들 offset 계산 (마우스 위치에 정확히 고정)
+                const handleBtn = e.currentTarget;
+                const rect = handleBtn.getBoundingClientRect();
+                const handleCenterX = rect.left + rect.width / 2;
+                const handleCenterY = rect.top + rect.height / 2;
+                const offsetX = e.clientX - handleCenterX;
+                const offsetY = e.clientY - handleCenterY;
+
+                // Context로 전달
+                setDragHandleOffset(offsetX, offsetY);
+
+                // 운동은 collapse 없이 바로 드래그 진행
+              }}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
