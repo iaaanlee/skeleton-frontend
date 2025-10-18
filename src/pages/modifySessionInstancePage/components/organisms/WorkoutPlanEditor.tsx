@@ -203,11 +203,9 @@ const PartCard: React.FC<PartCardProps> = ({
             className="flex items-center flex-1 cursor-pointer"
             onPointerDown={(e) => {
               // ✅ @dnd-kit 센서보다 먼저 이벤트 캡처
-              console.log('👆 PointerDown 캡처 - @dnd-kit 센서 차단 (파트)');
               e.stopPropagation();
             }}
             onClick={() => {
-              console.log('🟢 파트 클릭됨!', part.partSeedId, 'onPartClick:', !!onPartClick, 'isActive:', isActive);
               onPartClick(part.partSeedId);
             }}
           >
@@ -425,7 +423,6 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
   useEffect(() => {
     const handleAutoExpand = (event: CustomEvent) => {
       const { partId } = event.detail;
-      console.log('자동 펼침 이벤트 수신:', partId);
 
       // part-{index} 형태의 ID에서 실제 partSeedId 찾기
       // partId는 "part-{partIndex}-{partSeedId}" 형태
@@ -437,7 +434,6 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
 
         // 현재 펼침 상태 확인 후 닫혀있으면 펼치기
         if (!expandedParts.has(partSeedId)) {
-          console.log('닫힌 파트 자동 펼침:', partSeedId);
           togglePartExpansion(partSeedId);
         }
       }
@@ -454,11 +450,9 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
   useEffect(() => {
     const handleAutoExpandSet = (event: CustomEvent) => {
       const { setSeedId } = event.detail;
-      console.log('세트 자동 펼침 이벤트 수신:', setSeedId);
 
       // 현재 펼침 상태 확인 후 닫혀있으면 펼치기
       if (!expandedSets.has(setSeedId)) {
-        console.log('닫힌 세트 자동 펼침:', setSeedId);
         toggleSetExpansion(setSeedId);
       }
     };
@@ -473,7 +467,6 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
   // 🆕 별도 기능: 세트 드래그 시작 시 모든 세트 닫기 이벤트 리스너
   useEffect(() => {
     const handleCollapseAllSets = () => {
-      console.log('세트 드래그 시작: 모든 세트 닫기');
       collapseAllSets();
     };
 
@@ -487,7 +480,6 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
   // 🆕 별도 기능: 파트 드래그 시작 시 모든 파트 닫기 이벤트 리스너
   useEffect(() => {
     const handleCollapseAllParts = () => {
-      console.log('파트 드래그 시작: 모든 파트 닫기');
       collapseAllParts();
     };
 
@@ -501,7 +493,6 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
   // 🆕 드래그 시작 시 활성화 해제 이벤트 리스너
   useEffect(() => {
     const handleClearActive = () => {
-      console.log('드래그 시작: 활성화 해제');
       setActiveItem(null);
       onActiveItemChange?.(null);
     };
@@ -528,21 +519,11 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
 
   // togglePartExpansion은 useStatePreservation에서 가져옴
 
-  // ✅ 디버깅: activeItem state 변경 추적
-  React.useEffect(() => {
-    console.log('🔶 WorkoutPlanEditor activeItem 상태 변경:', {
-      activeItem,
-      timestamp: new Date().toISOString()
-    });
-  }, [activeItem]);
 
   // ActiveItem 핸들러들 추가
   const handlePartClick = (partSeedId: string) => {
-    console.log('🟢 handlePartClick 호출:', partSeedId);
-
     // 이미 활성화된 파트를 다시 클릭하면 해제 (토글)
     if (activeItem?.level === 'part' && activeItem.id === partSeedId) {
-      console.log('🟢 이미 활성화된 파트 → 해제');
       setActiveItem(null);
       onActiveItemChange?.(null);
       return;
@@ -551,46 +532,24 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
     const newActiveItem = { level: 'part' as const, id: partSeedId };
     setActiveItem(newActiveItem);
     onActiveItemChange?.(newActiveItem);
-    console.log('🟢 activeItem 업데이트 완료:', newActiveItem);
   };
 
   const handleSetClick = (setSeedId: string) => {
-    console.log('🎯🎯🎯 handleSetClick 호출됨!', {
-      setSeedId,
-      oldActiveItem: activeItem,
-      willSetNewActiveItem: { level: 'set', id: setSeedId }
-    });
-
     // 이미 활성화된 세트를 다시 클릭하면 해제 (토글)
     if (activeItem?.level === 'set' && activeItem.id === setSeedId) {
-      console.log('🎯 이미 활성화된 세트 → 해제');
       setActiveItem(null);
       onActiveItemChange?.(null);
       return;
     }
 
     const newActiveItem = { level: 'set' as const, id: setSeedId };
-
-    console.log('🎯 setActiveItem 호출 직전...');
     setActiveItem(newActiveItem);
-    console.log('🎯 setActiveItem 호출 완료, React가 리렌더링할 것임');
-
-    if (onActiveItemChange) {
-      console.log('🎯 onActiveItemChange 호출 중...', newActiveItem);
-      onActiveItemChange(newActiveItem);
-    } else {
-      console.warn('⚠️ onActiveItemChange prop이 없습니다');
-    }
-
-    console.log('🎯 handleSetClick 완료');
+    onActiveItemChange?.(newActiveItem);
   };
 
   const handleExerciseClick = (exerciseId: string) => {
-    console.log('🏋️ handleExerciseClick 호출:', exerciseId);
-
     // 이미 활성화된 운동을 다시 클릭하면 해제 (토글)
     if (activeItem?.level === 'move' && activeItem.id === exerciseId) {
-      console.log('🏋️ 이미 활성화된 운동 → 해제');
       setActiveItem(null);
       onActiveItemChange?.(null);
       return;
@@ -607,10 +566,7 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
   };
 
   const handleExerciseSelected = (exercise: ExerciseTemplate) => {
-    console.log('Selected exercise:', exercise.exerciseName, 'for part:', selectedPartIndex);
-
     if (selectedPartIndex === null || selectedPartIndex >= effectiveBlueprint.length) {
-      console.error('유효하지 않은 파트 인덱스');
       setShowExerciseSelection(false);
       setSelectedPartIndex(null);
       return;
@@ -655,9 +611,6 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
     targetPart.sets[0] = targetSet;
     newBlueprint[selectedPartIndex] = targetPart;
 
-    // partModifications 형태로 변경 알림 (실제 API 호출은 향후 구현)
-    console.log('✅ 운동 추가 완료 - 향후 API 연동 예정:', exercise.exerciseName);
-
     // 임시로 effectiveBlueprint 직접 업데이트 (개발 테스트용)
     // 실제로는 partModifications를 통해 백엔드 호출해야 함
     effectiveBlueprint[selectedPartIndex] = targetPart;
@@ -672,19 +625,16 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
   };
 
   const handleUpdateSet = (partIndex: number, setIndex: number, updatedSet: EffectiveSetBlueprint) => {
-    console.log('Updating set:', partIndex, setIndex, updatedSet);
-    // For now, just log. The actual modification logic will be implemented in state management
+    // For now, just alert. The actual modification logic will be implemented in state management
     alert('세트 수정 기능은 상태 관리 구현 후 활성화됩니다.');
   };
 
   const handleDeleteSet = (partIndex: number, setIndex: number) => {
-    console.log('Deleting set:', partIndex, setIndex);
     alert('세트 삭제 기능은 상태 관리 구현 후 활성화됩니다.');
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleAddSet = (partIndex: number) => {
-    console.log('Adding set to part:', partIndex);
     alert('세트 추가 기능은 상태 관리 구현 후 활성화됩니다.');
   };
 

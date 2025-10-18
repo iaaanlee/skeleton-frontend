@@ -659,7 +659,6 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
     // 🆕 드래그 시작 시 활성화 해제 이벤트 발행
     const clearActiveEvent = new CustomEvent('drag-start-clear-active');
     document.dispatchEvent(clearActiveEvent);
-    console.log('🎯 드래그 시작: 활성화 해제 이벤트 발행');
 
     // 토글 닫기는 드래그 핸들의 onPointerDown에서 이미 처리됨 (100ms 전에)
 

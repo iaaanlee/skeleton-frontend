@@ -29,26 +29,6 @@ export const PinWrapper: React.FC<Props> = ({
   const effectivePin = PinSystemHelpers.getEffectivePinState(pinState);
   const styleClasses = PinSystemHelpers.getPinStyleClasses(pinState);
 
-  // ✅ 디버깅: effectivePin 상태 확인
-  const hasPointerEventsNone = effectivePin.isProtected && !effectivePin.canEdit;
-  const hasOnClickHandler = !!(onClick || (effectivePin.isProtected && !effectivePin.canEdit));
-
-  React.useEffect(() => {
-    console.log('🔷 PinWrapper render:', {
-      pinState,
-      effectivePin,
-      hasPointerEventsNone,
-      hasOnClickHandler,
-      hasOnClickProp: !!onClick
-    });
-
-    if (hasPointerEventsNone) {
-      console.warn('⚠️ PinWrapper children에 pointer-events-none 적용됨!', {
-        effectivePin,
-        pinState
-      });
-    }
-  }, [pinState, effectivePin, hasPointerEventsNone, hasOnClickHandler, onClick]);
 
   // Position classes for pin indicator
   const indicatorPositionClasses = {
@@ -74,8 +54,6 @@ export const PinWrapper: React.FC<Props> = ({
 
   // Handle click events based on pin state
   const handleClick = (e: React.MouseEvent) => {
-    console.log('🔷 PinWrapper handleClick 실행, onClick prop:', !!onClick, 'isProtected:', effectivePin.isProtected);
-
     // ✅ 보호된 상태일 때만 stopPropagation (클릭 활성화 허용)
     if (!effectivePin.canEdit && effectivePin.isProtected) {
       e.stopPropagation();
@@ -97,14 +75,12 @@ export const PinWrapper: React.FC<Props> = ({
 
     // ✅ onClick prop이 있으면 호출하고 전파 차단
     if (onClick) {
-      console.log('🔷 PinWrapper onClick prop 호출');
       e.stopPropagation();
       onClick(e);
       return;
     }
 
-    // ✅ onClick prop이 없으면 이벤트 전파 허용 - 하지만 React에서는 명시적으로 허용해야 함!
-    console.log('🔷 PinWrapper onClick prop 없음, 이벤트 전파되어야 함');
+    // ✅ onClick prop이 없으면 이벤트 전파 허용
     // 아무것도 하지 않음 = 이벤트 계속 버블링
   };
 
@@ -153,16 +129,7 @@ export const PinWrapper: React.FC<Props> = ({
       )}
 
       {/* Content */}
-      <div className={(() => {
-        const className = effectivePin.isProtected && !effectivePin.canEdit ? 'pointer-events-none' : '';
-        if (className) {
-          console.warn('⚠️⚠️⚠️ PinWrapper children div에 pointer-events-none 적용 중!', {
-            effectivePin,
-            pinState
-          });
-        }
-        return className;
-      })()}>
+      <div className={effectivePin.isProtected && !effectivePin.canEdit ? 'pointer-events-none' : ''}>
         {children}
       </div>
 
