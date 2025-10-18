@@ -75,6 +75,11 @@ export const DndContextProvider: React.FC<Props> = ({
 
   // 외부 핸들러와 내부 핸들러 결합
   const handleDragStart = (event: DragStartEvent) => {
+    // 🆕 햅틱 피드백 (모바일 전용, PRD Line 294)
+    if ('vibrate' in navigator) {
+      navigator.vibrate(10); // 10ms 가벼운 진동
+    }
+
     dndHook.onDragStart(event);
     onDragStart?.(event);
   };
@@ -98,7 +103,8 @@ export const DndContextProvider: React.FC<Props> = ({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
         modifiers={dndHook.modifiers}
-        autoScroll={false}  // 자동 스크롤 비활성화
+        // 🆕 가장자리 오토스크롤 활성화 (PRD Line 296)
+        autoScroll={true}  // 기본 설정 사용 (상하단 가장자리 진입 시 자동 스크롤)
       >
         {children}
 

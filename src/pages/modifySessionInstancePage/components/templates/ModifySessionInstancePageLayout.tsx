@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSessionDetail } from '../../../../services/workoutService/sessionDetailService';
 import { useModifySession } from '../../../../services/workoutService/sessionModificationService';
-import { SessionDraftManager } from '../../../../utils/sessionDraftManager';
+import { SessionDraftManager, PageLeaveGuard, UIHintManager } from '../../../../utils/sessionDraftManager';
 import { triggerAutoCleanupAfterDrag } from '../../../../utils/autoCleanup';
 import {
   ModifySessionTopBar,
   WorkoutPlanEditor
 } from '../organisms';
 import { ExerciseSelectionBottomSheet } from '../molecules';
-import { SessionInfoCard, ExerciseAddFAB } from '../atoms';
+import { SessionInfoCard, ExerciseAddFAB, HintTooltip } from '../atoms';
 import { DndContextProvider } from '../../../../contexts/DndContextProvider';
 import type { ModifySessionRequest, PartModification, SetModification, ExerciseModification, ActiveItem } from '../../../../types/workout';
 import type { DragEndEvent } from '@dnd-kit/core';
@@ -28,8 +28,25 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
   const [activeItem, setActiveItem] = useState<ActiveItem>(null);
   const [placeholderInfo, setPlaceholderInfo] = useState<PlaceholderInfo>(null);
 
+  // 🆕 UI 힌트 (PRD Line 359-360)
+  const [showDndHint, setShowDndHint] = useState(() => UIHintManager.shouldShowHint('dnd'));
+
   const { data: sessionDetail, isLoading, error } = useSessionDetail(sessionId);
   const modifySessionMutation = useModifySession();
+
+  // 🆕 페이지 이탈 감지 (PRD Line 358)
+  useEffect(() => {
+    if (isModified) {
+      PageLeaveGuard.enable(sessionId);
+    } else {
+      PageLeaveGuard.disable();
+    }
+
+    // Cleanup: 컴포넌트 언마운트 시 비활성화
+    return () => {
+      PageLeaveGuard.disable();
+    };
+  }, [isModified, sessionId]);
 
   const handleBack = () => {
     if (isModified) {
@@ -49,6 +66,9 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
       });
       setIsModified(false);
       setPendingChanges({});
+      // 🆕 저장 후 draft 및 페이지 이탈 감지 정리
+      SessionDraftManager.clearDraft(sessionId);
+      PageLeaveGuard.disable();
       alert('세션이 성공적으로 수정되었습니다.');
       navigate(-1);
     } catch (error) {
@@ -69,6 +89,12 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
   // DnD 핸들러
   const handleDragStart = () => {
     setIsDragActive(true);
+
+    // 🆕 첫 드래그 시 힌트 숨김
+    if (showDndHint) {
+      UIHintManager.markHintAsUsed('dnd');
+      setShowDndHint(false);
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -681,10 +707,23 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
         </div>
 
         {/* Exercise Add FAB - PRD Compliant */}
-        <ExerciseAddFAB
-          isVisible={!isDragActive}
-          onClick={handleAddExercise}
-        />
+        <div className="relative">
+          <ExerciseAddFAB
+            isVisible={!isDragActive}
+            onClick={handleAddExercise}
+          />
+
+          {/* 🆕 DnD 힌트 (PRD Line 359-360) */}
+          {showDndHint && (
+            <HintTooltip
+              message="드래그 핸들(≡)을 길게 눌러 운동 순서를 변경하세요"
+              onDismiss={() => {
+                UIHintManager.markHintAsUsed('dnd');
+                setShowDndHint(false);
+              }}
+            />
+          )}
+        </div>
 
         {/* Fixed Save Button */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-30">

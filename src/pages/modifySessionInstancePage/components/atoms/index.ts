@@ -16,3 +16,6 @@ export { CircularDropZone } from './CircularDropZone';
 
 // FAB Components (PRD Requirements)
 export { ExerciseAddFAB } from './ExerciseAddFAB';
+
+// UI Hint Components (PRD Line 359-360)
+export { HintTooltip } from './HintTooltip';
