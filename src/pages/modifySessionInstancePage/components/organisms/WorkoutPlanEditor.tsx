@@ -19,6 +19,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useStatePreservation } from '../../../sessionInstanceDetailsPage/hooks/useStatePreservation';
 import { generatePartDragId, generateSetDragId } from '../../../../utils/dragIdGenerator';
 import { useDragHandleOffset } from '../../../../hooks/useDragHandleOffset';
+import { DEFAULT_SET_VALUES } from '../../../../constants/workoutDefaults';
 
 type Props = {
   // 🆕 Day 3: editable state를 받음 (editable 대신)
@@ -63,7 +64,9 @@ type PartCardProps = {
   onUpdateSet: (partIndex: number, setIndex: number, updatedSet: EffectiveSetBlueprint) => void;
   onDeleteSet: (partIndex: number, setIndex: number) => void;
   onDeleteExercise?: (partIndex: number, setIndex: number, exerciseIndex: number) => void;
+  onDeletePart?: (partIndex: number) => void;
   onAddExercise: (partIndex: number) => void;
+  onAddSet?: (partIndex: number, set: Omit<import('../../../../types/workout').EditableSetBlueprint, '_isModified' | '_originalOrder'>) => void;
   togglePartExpansion: (partSeedId: string) => void;
   toggleSetExpansion: (setSeedId: string) => void;
   placeholderInfo?: PlaceholderInfo;
@@ -86,7 +89,9 @@ const PartCard: React.FC<PartCardProps> = ({
   onUpdateSet,
   onDeleteSet,
   onDeleteExercise,
+  onDeletePart,
   onAddExercise,
+  onAddSet,
   togglePartExpansion,
   toggleSetExpansion,
   placeholderInfo,
@@ -196,6 +201,12 @@ const PartCard: React.FC<PartCardProps> = ({
     );
   };
 
+  const handleDeletePart = () => {
+    if (window.confirm('이 파트를 삭제하시겠습니까? 포함된 모든 세트와 운동이 함께 삭제됩니다.')) {
+      onDeletePart?.(partIndex);
+    }
+  };
+
   return (
     <div
       className={`border rounded-lg overflow-hidden transition-colors ${
@@ -250,13 +261,27 @@ const PartCard: React.FC<PartCardProps> = ({
             </div>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1">
+          {/* 🗑️ 삭제 버튼 */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeletePart();
+            }}
+            className="flex items-center justify-center w-8 h-8 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-600"
+            title="파트 삭제"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+
           {/* 드래그 핸들 버튼 (SortableItem activator 적용) */}
           <button
             ref={dragHandleProps?.setActivatorNodeRef}
             {...(dragHandleProps?.attributes || {})}
             {...(dragHandleProps?.listeners || {})}
-            className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing"
+            className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 transition-colors text-gray-600 cursor-grab active:cursor-grabbing"
             title="파트 이동"
             disabled={!canDrag}
             onPointerDown={(e) => {
@@ -429,9 +454,31 @@ const PartCard: React.FC<PartCardProps> = ({
               placeholderInfo.insertIndex === 0) && (
             <div className="text-center py-6 text-gray-500">
               <p>이 파트에는 세트가 없습니다.</p>
-              <p className="text-sm text-gray-400 mt-2">우하단 + 버튼으로 운동을 추가하세요</p>
+              <p className="text-sm text-gray-400 mt-2">아래 버튼으로 세트를 추가하세요</p>
             </div>
           )}
+
+          {/* 세트 추가 버튼 */}
+          <button
+            onClick={() => {
+              if (onAddSet) {
+                onAddSet(partIndex, {
+                  setBlueprintId: null,
+                  setSeedId: `set-${Date.now()}`,
+                  order: part.sets.length,
+                  restTime: DEFAULT_SET_VALUES.REST_TIME,
+                  timeLimit: DEFAULT_SET_VALUES.TIME_LIMIT,
+                  exercises: []
+                });
+              }
+            }}
+            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span className="font-medium">세트 추가하기</span>
+          </button>
         </div>
       )}
     </div>
@@ -639,8 +686,8 @@ export const WorkoutPlanEditor: React.FC<Props> = ({
         setBlueprintId: null,
         setSeedId: `set-${Date.now()}`,
         order: 0,
-        restTime: 60,
-        timeLimit: null,
+        restTime: DEFAULT_SET_VALUES.REST_TIME,
+        timeLimit: DEFAULT_SET_VALUES.TIME_LIMIT,
         exercises: []
       });
       // Note: 세트가 생성된 직후 운동을 추가하려면 state 업데이트 후 재시도 필요
@@ -801,7 +848,9 @@ export const WorkoutPlanEditor: React.FC<Props> = ({
                     onUpdateSet={handleUpdateSet}
                     onDeleteSet={handleDeleteSet}
                     onDeleteExercise={onDeleteExercise}
+                    onDeletePart={onDeletePart}
                     onAddExercise={handleAddExercise}
+                    onAddSet={onAddSet}
                     togglePartExpansion={togglePartExpansion}
                     toggleSetExpansion={toggleSetExpansion}
                     placeholderInfo={placeholderInfo}
@@ -835,9 +884,30 @@ export const WorkoutPlanEditor: React.FC<Props> = ({
               </svg>
             </div>
             <p className="text-gray-600 mb-2">이 세션에는 운동 계획이 없습니다.</p>
-            <p className="text-sm text-gray-400">우하단 + 버튼으로 운동을 추가하세요</p>
+            <p className="text-sm text-gray-400">아래 버튼으로 파트를 추가하세요</p>
           </div>
         )}
+
+        {/* 파트 추가 버튼 */}
+        <button
+          onClick={() => {
+            if (onAddPart) {
+              onAddPart({
+                partBlueprintId: null,
+                partSeedId: `part-${Date.now()}`,
+                partName: `파트 ${editable.length + 1}`,
+                order: editable.length,
+                sets: []
+              });
+            }
+          }}
+          className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          <span className="font-medium">파트 추가하기</span>
+        </button>
         </div>
       </SortableContext>
 

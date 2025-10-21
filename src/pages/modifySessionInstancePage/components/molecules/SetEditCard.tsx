@@ -10,6 +10,7 @@ import { generateExerciseDragId, generateSetDragId } from '../../../../utils/dra
 import { RestTimeEditBottomSheet } from './RestTimeEditBottomSheet';
 import { TimeLimitEditBottomSheet } from './TimeLimitEditBottomSheet';
 import { useDragHandleOffset } from '../../../../hooks/useDragHandleOffset';
+import { ExerciseName } from '../../../sessionInstanceDetailsPage/components/molecules/ExerciseName';
 
 type DragHandleProps = {
   setActivatorNodeRef: (element: HTMLElement | null) => void;
@@ -265,14 +266,28 @@ export const SetEditCard: React.FC<Props> = ({
                 onSetClick?.(set.setSeedId);
               }}
             >
-              <span className="text-sm font-medium text-gray-700 mr-2">
-                세트 {setIndex + 1}
-              </span>
-              {set.setBlueprintId === null && (
-                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                  새로 추가됨
-                </span>
-              )}
+              <div className="flex flex-col">
+                <div className="flex items-center">
+                  <span className="text-sm font-medium text-gray-700 mr-2">
+                    세트 {setIndex + 1}
+                  </span>
+                  {set.setBlueprintId === null && (
+                    <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                      새로 추가됨
+                    </span>
+                  )}
+                </div>
+                {set.exercises.length > 0 && (
+                  <div className="text-xs text-gray-500 mt-0.5">
+                    {set.exercises.map((exercise, index) => (
+                      <span key={`${exercise.exerciseTemplateId}-${index}`}>
+                        {index > 0 && ', '}
+                        <ExerciseName exerciseTemplateId={exercise.exerciseTemplateId} />
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -368,23 +383,25 @@ export const SetEditCard: React.FC<Props> = ({
           className=""
         >
           {/* 시간제한 배지 - session-details 스타일 + 클릭 가능 */}
-          <div className="px-3 mb-3">
-            <div
-              className="inline-block px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                setTimeLimitModalOpen(true);
-              }}
-              title="클릭하여 시간제한 수정"
-            >
-              {set.timeLimit === null || set.timeLimit === 0
-                ? "운동 시간 제한 없음"
-                : `운동 시간 제한 ${set.timeLimit}초`}
+          {set.exercises.length > 0 && (
+            <div className="px-3 mb-3">
+              <div
+                className="inline-block px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTimeLimitModalOpen(true);
+                }}
+                title="클릭하여 시간제한 수정"
+              >
+                {set.timeLimit === null || set.timeLimit === 0
+                  ? "운동 시간 제한 없음"
+                  : `운동 시간 제한 ${set.timeLimit}초`}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 운동 목록 - session-details 스타일 래퍼 */}
-          {set.exercises.length > 0 && (
+          {set.exercises.length > 0 ? (
             <div className="px-3 space-y-2 mb-2">
               <SortableContext items={exerciseIds} strategy={verticalListSortingStrategy}>
               {set.exercises.map((exercise, exerciseIndex) => {
@@ -469,15 +486,13 @@ export const SetEditCard: React.FC<Props> = ({
               )}
               </SortableContext>
             </div>
-          )}
-
-          {/* 빈 세트에서도 placeholder 표시 */}
-          {set.exercises.length === 0 && (
+          ) : (
+            /* 빈 세트: placeholder 또는 안내 메시지 */
             <div className="px-3 mb-2 min-h-[60px]">
               {placeholderInfo &&
                 placeholderInfo.containerType === 'set' &&
                 placeholderInfo.containerId === dragId &&
-                placeholderInfo.insertIndex === 0 && (
+                placeholderInfo.insertIndex === 0 ? (
                 <div
                   className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
                   data-placeholder="true"
@@ -486,12 +501,17 @@ export const SetEditCard: React.FC<Props> = ({
                     <span className="text-blue-600 text-sm font-medium">여기에 삽입</span>
                   </div>
                 </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500 bg-white rounded-lg border border-dashed">
+                  <p className="text-sm">이 세트에는 운동이 없습니다.</p>
+                  <p className="text-xs text-gray-400 mt-1">우하단 + 버튼으로 운동을 추가하세요</p>
+                </div>
               )}
             </div>
           )}
 
           {/* 휴식시간 섹션 - session-details 스타일 + 클릭 가능 (드롭존 내부!) */}
-          {set.restTime && set.restTime > 0 && (
+          {set.exercises.length > 0 && set.restTime && set.restTime > 0 && (
             <div className="px-3 mb-3">
               <div
                 className="flex items-center py-2 px-3 rounded border bg-gray-50 border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors"
@@ -513,16 +533,6 @@ export const SetEditCard: React.FC<Props> = ({
                     {set.restTime % 60 > 0 && `${set.restTime % 60}초`}
                   </p>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* 빈 세트 안내 메시지 (드롭존 내부!) */}
-          {set.exercises.length === 0 && (
-            <div className="px-3 mb-3">
-              <div className="text-center py-4 text-gray-500 bg-white rounded-lg border border-dashed">
-                <p className="text-sm">이 세트에는 운동이 없습니다.</p>
-                <p className="text-xs text-gray-400 mt-1">우하단 + 버튼으로 운동을 추가하세요</p>
               </div>
             </div>
           )}
