@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSessionDetail } from '../../../../services/workoutService/sessionDetailService';
 import { useModifySession } from '../../../../services/workoutService/sessionModificationService';
 import { SessionDraftManager, PageLeaveGuard, UIHintManager } from '../../../../utils/sessionDraftManager';
-import { triggerAutoCleanupAfterDrag } from '../../../../utils/autoCleanup';
+import { DEFAULT_SET_VALUES } from '../../../../constants/workoutDefaults';
 import {
   ModifySessionTopBar,
   WorkoutPlanEditor
@@ -12,7 +12,8 @@ import { ExerciseSelectionBottomSheet } from '../molecules';
 import { SessionInfoCard, ExerciseAddFAB, HintTooltip } from '../atoms';
 import { DndContextProvider } from '../../../../contexts/DndContextProvider';
 import { useEditableState } from '../../hooks';
-import type { ModifySessionRequest, PartModification, SetModification, ExerciseModification, ActiveItem } from '../../../../types/workout';
+import { convertEditableToModifyRequest } from '../../utils/convertEditableToModifyRequest';
+import type { ActiveItem } from '../../../../types/workout';
 import type { DragEndEvent } from '@dnd-kit/core';
 import type { DragEventCallback, PlaceholderInfo } from '../../../../hooks/useDragAndDrop';
 
@@ -22,12 +23,11 @@ type Props = {
 
 export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) => {
   const navigate = useNavigate();
-  const [isModified, setIsModified] = useState(false);
-  const [pendingChanges, setPendingChanges] = useState<ModifySessionRequest>({});
   const [isDragActive, setIsDragActive] = useState(false);
   const [showExerciseSelection, setShowExerciseSelection] = useState(false);
   const [activeItem, setActiveItem] = useState<ActiveItem>(null);
   const [placeholderInfo, setPlaceholderInfo] = useState<PlaceholderInfo>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // 🆕 UI 힌트 (PRD Line 359-360)
   const [showDndHint, setShowDndHint] = useState(() => UIHintManager.shouldShowHint('dnd'));
@@ -35,10 +35,10 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
   const { data: sessionDetail, isLoading, error } = useSessionDetail(sessionId);
   const modifySessionMutation = useModifySession();
 
-  // 🆕 Day 2: Editable State Management (점진적 통합)
+  // 🆕 Day 2-4: Editable State Management
   // effectiveBlueprint → editable 로컬 상태로 변환
   const editableStateHook = useEditableState(sessionDetail?.effectiveBlueprint || []);
-  const { editable, isModified: isEditableModified, reset: resetEditable } = editableStateHook;
+  const { editable, isModified, reset: resetEditable } = editableStateHook;
 
   // sessionDetail이 로드되면 editable state 초기화
   useEffect(() => {
@@ -46,6 +46,7 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
       resetEditable();
       console.log('✅ [Day 2] Editable state initialized:', editable);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionDetail?.effectiveBlueprint, resetEditable]);
 
   // 🆕 Day 2: Editable state 변경 감지 (디버깅용)
@@ -53,11 +54,11 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
     if (editable.length > 0) {
       console.log('🔄 [Day 2] Editable state changed:', {
         partsCount: editable.length,
-        isModified: isEditableModified,
+        isModified,
         editable
       });
     }
-  }, [editable, isEditableModified]);
+  }, [editable, isModified]);
 
   // 🆕 페이지 이탈 감지 (PRD Line 358)
   useEffect(() => {
@@ -84,31 +85,33 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
   };
 
   const handleSave = async () => {
+    setIsSaving(true);
     try {
+      // 🆕 Day 4 Phase 2: editable state를 ModifySessionRequest로 변환
+      const modifyRequest = convertEditableToModifyRequest(
+        sessionDetail?.effectiveBlueprint || [],
+        editable
+      );
+
+      console.log('💾 [Day 4] Saving changes:', modifyRequest);
+
       await modifySessionMutation.mutateAsync({
         sessionId,
-        data: pendingChanges
+        data: modifyRequest
       });
-      setIsModified(false);
-      setPendingChanges({});
+
       // 🆕 저장 후 draft 및 페이지 이탈 감지 정리
       SessionDraftManager.clearDraft(sessionId);
       PageLeaveGuard.disable();
       alert('세션이 성공적으로 수정되었습니다.');
       navigate(-1);
     } catch (error) {
-      console.error('세션 수정 실패:', error);
-      alert('세션 수정에 실패했습니다. 다시 시도해주세요.');
+      console.error('💥 [Day 4] 세션 수정 실패:', error);
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다';
+      alert(`세션 수정에 실패했습니다.\n\n오류: ${errorMessage}\n\n다시 시도해주세요.`);
+    } finally {
+      setIsSaving(false);
     }
-  };
-
-  const handleChanges = (changes: Partial<ModifySessionRequest>) => {
-    const updatedChanges = { ...pendingChanges, ...changes };
-    setPendingChanges(updatedChanges);
-    setIsModified(true);
-
-    // 자동 draft 저장 (500ms debounce)
-    SessionDraftManager.saveDraft(sessionId, updatedChanges);
   };
 
   // DnD 핸들러
@@ -345,193 +348,139 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
     },
 
     onItemDuplicate: (duplicateData) => {
-      console.log('아이템 복제:', duplicateData);
+      console.log('📋 아이템 복제:', duplicateData);
 
       const { item, targetIndices } = duplicateData;
 
+      // ✅ NEW: editable state 직접 업데이트
       if (item.type === 'exercise') {
-        // 운동 복제: 같은 세트 내에 복사본 추가
+        // Exercise 복제: 같은 세트 내에 복사본 추가
         const partIndex = targetIndices.partIndex ?? 0;
         const setIndex = targetIndices.setIndex ?? 0;
+        const newOrder = (item.indices.exerciseIndex ?? 0) + 1;
 
-        const duplicateExerciseModification: ExerciseModification = {
+        editableStateHook.addExercise(partIndex, setIndex, {
           exerciseTemplateId: item.data.exercise?.exerciseTemplateId || item.data.name || 'unknown',
-          action: 'add',
-          order: (item.indices.exerciseIndex ?? 0) + 1, // 현재 운동 다음에 추가
-          spec: item.data.exercise?.spec
-        };
-
-        const setModification: SetModification = {
-          setSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.sets[setIndex]?.setSeedId,
-          action: 'modify',
-          exerciseModifications: [duplicateExerciseModification]
-        };
-
-        const partModification: PartModification = {
-          partSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.partSeedId,
-          action: 'modify',
-          setModifications: [setModification]
-        };
-
-        handleChanges({
-          partModifications: [partModification]
+          order: newOrder,
+          spec: item.data.exercise?.spec || {
+            goal: { type: 'rep', value: 10, rule: 'exact' },
+            load: { type: 'free', value: null, text: '' },
+            timeLimit: null
+          }
         });
 
       } else if (item.type === 'set') {
-        // 세트 복제: 같은 파트 내에 복사본 추가
+        // Set 복제: 같은 파트 내에 복사본 추가
         const partIndex = targetIndices.partIndex ?? 0;
-        const originalSet = sessionDetail?.effectiveBlueprint[partIndex]?.sets[item.indices.setIndex ?? 0];
+        const originalSetIndex = item.indices.setIndex ?? 0;
+        const originalSet = editable[partIndex]?.sets[originalSetIndex];
 
         if (originalSet) {
-          const duplicateSetModification: SetModification = {
-            action: 'add',
-            order: (item.indices.setIndex ?? 0) + 1,
+          const newOrder = originalSetIndex + 1;
+
+          editableStateHook.addSet(partIndex, {
+            setBlueprintId: null,
+            setSeedId: `set-${Date.now()}`,
+            order: newOrder,
             restTime: originalSet.restTime,
             timeLimit: originalSet.timeLimit,
-            exerciseModifications: originalSet.exercises.map((exercise, index) => ({
-              exerciseTemplateId: exercise.exerciseTemplateId,
-              action: 'add',
-              order: index + 1,
-              spec: exercise.spec
+            exercises: originalSet.exercises.map((ex, idx) => ({
+              exerciseTemplateId: ex.exerciseTemplateId,
+              order: idx,
+              spec: {
+                goal: { ...ex.spec.goal },
+                load: { ...ex.spec.load },
+                timeLimit: ex.spec.timeLimit
+              }
             }))
-          };
-
-          const partModification: PartModification = {
-            partSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.partSeedId,
-            action: 'modify',
-            setModifications: [duplicateSetModification]
-          };
-
-          handleChanges({
-            partModifications: [partModification]
           });
         }
       }
+
+      console.log('✅ Editable state updated (duplicate)');
     },
 
     onItemDelete: (deleteData) => {
-      console.log('아이템 삭제:', deleteData);
+      console.log('🗑️ 아이템 삭제:', deleteData);
 
       const { itemType, indices } = deleteData;
 
+      // ✅ NEW: editable state 직접 업데이트
       if (itemType === 'exercise') {
-        // 운동 삭제
-        const partIndex = indices.partIndex ?? 0;
-        const setIndex = indices.setIndex ?? 0;
-
-        const exerciseModification: ExerciseModification = {
-          exerciseTemplateId: 'to-be-deleted', // 실제로는 ID를 사용해야 함
-          action: 'delete'
-        };
-
-        const setModification: SetModification = {
-          setSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.sets[setIndex]?.setSeedId,
-          action: 'modify',
-          exerciseModifications: [exerciseModification]
-        };
-
-        const partModification: PartModification = {
-          partSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.partSeedId,
-          action: 'modify',
-          setModifications: [setModification]
-        };
-
-        handleChanges({
-          partModifications: [partModification]
-        });
-
+        editableStateHook.deleteExercise(
+          indices.partIndex ?? 0,
+          indices.setIndex ?? 0,
+          indices.exerciseIndex ?? 0
+        );
       } else if (itemType === 'set') {
-        // 세트 삭제
-        const partIndex = indices.partIndex ?? 0;
-
-        const setModification: SetModification = {
-          setSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.sets[indices.setIndex ?? 0]?.setSeedId,
-          action: 'delete'
-        };
-
-        const partModification: PartModification = {
-          partSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.partSeedId,
-          action: 'modify',
-          setModifications: [setModification]
-        };
-
-        handleChanges({
-          partModifications: [partModification]
-        });
-
+        editableStateHook.deleteSet(
+          indices.partIndex ?? 0,
+          indices.setIndex ?? 0
+        );
       } else if (itemType === 'part') {
-        // 파트 삭제
-        const partModification: PartModification = {
-          partSeedId: sessionDetail?.effectiveBlueprint[indices.partIndex ?? 0]?.partSeedId,
-          action: 'delete'
-        };
-
-        handleChanges({
-          partModifications: [partModification]
-        });
+        editableStateHook.deletePart(indices.partIndex ?? 0);
       }
 
-      // 삭제 후 자동 정리 (빈 컨테이너 제거) - 모든 삭제 타입에 대해
-      if (sessionDetail?.effectiveBlueprint) {
-        triggerAutoCleanupAfterDrag(sessionDetail.effectiveBlueprint, handleChanges);
-      }
+      console.log('✅ Editable state updated (delete)');
     },
 
     onContainerCreate: (createData) => {
-      console.log('컨테이너 생성:', createData);
+      console.log('📦 컨테이너 생성:', createData);
 
       const { containerType, dragItem, targetIndices } = createData;
 
+      // ✅ NEW: editable state 직접 업데이트
       if (containerType === 'part') {
         // 새 파트 생성
-        const newPartModification: PartModification = {
-          action: 'add',
-          partName: `새 파트 ${(sessionDetail?.effectiveBlueprint.length || 0) + 1}`,
-          order: (targetIndices.partIndex ?? 0) + 1,
-          setModifications: [{
-            action: 'add',
-            order: 1,
-            restTime: 60, // 기본 휴식 시간
-            timeLimit: null,
-            exerciseModifications: [{
+        const newOrder = (targetIndices.partIndex ?? 0) + 1;
+
+        editableStateHook.addPart({
+          partBlueprintId: null,
+          partSeedId: `part-${Date.now()}`,
+          partName: `새 파트 ${editable.length + 1}`,
+          order: newOrder,
+          sets: [{
+            setBlueprintId: null,
+            setSeedId: `set-${Date.now()}`,
+            order: 0,
+            restTime: DEFAULT_SET_VALUES.REST_TIME,
+            timeLimit: DEFAULT_SET_VALUES.TIME_LIMIT,
+            exercises: [{
               exerciseTemplateId: dragItem.data.exercise?.exerciseTemplateId || dragItem.data.name || 'unknown',
-              action: 'add',
-              order: 1,
-              spec: dragItem.data.exercise?.spec
+              order: 0,
+              spec: dragItem.data.exercise?.spec || {
+                goal: { type: 'rep', value: 10, rule: 'exact' },
+                load: { type: 'free', value: null, text: '' },
+                timeLimit: null
+              }
             }]
           }]
-        };
-
-        handleChanges({
-          partModifications: [newPartModification]
         });
 
       } else if (containerType === 'set') {
         // 새 세트 생성
         const targetPartIndex = targetIndices.partIndex ?? 0;
-        const newSetModification: SetModification = {
-          action: 'add',
-          order: (targetIndices.setIndex ?? 0) + 1,
-          restTime: 60, // 기본 휴식 시간
-          timeLimit: null,
-          exerciseModifications: [{
+        const newOrder = (targetIndices.setIndex ?? 0) + 1;
+
+        editableStateHook.addSet(targetPartIndex, {
+          setBlueprintId: null,
+          setSeedId: `set-${Date.now()}`,
+          order: newOrder,
+          restTime: DEFAULT_SET_VALUES.REST_TIME,
+          timeLimit: DEFAULT_SET_VALUES.TIME_LIMIT,
+          exercises: [{
             exerciseTemplateId: dragItem.data.exercise?.exerciseTemplateId || dragItem.data.name || 'unknown',
-            action: 'add',
-            order: 1,
-            spec: dragItem.data.exercise?.spec
+            order: 0,
+            spec: dragItem.data.exercise?.spec || {
+              goal: { type: 'rep', value: 10, rule: 'exact' },
+              load: { type: 'free', value: null, text: '' },
+              timeLimit: null
+            }
           }]
-        };
-
-        const partModification: PartModification = {
-          partSeedId: sessionDetail?.effectiveBlueprint[targetPartIndex]?.partSeedId,
-          action: 'modify',
-          setModifications: [newSetModification]
-        };
-
-        handleChanges({
-          partModifications: [partModification]
         });
       }
+
+      console.log('✅ Editable state updated (container create)');
     },
 
     onPlaceholderUpdate: (info) => {
@@ -653,7 +602,6 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
           <WorkoutPlanEditor
             editable={editable}
             sessionId={sessionId}
-            onChange={handleChanges}
             onActiveItemChange={setActiveItem}
             placeholderInfo={placeholderInfo}
             onUpdateExerciseSpec={editableStateHook.updateExerciseSpec}
@@ -694,16 +642,16 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
             <button
               onClick={handleBack}
               className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
-              disabled={modifySessionMutation.isPending}
+              disabled={isSaving}
             >
               취소
             </button>
             <button
               onClick={handleSave}
-              disabled={!isModified || modifySessionMutation.isPending}
+              disabled={!isModified || isSaving}
               className="flex-1 py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
-              {modifySessionMutation.isPending ? '저장 중...' : '저장하기'}
+              {isSaving ? '저장 중...' : '저장하기'}
             </button>
           </div>
         </div>

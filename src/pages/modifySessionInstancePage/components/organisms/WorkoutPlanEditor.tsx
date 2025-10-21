@@ -3,8 +3,6 @@ import { ExerciseSelectionBottomSheet, SetEditCard } from '../molecules';
 import type {
   EffectivePartBlueprint,
   EditablePartBlueprint,
-  ModifySessionRequest,
-  PartModification,
   ExerciseTemplate,
   EffectiveSetBlueprint,
   PinState,
@@ -25,7 +23,6 @@ type Props = {
   // 🆕 Day 3: editable state를 받음 (editable 대신)
   editable: EditablePartBlueprint[];
   sessionId: string;
-  onChange: (changes: Partial<ModifySessionRequest>) => void;
   onActiveItemChange?: (activeItem: ActiveItem) => void;
   placeholderInfo?: PlaceholderInfo;
   // 🆕 Day 2-3: Editable State Update Functions
@@ -145,14 +142,16 @@ const PartCard: React.FC<PartCardProps> = ({
     autoExpand: false
   };
 
-  const { setNodeRef: partHeaderDropRef, isOver: isHeaderOver } = useDroppable({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { setNodeRef: _partHeaderDropRef, isOver: _isHeaderOver } = useDroppable({
     id: partHeaderDropZone.id,
     data: partHeaderDropZone,
     disabled: true // ✅ 항상 비활성화: 파트 활성화 클릭이 작동하도록 함
   });
 
   // 세트 목록 영역 드롭존 (펼쳤을 때만 활성화) - SetEditCard 패턴
-  const { setNodeRef: partContentDropRef, isOver: isContentOver } = useDroppable({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { setNodeRef: partContentDropRef, isOver: _isContentOver } = useDroppable({
     id: partDragItem.id, // 같은 ID 사용
     data: {
       id: partDragItem.id,
@@ -488,7 +487,6 @@ const PartCard: React.FC<PartCardProps> = ({
 export const WorkoutPlanEditor: React.FC<Props> = ({
   editable,
   sessionId,
-  onChange,
   onActiveItemChange,
   placeholderInfo,
   onUpdateExerciseSpec,
@@ -506,9 +504,6 @@ export const WorkoutPlanEditor: React.FC<Props> = ({
   const { expandedParts, expandedSets, togglePartExpansion, toggleSetExpansion, initializeToggleStates, collapseAllParts, collapseAllSets } = useStatePreservation(sessionId);
 
   const [activeItem, setActiveItem] = useState<ActiveItem>(null);
-  // TODO: pendingModifications will be used in state management phase
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [pendingModifications, setPendingModifications] = useState<PartModification[]>([]);
 
   // 첫 파트와 첫 세트 자동 펼치기 초기화
   useEffect(() => {
@@ -614,8 +609,6 @@ export const WorkoutPlanEditor: React.FC<Props> = ({
     exercisePin: false
   };
 
-  // Suppress unused variable warning - will be used in state management implementation
-  void setPendingModifications;
   const [showExerciseSelection, setShowExerciseSelection] = useState(false);
   const [selectedPartIndex, setSelectedPartIndex] = useState<number | null>(null);
 
