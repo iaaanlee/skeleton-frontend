@@ -8,40 +8,56 @@ import type { ExerciseSpec } from '../types/workout';
 // 🆕 DragHandle Offset Context - 드래그 핸들을 마우스 위치에 정확히 고정
 export const DragHandleOffsetContext = createContext<(x: number, y: number) => void>(() => {});
 
-// formatExerciseSpec 함수 - ExerciseEditCard와 동일
+// formatExerciseSpec 함수 - PRD 타입 시스템 기반
 const formatExerciseSpec = (spec: ExerciseSpec) => {
   const { goal, load, timeLimit } = spec;
 
+  // Goal 텍스트 생성 (단위 변환: g→kg, mm→m)
   let goalText = '';
+  let goalValue = goal.value;
+  if (goal.type === 'mm' && goalValue) {
+    goalValue = goalValue / 1000; // mm → m
+  } else if (goal.type === 'g' && goalValue) {
+    goalValue = goalValue / 1000; // g → kg
+  }
+
   switch (goal.type) {
-    case 'reps':
-      goalText = `${goal.value}회`;
+    case 'rep':
+      goalText = `${goalValue}회`;
       break;
-    case 'time':
-      goalText = `${goal.value}초`;
+    case 'second':
+      goalText = `${goalValue}초`;
       break;
-    case 'distance':
-      goalText = `${goal.value}m`;
+    case 'mm':
+      goalText = `${goalValue}m`;
       break;
-    case 'weight':
-      goalText = `${goal.value}kg`;
+    case 'g':
+      goalText = `${goalValue}kg`;
       break;
   }
 
-  let loadText = load.text || '';
-  if (load.type === 'weight' && load.value) {
-    loadText = `${load.value}kg`;
-  } else if (load.type === 'bodyweight') {
-    loadText = '체중';
+  // Load 텍스트 생성 (단위 변환: g→kg, mm→m)
+  let loadText = '';
+  let loadValue = load.value;
+  if (load.type === 'g' && loadValue) {
+    loadValue = loadValue / 1000; // g → kg
+    loadText = `${loadValue}kg`;
+  } else if (load.type === 'mm' && loadValue) {
+    loadValue = loadValue / 1000; // mm → m
+    loadText = `${loadValue}m`;
+  } else if (load.type === 'second' && loadValue) {
+    loadText = `${loadValue}초`;
+  } else if (load.type === 'free') {
+    loadText = load.text || '맨몸';
   }
 
-  const parts = [loadText, goalText].filter(Boolean);  // loadText를 먼저 배치
+  const parts = [loadText, goalText].filter(Boolean);
 
   if (timeLimit && timeLimit > 0) {
     parts.push(`제한시간 ${timeLimit}초`);
   }
 
-  return parts.join(' x ');  // ' x '로 연결
+  return parts.join(' x ');
 };
 
 type Props = {

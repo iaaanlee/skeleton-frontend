@@ -11,6 +11,27 @@ import type { ExerciseEditBottomSheetProps } from '../../../../types/editBottomS
 import type { ExerciseSpec } from '../../../../types/workout';
 import { ExerciseName } from '../../../sessionInstanceDetailsPage/components/molecules/ExerciseName';
 
+/**
+ * PRD 기준 LOAD/GOAL 타입 정의
+ *
+ * LOAD 타입 (4가지):
+ * - free: 자유 기술 (value=null, text 사용)
+ * - g: 무게 (그램)
+ * - mm: 길이 (밀리미터)
+ * - second: 시간 (초)
+ *
+ * GOAL 타입 (4가지):
+ * - rep: 횟수
+ * - second: 시간
+ * - mm: 길이
+ * - g: 무게
+ *
+ * 제약사항: goal.type ≠ load.type (절대 같을 수 없음)
+ */
+
+// DB 값은 그대로 사용 (normalize 불필요)
+// 다만 단위 변환만 필요: g → kg, mm → m
+
 export const ExerciseEditBottomSheet: React.FC<ExerciseEditBottomSheetProps> = ({
   isOpen,
   onClose,
@@ -27,22 +48,100 @@ export const ExerciseEditBottomSheet: React.FC<ExerciseEditBottomSheetProps> = (
   // 모달이 열릴 때마다 현재값으로 초기화
   useEffect(() => {
     if (isOpen) {
-      setEditingSpec(exercise.spec);
+      console.log('🔍 [ExerciseEditBottomSheet] 모달 열림, 초기 spec:', {
+        exerciseTemplateId: exercise.exerciseTemplateId,
+        spec: exercise.spec,
+        loadType: exercise.spec.load.type,
+        loadValue: exercise.spec.load.value,
+        goalType: exercise.spec.goal.type,
+        goalValue: exercise.spec.goal.value
+      });
+
+      // 🔧 DB 타입 그대로 사용, 단위만 변환 (g → kg, mm → m)
+      let displayLoadValue = exercise.spec.load.value;
+      if (exercise.spec.load.type === 'g' && displayLoadValue) {
+        displayLoadValue = displayLoadValue / 1000; // g → kg
+      } else if (exercise.spec.load.type === 'mm' && displayLoadValue) {
+        displayLoadValue = displayLoadValue / 1000; // mm → m
+      }
+
+      let displayGoalValue = exercise.spec.goal.value;
+      if (exercise.spec.goal.type === 'g' && displayGoalValue) {
+        displayGoalValue = displayGoalValue / 1000; // g → kg
+      } else if (exercise.spec.goal.type === 'mm' && displayGoalValue) {
+        displayGoalValue = displayGoalValue / 1000; // mm → m
+      }
+
+      const displaySpec: ExerciseSpec = {
+        ...exercise.spec,
+        load: {
+          ...exercise.spec.load,
+          value: displayLoadValue
+        },
+        goal: {
+          ...exercise.spec.goal,
+          value: displayGoalValue
+        }
+      };
+
+      console.log('✅ [ExerciseEditBottomSheet] Display spec (unit converted):', {
+        loadType: displaySpec.load.type,
+        loadValue: displaySpec.load.value,
+        goalType: displaySpec.goal.type,
+        goalValue: displaySpec.goal.value
+      });
+
+      setEditingSpec(displaySpec);
       setApplyToSameExercise(false);
     }
-  }, [isOpen, exercise.spec]);
+  }, [isOpen, exercise.spec, exercise.exerciseTemplateId]);
 
   // 기존 ExerciseEditCard 패턴 완전 보존
   const handleSave = () => {
+    // 🔧 DB 단위 역변환 (kg → g, m → mm)
+    let dbLoadValue = editingSpec.load.value;
+    if (editingSpec.load.type === 'g' && dbLoadValue) {
+      dbLoadValue = Math.round(dbLoadValue * 1000); // kg → g
+    } else if (editingSpec.load.type === 'mm' && dbLoadValue) {
+      dbLoadValue = Math.round(dbLoadValue * 1000); // m → mm
+    }
+
+    let dbGoalValue = editingSpec.goal.value;
+    if (editingSpec.goal.type === 'g' && dbGoalValue) {
+      dbGoalValue = Math.round(dbGoalValue * 1000); // kg → g
+    } else if (editingSpec.goal.type === 'mm' && dbGoalValue) {
+      dbGoalValue = Math.round(dbGoalValue * 1000); // m → mm
+    }
+
+    // 🔧 DB 형식 spec (타입은 그대로, 단위만 역변환)
+    const dbSpec: ExerciseSpec = {
+      ...editingSpec,
+      load: {
+        ...editingSpec.load,
+        value: dbLoadValue
+      },
+      goal: {
+        ...editingSpec.goal,
+        value: dbGoalValue
+      }
+    };
+
+    console.log('💾 [ExerciseEditBottomSheet] Saving DB spec:', {
+      loadType: dbSpec.load.type,
+      displayLoadValue: editingSpec.load.value,
+      dbLoadValue: dbSpec.load.value,
+      goalType: dbSpec.goal.type,
+      displayGoalValue: editingSpec.goal.value,
+      dbGoalValue: dbSpec.goal.value
+    });
+
     // 상위 컴포넌트로 결과 전달 (기존 인터페이스 100% 유지)
-    onSave(editingSpec, applyToSameExercise);
+    onSave(dbSpec, applyToSameExercise);
     onClose();
   };
 
   const handleCancel = () => {
-    // 변경사항 취소 후 모달 닫기
-    setEditingSpec(exercise.spec);
-    setApplyToSameExercise(false);
+    // 변경사항 취소: 모달만 닫고, useEffect가 다음에 열 때 초기화함
     onClose();
   };
 
@@ -92,13 +191,13 @@ export const ExerciseEditBottomSheet: React.FC<ExerciseEditBottomSheetProps> = (
               운동 강도
             </label>
 
-            {/* 부하 타입 선택 */}
+            {/* 부하 타입 선택 (PRD: free, g, mm, second) */}
             <div className="grid grid-cols-2 gap-2 mb-4">
               {[
-                { value: 'none', label: '없음' },
-                { value: 'bodyweight', label: '체중' },
-                { value: 'weight', label: '중량' },
-                { value: 'resistance', label: '저항' }
+                { value: 'free', label: '없음' },
+                { value: 'g', label: '중량' },
+                { value: 'mm', label: '거리' },
+                { value: 'second', label: '시간' }
               ].map((option) => (
                 <button
                   key={option.value}
@@ -107,7 +206,10 @@ export const ExerciseEditBottomSheet: React.FC<ExerciseEditBottomSheetProps> = (
                     load: {
                       ...prev.load,
                       type: option.value as ExerciseSpec['load']['type'],
-                      value: option.value === 'weight' ? (prev.load.value || 10) : null
+                      value: option.value === 'g' ? (prev.load.value || 10) :
+                             option.value === 'mm' ? (prev.load.value || 100) :
+                             option.value === 'second' ? (prev.load.value || 30) : null,
+                      text: option.value === 'free' ? (prev.load.text || '') : undefined
                     }
                   }))}
                   className={`py-2 px-3 rounded-lg border text-sm font-medium transition-colors ${
@@ -122,7 +224,7 @@ export const ExerciseEditBottomSheet: React.FC<ExerciseEditBottomSheetProps> = (
             </div>
 
             {/* 중량 설정 (PRD ::c.png 스타일 +/- 버튼) */}
-            {editingSpec.load.type === 'weight' && (
+            {editingSpec.load.type === 'g' && (
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="flex items-center justify-center space-x-6">
                   {/* - 버튼 */}
@@ -131,7 +233,7 @@ export const ExerciseEditBottomSheet: React.FC<ExerciseEditBottomSheetProps> = (
                       ...prev,
                       load: {
                         ...prev.load,
-                        value: Math.max(0, (prev.load.value || 10) - 2.5)
+                        value: Math.max(0, (prev.load.value || 10) - 1)
                       }
                     }))}
                     className="w-12 h-12 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
@@ -154,7 +256,7 @@ export const ExerciseEditBottomSheet: React.FC<ExerciseEditBottomSheetProps> = (
                       ...prev,
                       load: {
                         ...prev.load,
-                        value: (prev.load.value || 10) + 2.5
+                        value: (prev.load.value || 10) + 1
                       }
                     }))}
                     className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-colors"
@@ -165,7 +267,7 @@ export const ExerciseEditBottomSheet: React.FC<ExerciseEditBottomSheetProps> = (
                   </button>
                 </div>
                 <div className="text-center mt-2">
-                  <span className="text-sm text-gray-500">2.5kg 단위</span>
+                  <span className="text-sm text-gray-500">1kg 단위</span>
                 </div>
               </div>
             )}
@@ -177,13 +279,13 @@ export const ExerciseEditBottomSheet: React.FC<ExerciseEditBottomSheetProps> = (
               목표
             </label>
 
-            {/* 목표 타입 선택 */}
+            {/* 목표 타입 선택 (PRD: rep, second, mm, g) */}
             <div className="grid grid-cols-2 gap-2 mb-4">
               {[
-                { value: 'reps', label: '횟수' },
-                { value: 'time', label: '시간' },
-                { value: 'distance', label: '거리' },
-                { value: 'weight', label: '중량' }
+                { value: 'rep', label: '횟수' },
+                { value: 'second', label: '시간' },
+                { value: 'mm', label: '거리' },
+                { value: 'g', label: '중량' }
               ].map((option) => (
                 <button
                   key={option.value}
@@ -225,12 +327,12 @@ export const ExerciseEditBottomSheet: React.FC<ExerciseEditBottomSheetProps> = (
                   </svg>
                 </button>
 
-                {/* 목표 값 표시 */}
+                {/* 목표 값 표시 (PRD 타입 기준) */}
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-900">
-                    {editingSpec.goal.value || 10} {editingSpec.goal.type === 'reps' ? '회' :
-                      editingSpec.goal.type === 'time' ? '초' :
-                      editingSpec.goal.type === 'distance' ? 'm' : 'kg'}
+                    {editingSpec.goal.value || 10} {editingSpec.goal.type === 'rep' ? '회' :
+                      editingSpec.goal.type === 'second' ? '초' :
+                      editingSpec.goal.type === 'mm' ? 'm' : 'kg'}
                   </div>
                 </div>
 

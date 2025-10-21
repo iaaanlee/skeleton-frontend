@@ -23,6 +23,7 @@ type Props = {
   pinState?: PinState;
   onUpdateSet: (updatedSet: EffectiveSetBlueprint) => void;
   onDeleteSet: () => void;
+  onDeleteExercise?: (exerciseIndex: number) => void;
   onAddExercise: () => void;
   // DnD Props
   partIndex?: number;
@@ -46,6 +47,7 @@ export const SetEditCard: React.FC<Props> = ({
   pinState,
   onUpdateSet,
   onDeleteSet,
+  onDeleteExercise,
   onAddExercise,
   partIndex,
   parentId,
@@ -190,12 +192,20 @@ export const SetEditCard: React.FC<Props> = ({
   };
 
   const handleDeleteExercise = (exerciseIndex: number) => {
-    if (window.confirm('이 운동을 삭제하시겠습니까?')) {
-      const updatedExercises = set.exercises.filter((_, index) => index !== exerciseIndex);
-      onUpdateSet({
-        ...set,
-        exercises: updatedExercises
-      });
+    console.log('🗑️ [SetEditCard] handleDeleteExercise called:', { partIndex, setIndex, exerciseIndex });
+
+    // 🆕 Day 3: editable state의 deleteExercise 함수 사용
+    if (onDeleteExercise) {
+      onDeleteExercise(exerciseIndex);
+    } else {
+      // Fallback: 기존 방식 (confirm 포함)
+      if (window.confirm('이 운동을 삭제하시겠습니까?')) {
+        const updatedExercises = set.exercises.filter((_, index) => index !== exerciseIndex);
+        onUpdateSet({
+          ...set,
+          exercises: updatedExercises
+        });
+      }
     }
   };
 

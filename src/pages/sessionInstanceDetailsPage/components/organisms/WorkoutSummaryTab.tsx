@@ -22,27 +22,43 @@ export const WorkoutSummaryTab: React.FC<Props> = ({ sessionDetail, onExerciseCl
   const formatExerciseSpec = (spec: ExerciseSpec) => {
     const { goal, load, timeLimit } = spec;
 
+    // Goal 텍스트 생성 (단위 변환: g→kg, mm→m)
     let goalText = '';
+    let goalValue = goal.value;
+    if (goal.type === 'mm' && goalValue) {
+      goalValue = goalValue / 1000; // mm → m
+    } else if (goal.type === 'g' && goalValue) {
+      goalValue = goalValue / 1000; // g → kg
+    }
+
     switch (goal.type) {
-      case 'reps':
-        goalText = `${goal.value}회`;
+      case 'rep':
+        goalText = `${goalValue}회`;
         break;
-      case 'time':
-        goalText = `${goal.value}초`;
+      case 'second':
+        goalText = `${goalValue}초`;
         break;
-      case 'distance':
-        goalText = `${goal.value}m`;
+      case 'mm':
+        goalText = `${goalValue}m`;
         break;
-      case 'weight':
-        goalText = `${goal.value}kg`;
+      case 'g':
+        goalText = `${goalValue}kg`;
         break;
     }
 
-    let loadText = load.text || '';
-    if (load.type === 'weight' && load.value) {
-      loadText = `${load.value}kg`;
-    } else if (load.type === 'bodyweight') {
-      loadText = '체중';
+    // Load 텍스트 생성 (단위 변환: g→kg, mm→m)
+    let loadText = '';
+    let loadValue = load.value;
+    if (load.type === 'g' && loadValue) {
+      loadValue = loadValue / 1000; // g → kg
+      loadText = `${loadValue}kg`;
+    } else if (load.type === 'mm' && loadValue) {
+      loadValue = loadValue / 1000; // mm → m
+      loadText = `${loadValue}m`;
+    } else if (load.type === 'second' && loadValue) {
+      loadText = `${loadValue}초`;
+    } else if (load.type === 'free') {
+      loadText = load.text || '맨몸';
     }
 
     const parts = [goalText, loadText].filter(Boolean);

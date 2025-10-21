@@ -118,16 +118,53 @@ export type EffectiveExerciseBlueprint = {
   spec: ExerciseSpec;
 };
 
+// Editable Blueprint Types (Stage 4B: Modify Page State Management)
+// effectiveBlueprint를 로컬에서 편집 가능한 상태로 변환한 타입
+export type EditableExerciseBlueprint = {
+  exerciseTemplateId: string;
+  order: number;
+  spec: ExerciseSpec;
+  // 편집 메타데이터
+  _isModified?: boolean;      // spec이 변경되었는지
+  _originalOrder?: number;    // DnD 전 원래 순서 (복원용)
+};
+
+export type EditableSetBlueprint = {
+  setBlueprintId: string | null;
+  setSeedId: string;
+  order: number;
+  restTime: number;
+  timeLimit: number | null;
+  exercises: EditableExerciseBlueprint[];
+  // 편집 메타데이터
+  _isModified?: boolean;      // restTime/timeLimit이 변경되었는지
+  _originalOrder?: number;    // DnD 전 원래 순서
+};
+
+export type EditablePartBlueprint = {
+  partBlueprintId: string | null;
+  partSeedId: string;
+  partName: string;
+  order: number;
+  sets: EditableSetBlueprint[];
+  // 편집 메타데이터
+  _isModified?: boolean;      // partName이 변경되었는지
+  _originalOrder?: number;    // DnD 전 원래 순서
+};
+
+// PRD 타입 시스템 (WORKOUT_MANAGEMENT_IMPLEMENTATION_PLAN.md Line 798-801)
+// loadType: 'free' | 'g' | 'mm' | 'second'
+// goalType: 'rep' | 'second' | 'mm' | 'g'
 export type ExerciseSpec = {
   goal: {
-    type: 'reps' | 'time' | 'distance' | 'weight';
+    type: 'rep' | 'second' | 'mm' | 'g';
     value: number;
     rule: 'exact' | 'min' | 'max';
   };
   load: {
-    type: 'bodyweight' | 'weight' | 'resistance' | 'none';
+    type: 'free' | 'g' | 'mm' | 'second';
     value: number | null;
-    text: string;
+    text?: string;  // 'free' 타입만 사용 (optional)
   };
   timeLimit: number | null; // seconds
 };

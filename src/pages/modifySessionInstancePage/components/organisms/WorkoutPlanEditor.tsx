@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { ExerciseSelectionBottomSheet, SetEditCard } from '../molecules';
-import type { EffectivePartBlueprint, ModifySessionRequest, PartModification, ExerciseTemplate, EffectiveSetBlueprint, PinState, ActiveItem } from '../../../../types/workout';
+import type {
+  EffectivePartBlueprint,
+  EditablePartBlueprint,
+  ModifySessionRequest,
+  PartModification,
+  ExerciseTemplate,
+  EffectiveSetBlueprint,
+  PinState,
+  ActiveItem,
+  ExerciseSpec
+} from '../../../../types/workout';
 import { SortableItem } from '../atoms/SortableItem';
 import type { DragItem, PlaceholderInfo } from '../../../../hooks/useDragAndDrop';
 import { ExerciseName } from '../../../sessionInstanceDetailsPage/components/molecules/ExerciseName';
@@ -11,11 +21,23 @@ import { generatePartDragId, generateSetDragId } from '../../../../utils/dragIdG
 import { useDragHandleOffset } from '../../../../hooks/useDragHandleOffset';
 
 type Props = {
-  effectiveBlueprint: EffectivePartBlueprint[];
+  // 🆕 Day 3: editable state를 받음 (editable 대신)
+  editable: EditablePartBlueprint[];
   sessionId: string;
   onChange: (changes: Partial<ModifySessionRequest>) => void;
   onActiveItemChange?: (activeItem: ActiveItem) => void;
   placeholderInfo?: PlaceholderInfo;
+  // 🆕 Day 2-3: Editable State Update Functions
+  onUpdateExerciseSpec?: (partIndex: number, setIndex: number, exerciseIndex: number, spec: ExerciseSpec) => void;
+  onUpdateSetProperties?: (partIndex: number, setIndex: number, properties: { restTime?: number; timeLimit?: number | null }) => void;
+  onUpdatePartName?: (partIndex: number, partName: string) => void;
+  onAddExercise?: (partIndex: number, setIndex: number, exercise: Omit<import('../../../../types/workout').EditableExerciseBlueprint, '_isModified' | '_originalOrder'>) => void;
+  onDeleteExercise?: (partIndex: number, setIndex: number, exerciseIndex: number) => void;
+  onAddSet?: (partIndex: number, set: Omit<import('../../../../types/workout').EditableSetBlueprint, '_isModified' | '_originalOrder'>) => void;
+  onDeleteSet?: (partIndex: number, setIndex: number) => void;
+  onAddPart?: (part: Omit<EditablePartBlueprint, '_isModified' | '_originalOrder'>) => void;
+  onDeletePart?: (partIndex: number) => void;
+  onUpdateExerciseOrder?: (partIndex: number, setIndex: number, exerciseIndex: number, newOrder: number) => void;
 };
 
 
@@ -28,7 +50,7 @@ type DragHandleProps = {
 
 // 파트 카드 컴포넌트 Props
 type PartCardProps = {
-  part: EffectivePartBlueprint;
+  part: EditablePartBlueprint;
   partIndex: number;
   isExpanded: boolean;
   isActive: boolean;
@@ -40,6 +62,7 @@ type PartCardProps = {
   onExerciseClick: (exerciseId: string) => void;
   onUpdateSet: (partIndex: number, setIndex: number, updatedSet: EffectiveSetBlueprint) => void;
   onDeleteSet: (partIndex: number, setIndex: number) => void;
+  onDeleteExercise?: (partIndex: number, setIndex: number, exerciseIndex: number) => void;
   onAddExercise: (partIndex: number) => void;
   togglePartExpansion: (partSeedId: string) => void;
   toggleSetExpansion: (setSeedId: string) => void;
@@ -62,6 +85,7 @@ const PartCard: React.FC<PartCardProps> = ({
   onExerciseClick,
   onUpdateSet,
   onDeleteSet,
+  onDeleteExercise,
   onAddExercise,
   togglePartExpansion,
   toggleSetExpansion,
@@ -355,6 +379,7 @@ const PartCard: React.FC<PartCardProps> = ({
                         onExerciseClick={onExerciseClick}
                         onUpdateSet={(updatedSet) => onUpdateSet(partIndex, setIndex, updatedSet)}
                         onDeleteSet={() => onDeleteSet(partIndex, setIndex)}
+                        onDeleteExercise={(exerciseIndex) => onDeleteExercise?.(partIndex, setIndex, exerciseIndex)}
                         onAddExercise={() => onAddExercise(partIndex)}
                         isExpanded={expandedSets.has(set.setSeedId)}
                         onToggle={toggleSetExpansion}
@@ -413,7 +438,23 @@ const PartCard: React.FC<PartCardProps> = ({
   );
 };
 
-export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, sessionId, onChange, onActiveItemChange, placeholderInfo }) => {
+export const WorkoutPlanEditor: React.FC<Props> = ({
+  editable,
+  sessionId,
+  onChange,
+  onActiveItemChange,
+  placeholderInfo,
+  onUpdateExerciseSpec,
+  onUpdateSetProperties,
+  onUpdatePartName,
+  onAddExercise,
+  onDeleteExercise,
+  onAddSet,
+  onDeleteSet,
+  onAddPart,
+  onDeletePart,
+  onUpdateExerciseOrder
+}) => {
   // 토글 상태 인계 시스템 적용
   const { expandedParts, expandedSets, togglePartExpansion, toggleSetExpansion, initializeToggleStates, collapseAllParts, collapseAllSets } = useStatePreservation(sessionId);
 
@@ -424,14 +465,14 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
 
   // 첫 파트와 첫 세트 자동 펼치기 초기화
   useEffect(() => {
-    if (effectiveBlueprint.length > 0) {
-      const firstPartId = effectiveBlueprint[0].partSeedId;
-      const firstSetId = effectiveBlueprint[0].sets.length > 0
-        ? effectiveBlueprint[0].sets[0].setSeedId
+    if (editable.length > 0) {
+      const firstPartId = editable[0].partSeedId;
+      const firstSetId = editable[0].sets.length > 0
+        ? editable[0].sets[0].setSeedId
         : undefined;
       initializeToggleStates(firstPartId, firstSetId);
     }
-  }, [effectiveBlueprint, initializeToggleStates]);
+  }, [editable, initializeToggleStates]);
 
   // 자동 펼침 이벤트 리스너 연결
   useEffect(() => {
@@ -443,8 +484,8 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
       const parts = partId.split('-');
       const partIndex = parts[1] ? parseInt(parts[1]) : NaN;
 
-      if (!isNaN(partIndex) && partIndex >= 0 && partIndex < effectiveBlueprint.length) {
-        const partSeedId = effectiveBlueprint[partIndex].partSeedId;
+      if (!isNaN(partIndex) && partIndex >= 0 && partIndex < editable.length) {
+        const partSeedId = editable[partIndex].partSeedId;
 
         // 현재 펼침 상태 확인 후 닫혀있으면 펼치기
         if (!expandedParts.has(partSeedId)) {
@@ -458,7 +499,7 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
     return () => {
       document.removeEventListener('auto-expand-part', handleAutoExpand as EventListener);
     };
-  }, [effectiveBlueprint, expandedParts, togglePartExpansion]);
+  }, [editable, expandedParts, togglePartExpansion]);
 
   // 세트 자동 펼침 이벤트 리스너 연결
   useEffect(() => {
@@ -580,57 +621,61 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
   };
 
   const handleExerciseSelected = (exercise: ExerciseTemplate) => {
-    if (selectedPartIndex === null || selectedPartIndex >= effectiveBlueprint.length) {
+    if (selectedPartIndex === null || selectedPartIndex >= editable.length) {
       setShowExerciseSelection(false);
       setSelectedPartIndex(null);
       return;
     }
 
-    // 새로운 blueprint 생성 (immutable update)
-    const newBlueprint = [...effectiveBlueprint];
-    const targetPart = { ...newBlueprint[selectedPartIndex] };
+    console.log('🆕 [Day 3] handleExerciseSelected:', { selectedPartIndex, exercise });
 
+    const targetPart = editable[selectedPartIndex];
+
+    // 🆕 Day 3: editable state update 함수 사용
     // 첫 번째 세트가 없으면 생성
     if (targetPart.sets.length === 0) {
-      targetPart.sets = [{
+      console.log('  → Creating new set first');
+      onAddSet?.(selectedPartIndex, {
         setBlueprintId: null,
         setSeedId: `set-${Date.now()}`,
-        order: 1,
+        order: 0,
         restTime: 60,
         timeLimit: null,
         exercises: []
-      }];
+      });
+      // Note: 세트가 생성된 직후 운동을 추가하려면 state 업데이트 후 재시도 필요
+      // 현재는 사용자가 다시 추가 버튼을 누르도록 함
+      setShowExerciseSelection(false);
+      setSelectedPartIndex(null);
+      alert('세트가 생성되었습니다. 운동을 다시 추가해주세요.');
+      return;
     }
 
     // 첫 번째 세트에 운동 추가
-    const targetSet = { ...targetPart.sets[0] };
-    targetSet.exercises = [...targetSet.exercises, {
+    const targetSetIndex = 0;
+    const targetSet = targetPart.sets[targetSetIndex];
+
+    onAddExercise?.(selectedPartIndex, targetSetIndex, {
       exerciseTemplateId: exercise._id,
-      order: targetSet.exercises.length + 1,
+      order: targetSet.exercises.length,
       spec: {
         goal: {
-          type: 'reps',
+          type: 'rep',
           value: 10,
           rule: 'exact'
         },
         load: {
-          type: 'bodyweight',
+          type: 'free',
           value: null,
           text: ''
         },
         timeLimit: null
       }
-    }];
-
-    targetPart.sets[0] = targetSet;
-    newBlueprint[selectedPartIndex] = targetPart;
-
-    // 임시로 effectiveBlueprint 직접 업데이트 (개발 테스트용)
-    // 실제로는 partModifications를 통해 백엔드 호출해야 함
-    effectiveBlueprint[selectedPartIndex] = targetPart;
+    });
 
     setShowExerciseSelection(false);
     setSelectedPartIndex(null);
+    console.log('  → Exercise added via onAddExercise');
   };
 
   const handleCloseExerciseSelection = () => {
@@ -639,12 +684,40 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
   };
 
   const handleUpdateSet = (partIndex: number, setIndex: number, updatedSet: EffectiveSetBlueprint) => {
-    // For now, just alert. The actual modification logic will be implemented in state management
-    alert('세트 수정 기능은 상태 관리 구현 후 활성화됩니다.');
+    console.log('🆕 [Day 3] handleUpdateSet called:', { partIndex, setIndex, updatedSet });
+
+    // 🆕 Day 3: editable state update (완전 전환)
+    const originalSet = editable[partIndex]?.sets[setIndex];
+    if (!originalSet) {
+      console.warn('  → Original set not found, skipping update');
+      return;
+    }
+
+    // Set properties 변경 감지
+    const hasRestTimeChange = originalSet.restTime !== updatedSet.restTime;
+    const hasTimeLimitChange = originalSet.timeLimit !== updatedSet.timeLimit;
+
+    if (hasRestTimeChange || hasTimeLimitChange) {
+      console.log('  → Set properties changed, calling onUpdateSetProperties');
+      onUpdateSetProperties?.(partIndex, setIndex, {
+        restTime: updatedSet.restTime,
+        timeLimit: updatedSet.timeLimit
+      });
+    }
+
+    // Exercise spec 변경 감지
+    updatedSet.exercises.forEach((exercise, exerciseIndex) => {
+      const originalExercise = originalSet.exercises[exerciseIndex];
+      if (originalExercise && JSON.stringify(originalExercise.spec) !== JSON.stringify(exercise.spec)) {
+        console.log('  → Exercise spec changed, calling onUpdateExerciseSpec');
+        onUpdateExerciseSpec?.(partIndex, setIndex, exerciseIndex, exercise.spec);
+      }
+    });
   };
 
   const handleDeleteSet = (partIndex: number, setIndex: number) => {
-    alert('세트 삭제 기능은 상태 관리 구현 후 활성화됩니다.');
+    console.log('🆕 [Day 3] handleDeleteSet called:', { partIndex, setIndex });
+    onDeleteSet?.(partIndex, setIndex);
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -653,7 +726,7 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
   };
 
   // Session-level Part ID 목록 생성 (SortableContext용)
-  const partIds = effectiveBlueprint.map((part, index) =>
+  const partIds = editable.map((part, index) =>
     generatePartDragId(index, part.partSeedId)
   );
 
@@ -665,7 +738,7 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
 
       <SortableContext items={partIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-3">
-          {effectiveBlueprint.map((part, partIndex) => {
+          {editable.map((part, partIndex) => {
           const isActive = activeItem?.level === 'part' && activeItem.id === part.partSeedId;
           const isExpanded = expandedParts.has(part.partSeedId);
 
@@ -727,6 +800,7 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
                     onExerciseClick={handleExerciseClick}
                     onUpdateSet={handleUpdateSet}
                     onDeleteSet={handleDeleteSet}
+                    onDeleteExercise={onDeleteExercise}
                     onAddExercise={handleAddExercise}
                     togglePartExpansion={togglePartExpansion}
                     toggleSetExpansion={toggleSetExpansion}
@@ -742,7 +816,7 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
         {/* Session-level Placeholder: 마지막 파트 이후 위치 */}
         {placeholderInfo &&
           placeholderInfo.containerType === 'session' &&
-          placeholderInfo.insertIndex === effectiveBlueprint.length && (
+          placeholderInfo.insertIndex === editable.length && (
           <div
             className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
             data-placeholder="true"
@@ -753,7 +827,7 @@ export const WorkoutPlanEditor: React.FC<Props> = ({ effectiveBlueprint, session
           </div>
         )}
 
-        {effectiveBlueprint.length === 0 && (
+        {editable.length === 0 && (
           <div className="bg-white rounded-lg border p-8 text-center">
             <div className="text-gray-500 mb-4">
               <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

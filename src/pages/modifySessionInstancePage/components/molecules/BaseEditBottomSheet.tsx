@@ -28,15 +28,15 @@ export const BaseEditBottomSheet: React.FC<BaseEditBottomSheetProps> = ({
         onClick={onClose}
       />
 
-      {/* Bottom Sheet Container */}
-      <div className="relative w-full max-h-[80vh] bg-white rounded-t-xl overflow-hidden">
+      {/* Bottom Sheet Container - 95vh로 높이 증가하여 스크롤 최소화 */}
+      <div className="relative w-full max-h-[95vh] bg-white rounded-t-xl flex flex-col">
         {/* Handle - 드래그 시각적 표시 */}
-        <div className="flex justify-center py-2">
+        <div className="flex justify-center py-2 flex-shrink-0">
           <div className="w-10 h-1 bg-gray-300 rounded-full" />
         </div>
 
         {/* Header - PRD 맞춤 수정 */}
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-4 flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
             {/* 제목 */}
             <h2 className="text-lg font-semibold text-gray-900">
@@ -50,7 +50,9 @@ export const BaseEditBottomSheet: React.FC<BaseEditBottomSheetProps> = ({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDelete();
+                    if (window.confirm('이 운동을 삭제하시겠습니까?')) {
+                      onDelete();
+                    }
                   }}
                   className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-red-50 transition-colors text-red-600"
                   title="운동 삭제"
@@ -67,7 +69,7 @@ export const BaseEditBottomSheet: React.FC<BaseEditBottomSheetProps> = ({
           </div>
         </div>
 
-        {/* Content Area - 각 모달별 특정 내용 */}
+        {/* Content Area - 스크롤 가능한 영역 */}
         <div className="flex-1 overflow-y-auto px-4 pb-6">
           {children}
         </div>

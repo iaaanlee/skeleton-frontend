@@ -11,6 +11,7 @@ import {
 import { ExerciseSelectionBottomSheet } from '../molecules';
 import { SessionInfoCard, ExerciseAddFAB, HintTooltip } from '../atoms';
 import { DndContextProvider } from '../../../../contexts/DndContextProvider';
+import { useEditableState } from '../../hooks';
 import type { ModifySessionRequest, PartModification, SetModification, ExerciseModification, ActiveItem } from '../../../../types/workout';
 import type { DragEndEvent } from '@dnd-kit/core';
 import type { DragEventCallback, PlaceholderInfo } from '../../../../hooks/useDragAndDrop';
@@ -33,6 +34,30 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
 
   const { data: sessionDetail, isLoading, error } = useSessionDetail(sessionId);
   const modifySessionMutation = useModifySession();
+
+  // 🆕 Day 2: Editable State Management (점진적 통합)
+  // effectiveBlueprint → editable 로컬 상태로 변환
+  const editableStateHook = useEditableState(sessionDetail?.effectiveBlueprint || []);
+  const { editable, isModified: isEditableModified, reset: resetEditable } = editableStateHook;
+
+  // sessionDetail이 로드되면 editable state 초기화
+  useEffect(() => {
+    if (sessionDetail?.effectiveBlueprint) {
+      resetEditable();
+      console.log('✅ [Day 2] Editable state initialized:', editable);
+    }
+  }, [sessionDetail?.effectiveBlueprint, resetEditable]);
+
+  // 🆕 Day 2: Editable state 변경 감지 (디버깅용)
+  useEffect(() => {
+    if (editable.length > 0) {
+      console.log('🔄 [Day 2] Editable state changed:', {
+        partsCount: editable.length,
+        isModified: isEditableModified,
+        editable
+      });
+    }
+  }, [editable, isEditableModified]);
 
   // 🆕 페이지 이탈 감지 (PRD Line 358)
   useEffect(() => {
@@ -115,53 +140,102 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
   };
 
   const handleExerciseSelected = (exercise: any) => {
-    console.log('운동 선택됨:', exercise, '활성 아이템:', activeItem);
+    console.log('🆕 [Day 3] 운동 선택됨:', exercise, '활성 아이템:', activeItem);
 
-    if (!sessionDetail?.effectiveBlueprint) {
+    if (!editable || editable.length === 0) {
       console.error('세션 정보가 없어서 운동을 추가할 수 없습니다.');
       return;
     }
 
     let targetPartIndex = 0;
     let targetSetIndex = 0;
-    let insertPosition = 1; // 기본값: 첫 번째 위치
+    let insertPosition = 0; // order는 0-based
 
     // ActiveItem 기반 스마트 위치 결정
     if (activeItem) {
       if (activeItem.level === 'part') {
-        // 활성 파트의 첫 번째 세트 끝에 추가
-        targetPartIndex = sessionDetail.effectiveBlueprint.findIndex(
+        // 🔧 활성 파트에 새로운 세트 생성 + 운동 추가
+        targetPartIndex = editable.findIndex(
           part => part.partSeedId === activeItem.id
         );
-        targetSetIndex = 0; // 첫 번째 세트
-        insertPosition = sessionDetail.effectiveBlueprint[targetPartIndex]?.sets[0]?.exercises.length + 1 || 1;
+        if (targetPartIndex !== -1) {
+          const targetPart = editable[targetPartIndex];
+          const newSetOrder = targetPart.sets.length; // 마지막 세트 다음
+
+          console.log('🆕 [Day 3] 파트 활성화: 새로운 세트 생성 중', {
+            targetPartIndex,
+            newSetOrder,
+            partName: targetPart.partName
+          });
+
+          // 새로운 세트 생성
+          editableStateHook.addSet(targetPartIndex, {
+            setBlueprintId: null,
+            setSeedId: `set-${Date.now()}`,
+            order: newSetOrder,
+            restTime: 60,
+            timeLimit: null,
+            exercises: []
+          });
+
+          // 새로운 세트에 운동 추가 (다음 렌더링에서 처리되도록 지연)
+          setTimeout(() => {
+            editableStateHook.addExercise(targetPartIndex, newSetOrder, {
+              exerciseTemplateId: exercise.exerciseTemplateId || exercise._id,
+              order: 0,
+              spec: {
+                goal: { type: 'rep', value: 10, rule: 'exact' },
+                load: { type: 'free', value: null, text: '' },
+                timeLimit: null
+              }
+            });
+
+            setShowExerciseSelection(false);
+
+            // 자동 펼침 이벤트
+            const partId = `part-${targetPartIndex}-${targetPart.partSeedId}`;
+            const expandPartEvent = new CustomEvent('auto-expand-part', {
+              detail: { partId }
+            });
+            document.dispatchEvent(expandPartEvent);
+            console.log('🔄 파트 자동 펼침 이벤트 발생:', partId);
+
+            console.log(`✅ "${exercise.exerciseName || exercise.exerciseTemplateId}" 운동이 새로운 세트에 추가되었습니다.`);
+          }, 100);
+
+          return;
+        }
 
       } else if (activeItem.level === 'set') {
         // 활성 세트 끝에 추가
-        for (let partIdx = 0; partIdx < sessionDetail.effectiveBlueprint.length; partIdx++) {
-          const setIdx = sessionDetail.effectiveBlueprint[partIdx].sets.findIndex(
+        for (let partIdx = 0; partIdx < editable.length; partIdx++) {
+          const setIdx = editable[partIdx].sets.findIndex(
             set => set.setSeedId === activeItem.id
           );
           if (setIdx !== -1) {
             targetPartIndex = partIdx;
             targetSetIndex = setIdx;
-            insertPosition = sessionDetail.effectiveBlueprint[partIdx].sets[setIdx].exercises.length + 1;
+            insertPosition = editable[partIdx].sets[setIdx].exercises.length;
             break;
           }
         }
 
       } else if (activeItem.level === 'move') {
         // 활성 운동 바로 다음에 추가
-        for (let partIdx = 0; partIdx < sessionDetail.effectiveBlueprint.length; partIdx++) {
-          for (let setIdx = 0; setIdx < sessionDetail.effectiveBlueprint[partIdx].sets.length; setIdx++) {
-            const exerciseIdx = sessionDetail.effectiveBlueprint[partIdx].sets[setIdx].exercises.findIndex(
-              (ex, idx) => ex.exerciseTemplateId === activeItem.id ||
-                    `exercise-${partIdx}-${setIdx}-${idx}-${ex.exerciseTemplateId}` === activeItem.id
+        for (let partIdx = 0; partIdx < editable.length; partIdx++) {
+          for (let setIdx = 0; setIdx < editable[partIdx].sets.length; setIdx++) {
+            const exerciseIdx = editable[partIdx].sets[setIdx].exercises.findIndex(
+              (ex, idx) => {
+                // activeItem.id 패턴: "setSeedId-exerciseTemplateId-order" 또는 "exercise-partIdx-setIdx-idx-exerciseTemplateId"
+                const key1 = `${editable[partIdx].sets[setIdx].setSeedId}-${ex.exerciseTemplateId}-${ex.order}`;
+                const key2 = `exercise-${partIdx}-${setIdx}-${idx}-${ex.exerciseTemplateId}`;
+                return key1 === activeItem.id || key2 === activeItem.id || ex.exerciseTemplateId === activeItem.id;
+              }
             );
             if (exerciseIdx !== -1) {
               targetPartIndex = partIdx;
               targetSetIndex = setIdx;
-              insertPosition = exerciseIdx + 2; // 다음 위치
+              insertPosition = exerciseIdx + 1; // 다음 위치
               break;
             }
           }
@@ -170,53 +244,41 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
     }
 
     // 유효성 검사
-    if (targetPartIndex >= sessionDetail.effectiveBlueprint.length ||
-        targetSetIndex >= sessionDetail.effectiveBlueprint[targetPartIndex].sets.length) {
-      console.warn('유효하지 않은 위치, 기본 위치로 폴백:', { targetPartIndex, targetSetIndex });
+    if (targetPartIndex >= editable.length || targetPartIndex < 0) {
+      console.warn('유효하지 않은 파트 인덱스, 기본 위치로 폴백:', { targetPartIndex });
       targetPartIndex = 0;
       targetSetIndex = 0;
-      insertPosition = 1;
+      insertPosition = 0;
     }
 
-    console.log('운동 추가 위치 결정:', {
+    if (targetSetIndex >= editable[targetPartIndex].sets.length || targetSetIndex < 0) {
+      console.warn('유효하지 않은 세트 인덱스, 기본 위치로 폴백:', { targetSetIndex });
+      targetSetIndex = 0;
+      insertPosition = 0;
+    }
+
+    console.log('🆕 [Day 3] 운동 추가 위치 결정:', {
       targetPartIndex,
       targetSetIndex,
       insertPosition,
       activeItem
     });
 
-    // 운동 추가 로직 실행
-    const exerciseModification: ExerciseModification = {
-      exerciseTemplateId: exercise.exerciseTemplateId,
-      action: 'add',
+    // 🆕 Day 3: editable state update 함수 사용
+    editableStateHook.addExercise(targetPartIndex, targetSetIndex, {
+      exerciseTemplateId: exercise.exerciseTemplateId || exercise._id,
       order: insertPosition,
       spec: {
-        load: { type: 'none', value: null, text: '' },
-        goal: { type: 'reps', value: 10, rule: 'exact' },
+        goal: { type: 'rep', value: 10, rule: 'exact' },
+        load: { type: 'free', value: null, text: '' },
         timeLimit: null
       }
-    };
-
-    const setModification: SetModification = {
-      setSeedId: sessionDetail.effectiveBlueprint[targetPartIndex].sets[targetSetIndex].setSeedId,
-      action: 'modify',
-      exerciseModifications: [exerciseModification]
-    };
-
-    const partModification: PartModification = {
-      partSeedId: sessionDetail.effectiveBlueprint[targetPartIndex].partSeedId,
-      action: 'modify',
-      setModifications: [setModification]
-    };
-
-    handleChanges({
-      partModifications: [partModification]
     });
 
     setShowExerciseSelection(false);
 
     // 파트와 세트 자동 펼침 이벤트 발생
-    const targetPart = sessionDetail.effectiveBlueprint[targetPartIndex];
+    const targetPart = editable[targetPartIndex];
     const targetSet = targetPart.sets[targetSetIndex];
 
     // 1. 파트 자동 펼침 이벤트
@@ -234,7 +296,7 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
     document.dispatchEvent(expandSetEvent);
     console.log('🔄 세트 자동 펼침 이벤트 발생:', targetSet.setSeedId);
 
-    console.log(`✅ "${exercise.exerciseName}" 운동이 스마트 위치에 추가되었습니다.`);
+    console.log(`✅ "${exercise.exerciseName || exercise.exerciseTemplateId}" 운동이 스마트 위치에 추가되었습니다.`);
   };
 
   // DnD 콜백 구현
@@ -698,11 +760,21 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
         {/* Workout Plan Editor */}
         <div className="px-4 pb-32">
           <WorkoutPlanEditor
-            effectiveBlueprint={sessionDetail.effectiveBlueprint}
+            editable={editable}
             sessionId={sessionId}
             onChange={handleChanges}
             onActiveItemChange={setActiveItem}
             placeholderInfo={placeholderInfo}
+            onUpdateExerciseSpec={editableStateHook.updateExerciseSpec}
+            onUpdateSetProperties={editableStateHook.updateSetProperties}
+            onUpdatePartName={editableStateHook.updatePartName}
+            onAddExercise={editableStateHook.addExercise}
+            onDeleteExercise={editableStateHook.deleteExercise}
+            onAddSet={editableStateHook.addSet}
+            onDeleteSet={editableStateHook.deleteSet}
+            onAddPart={editableStateHook.addPart}
+            onDeletePart={editableStateHook.deletePart}
+            onUpdateExerciseOrder={editableStateHook.updateExerciseOrder}
           />
         </div>
 

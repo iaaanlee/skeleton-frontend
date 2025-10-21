@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import type { EffectiveExerciseBlueprint, ExerciseSpec, PinState, ActiveItem } from '../../../../types/workout';
 import { DraggableCard } from '../atoms/DraggableCard';
@@ -15,35 +15,78 @@ type DragHandleProps = {
   attributes: Record<string, any>;
 };
 
-// formatExerciseSpec 함수 - session-instance-details와 동일
+/**
+ * formatExerciseSpec - PRD 기준 타입으로 운동 spec 포맷팅
+ *
+ * LOAD 타입: free, g, mm, second
+ * GOAL 타입: rep, second, mm, g
+ */
 const formatExerciseSpec = (spec: ExerciseSpec) => {
   const { goal, load, timeLimit } = spec;
 
+  // Goal 정보 (PRD 타입: rep, second, mm, g)
   let goalText = '';
+  let goalValue = goal.value;
+
+  // 단위 변환
+  if (goal.type === 'mm' && goalValue) {
+    goalValue = goalValue / 1000; // mm → m
+  } else if (goal.type === 'g' && goalValue) {
+    goalValue = goalValue / 1000; // g → kg
+  }
+
   switch (goal.type) {
-    case 'reps':
-      goalText = `${goal.value}회`;
+    case 'rep':
+      goalText = `${goalValue}회`;
       break;
-    case 'time':
-      goalText = `${goal.value}초`;
+    case 'second':
+      goalText = `${goalValue}초`;
       break;
-    case 'distance':
-      goalText = `${goal.value}m`;
+    case 'mm':
+      goalText = `${goalValue}m`;
       break;
-    case 'weight':
-      goalText = `${goal.value}kg`;
+    case 'g':
+      goalText = `${goalValue}kg`;
       break;
+    default:
+      goalText = `${goalValue} ${goal.type}`;
   }
 
-  let loadText = load.text || '';
-  if (load.type === 'weight' && load.value) {
-    loadText = `${load.value}kg`;
-  } else if (load.type === 'bodyweight') {
-    loadText = '체중';
+  // Load 정보 (PRD 타입: free, g, mm, second)
+  let loadText = '';
+  let loadValue = load.value;
+
+  // 단위 변환
+  if (load.type === 'g' && loadValue) {
+    loadValue = loadValue / 1000; // g → kg
+  } else if (load.type === 'mm' && loadValue) {
+    loadValue = loadValue / 1000; // mm → m
   }
 
-  const parts = [goalText, loadText].filter(Boolean);
+  switch (load.type) {
+    case 'free':
+      loadText = load.text || '맨몸';
+      break;
+    case 'g':
+      loadText = `${loadValue}kg`;
+      break;
+    case 'mm':
+      loadText = `${loadValue}m`;
+      break;
+    case 'second':
+      loadText = `${loadValue}초`;
+      break;
+    default:
+      loadText = load.text || '';
+  }
 
+  // Parts 조합 (goal은 항상 포함)
+  const parts = [goalText];
+  if (loadText) {
+    parts.push(loadText);
+  }
+
+  // TimeLimit 정보
   if (timeLimit && timeLimit > 0) {
     parts.push(`제한시간 ${timeLimit}초`);
   }
@@ -127,12 +170,29 @@ export const ExerciseEditCard: React.FC<Props> = ({
   const exerciseKey = setSeedId ? `${setSeedId}-${exercise.exerciseTemplateId}-${exercise.order}` : `exercise-${exerciseIndex}-${exercise.exerciseTemplateId}`;
   const isActive = activeItem?.level === 'move' && activeItem.id === exerciseKey;
 
+  // 🔍 디버깅: spec 정보 출력
+  useEffect(() => {
+    console.log(`📋 [ExerciseEditCard] Rendering exercise:`, {
+      exerciseTemplateId: exercise.exerciseTemplateId,
+      order: exercise.order,
+      spec: exercise.spec,
+      formatted: formatExerciseSpec(exercise.spec)
+    });
+  }, [exercise.spec, exercise.exerciseTemplateId, exercise.order]);
+
   // Phase 3: ExerciseEditBottomSheet 저장 핸들러
   const handleExerciseModalSave = (updatedSpec: ExerciseSpec, applyToAll: boolean) => {
     const updatedExercise = {
       ...exercise,
       spec: updatedSpec
     };
+
+    console.log('💾 [ExerciseEditCard] Saving exercise spec:', {
+      exerciseTemplateId: exercise.exerciseTemplateId,
+      oldSpec: exercise.spec,
+      newSpec: updatedSpec,
+      applyToAll
+    });
 
     // PRD 요구사항: 일괄 적용 토글 처리
     if (applyToAll) {
