@@ -302,13 +302,7 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
   // DnD 콜백 구현
   const dragCallbacks: DragEventCallback = {
     onItemMove: (moveData) => {
-      console.log('🚨 아이템 이동 디버깅:', {
-        itemId: moveData.itemId,
-        itemType: moveData.itemType,
-        fromIndices: moveData.fromIndices,
-        toIndices: moveData.toIndices,
-        newParentId: moveData.newParentId
-      });
+      console.log('🚨 아이템 이동:', moveData);
 
       const { itemType, fromIndices, toIndices } = moveData;
 
@@ -320,137 +314,34 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
 
       if (!hasPositionChanged) {
         console.log('같은 위치로 드롭됨 - 변경사항 없음');
-        return; // 변경사항 없으므로 처리하지 않음
+        return;
       }
 
+      // ✅ NEW: editable state 직접 업데이트
       if (itemType === 'exercise') {
-        // 운동 이동
-        const fromPartIndex = fromIndices.partIndex ?? 0;
-        const fromSetIndex = fromIndices.setIndex ?? 0;
-        const toPartIndex = toIndices.partIndex ?? fromPartIndex;
-        const toSetIndex = toIndices.setIndex ?? fromSetIndex;
-
-        // 같은 세트 내에서의 순서 변경인지, 다른 세트로의 이동인지 확인
-        if (fromPartIndex === toPartIndex && fromSetIndex === toSetIndex) {
-          // 같은 세트 내 순서 변경
-          const exerciseModification: ExerciseModification = {
-            exerciseTemplateId: 'to-be-moved', // 실제로는 운동 ID 필요
-            action: 'modify',
-            order: toIndices.exerciseIndex ?? 0
-          };
-
-          const setModification: SetModification = {
-            setSeedId: sessionDetail?.effectiveBlueprint[fromPartIndex]?.sets[fromSetIndex]?.setSeedId,
-            action: 'modify',
-            exerciseModifications: [exerciseModification]
-          };
-
-          const partModification: PartModification = {
-            partSeedId: sessionDetail?.effectiveBlueprint[fromPartIndex]?.partSeedId,
-            action: 'modify',
-            setModifications: [setModification]
-          };
-
-          handleChanges({
-            partModifications: [partModification]
-          });
-        } else {
-          // 다른 세트로 이동 (삭제 + 추가)
-          const originalExercise = sessionDetail?.effectiveBlueprint[fromPartIndex]?.sets[fromSetIndex]?.exercises[fromIndices.exerciseIndex ?? 0];
-
-          if (originalExercise) {
-            // 기존 위치에서 삭제
-            const deleteExerciseModification: ExerciseModification = {
-              exerciseTemplateId: originalExercise.exerciseTemplateId,
-              action: 'delete'
-            };
-
-            // 새 위치에 추가
-            const addExerciseModification: ExerciseModification = {
-              exerciseTemplateId: originalExercise.exerciseTemplateId,
-              action: 'add',
-              order: toIndices.exerciseIndex ?? 1,
-              spec: originalExercise.spec
-            };
-
-            const fromSetModification: SetModification = {
-              setSeedId: sessionDetail?.effectiveBlueprint[fromPartIndex]?.sets[fromSetIndex]?.setSeedId,
-              action: 'modify',
-              exerciseModifications: [deleteExerciseModification]
-            };
-
-            const toSetModification: SetModification = {
-              setSeedId: sessionDetail?.effectiveBlueprint[toPartIndex]?.sets[toSetIndex]?.setSeedId,
-              action: 'modify',
-              exerciseModifications: [addExerciseModification]
-            };
-
-            const partModifications: PartModification[] = [];
-
-            if (fromPartIndex === toPartIndex) {
-              // 같은 파트 내에서 다른 세트로 이동
-              partModifications.push({
-                partSeedId: sessionDetail?.effectiveBlueprint[fromPartIndex]?.partSeedId,
-                action: 'modify',
-                setModifications: [fromSetModification, toSetModification]
-              });
-            } else {
-              // 다른 파트의 다른 세트로 이동
-              partModifications.push({
-                partSeedId: sessionDetail?.effectiveBlueprint[fromPartIndex]?.partSeedId,
-                action: 'modify',
-                setModifications: [fromSetModification]
-              });
-              partModifications.push({
-                partSeedId: sessionDetail?.effectiveBlueprint[toPartIndex]?.partSeedId,
-                action: 'modify',
-                setModifications: [toSetModification]
-              });
-            }
-
-            handleChanges({
-              partModifications
-            });
-          }
-        }
-
+        editableStateHook.moveExercise(
+          fromIndices.partIndex ?? 0,
+          fromIndices.setIndex ?? 0,
+          fromIndices.exerciseIndex ?? 0,
+          toIndices.partIndex ?? 0,
+          toIndices.setIndex ?? 0,
+          toIndices.exerciseIndex ?? 0
+        );
       } else if (itemType === 'set') {
-        // 세트 이동 (같은 파트 내에서만 가능)
-        const partIndex = fromIndices.partIndex ?? 0;
-
-        const setModification: SetModification = {
-          setSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.sets[fromIndices.setIndex ?? 0]?.setSeedId,
-          action: 'modify',
-          order: toIndices.setIndex ?? 0
-        };
-
-        const partModification: PartModification = {
-          partSeedId: sessionDetail?.effectiveBlueprint[partIndex]?.partSeedId,
-          action: 'modify',
-          setModifications: [setModification]
-        };
-
-        handleChanges({
-          partModifications: [partModification]
-        });
-
+        editableStateHook.moveSet(
+          fromIndices.partIndex ?? 0,
+          fromIndices.setIndex ?? 0,
+          toIndices.partIndex ?? 0,
+          toIndices.setIndex ?? 0
+        );
       } else if (itemType === 'part') {
-        // 파트 순서 변경
-        const partModification: PartModification = {
-          partSeedId: sessionDetail?.effectiveBlueprint[fromIndices.partIndex ?? 0]?.partSeedId,
-          action: 'modify',
-          order: toIndices.partIndex ?? 0
-        };
-
-        handleChanges({
-          partModifications: [partModification]
-        });
-
-        // 파트 이동 후 자동 정리 (빈 컨테이너 제거)
-        if (sessionDetail?.effectiveBlueprint) {
-          triggerAutoCleanupAfterDrag(sessionDetail.effectiveBlueprint, handleChanges);
-        }
+        editableStateHook.movePart(
+          fromIndices.partIndex ?? 0,
+          toIndices.partIndex ?? 0
+        );
       }
+
+      console.log('✅ Editable state updated');
     },
 
     onItemDuplicate: (duplicateData) => {

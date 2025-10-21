@@ -306,6 +306,175 @@ export const useEditableState = (effectiveBlueprint: EffectivePartBlueprint[]) =
   }, []);
 
   /**
+   * Move exercise (DnD support)
+   */
+  const moveExercise = useCallback((
+    fromPartIndex: number,
+    fromSetIndex: number,
+    fromExerciseIndex: number,
+    toPartIndex: number,
+    toSetIndex: number,
+    toExerciseIndex: number
+  ) => {
+    setEditable(prev => {
+      const newState = [...prev];
+
+      // 1. 원본 운동 추출
+      const fromPart = { ...newState[fromPartIndex] };
+      const fromSets = [...fromPart.sets];
+      const fromSet = { ...fromSets[fromSetIndex] };
+      const fromExercises = [...fromSet.exercises];
+      const [movedExercise] = fromExercises.splice(fromExerciseIndex, 1);
+
+      // 2. 같은 세트인지 확인
+      const isSameSet = fromPartIndex === toPartIndex && fromSetIndex === toSetIndex;
+
+      if (isSameSet) {
+        // Case A: 같은 세트 내 이동
+        fromExercises.splice(toExerciseIndex, 0, movedExercise);
+
+        // order 재정렬
+        fromExercises.forEach((ex, idx) => { ex.order = idx; });
+
+        fromSet.exercises = fromExercises;
+        fromSet._isModified = true;
+        fromSets[fromSetIndex] = fromSet;
+        fromPart.sets = fromSets;
+        newState[fromPartIndex] = fromPart;
+
+      } else {
+        // Case B: 다른 세트로 이동
+
+        // 2a. fromSet 업데이트 (제거)
+        fromExercises.forEach((ex, idx) => { ex.order = idx; });
+        fromSet.exercises = fromExercises;
+        fromSet._isModified = true;
+        fromSets[fromSetIndex] = fromSet;
+        fromPart.sets = fromSets;
+        newState[fromPartIndex] = fromPart;
+
+        // 2b. toSet 업데이트 (삽입)
+        const toPart = { ...newState[toPartIndex] };
+        const toSets = [...toPart.sets];
+        const toSet = { ...toSets[toSetIndex] };
+        const toExercises = [...toSet.exercises];
+
+        toExercises.splice(toExerciseIndex, 0, movedExercise);
+        toExercises.forEach((ex, idx) => { ex.order = idx; });
+
+        toSet.exercises = toExercises;
+        toSet._isModified = true;
+        toSets[toSetIndex] = toSet;
+        toPart.sets = toSets;
+        toPart._isModified = true;
+        newState[toPartIndex] = toPart;
+      }
+
+      console.log('✅ [useEditableState] Exercise moved:', {
+        from: { partIndex: fromPartIndex, setIndex: fromSetIndex, exerciseIndex: fromExerciseIndex },
+        to: { partIndex: toPartIndex, setIndex: toSetIndex, exerciseIndex: toExerciseIndex },
+        exerciseTemplateId: movedExercise.exerciseTemplateId
+      });
+
+      return newState;
+    });
+  }, []);
+
+  /**
+   * Move set (DnD support)
+   */
+  const moveSet = useCallback((
+    fromPartIndex: number,
+    fromSetIndex: number,
+    toPartIndex: number,
+    toSetIndex: number
+  ) => {
+    setEditable(prev => {
+      const newState = [...prev];
+
+      // 1. 원본 세트 추출
+      const fromPart = { ...newState[fromPartIndex] };
+      const fromSets = [...fromPart.sets];
+      const [movedSet] = fromSets.splice(fromSetIndex, 1);
+
+      // 2. 같은 파트인지 확인
+      const isSamePart = fromPartIndex === toPartIndex;
+
+      if (isSamePart) {
+        // Case A: 같은 파트 내 이동
+        fromSets.splice(toSetIndex, 0, movedSet);
+
+        // order 재정렬
+        fromSets.forEach((set, idx) => { set.order = idx; });
+
+        fromPart.sets = fromSets;
+        fromPart._isModified = true;
+        newState[fromPartIndex] = fromPart;
+
+      } else {
+        // Case B: 다른 파트로 이동
+
+        // 2a. fromPart 업데이트 (제거)
+        fromSets.forEach((set, idx) => { set.order = idx; });
+        fromPart.sets = fromSets;
+        fromPart._isModified = true;
+        newState[fromPartIndex] = fromPart;
+
+        // 2b. toPart 업데이트 (삽입)
+        const toPart = { ...newState[toPartIndex] };
+        const toSets = [...toPart.sets];
+
+        toSets.splice(toSetIndex, 0, movedSet);
+        toSets.forEach((set, idx) => { set.order = idx; });
+
+        toPart.sets = toSets;
+        toPart._isModified = true;
+        newState[toPartIndex] = toPart;
+      }
+
+      console.log('✅ [useEditableState] Set moved:', {
+        from: { partIndex: fromPartIndex, setIndex: fromSetIndex },
+        to: { partIndex: toPartIndex, setIndex: toSetIndex },
+        setSeedId: movedSet.setSeedId
+      });
+
+      return newState;
+    });
+  }, []);
+
+  /**
+   * Move part (DnD support)
+   */
+  const movePart = useCallback((
+    fromPartIndex: number,
+    toPartIndex: number
+  ) => {
+    setEditable(prev => {
+      const newState = [...prev];
+
+      // 1. 원본 파트 추출
+      const [movedPart] = newState.splice(fromPartIndex, 1);
+
+      // 2. 새 위치에 삽입
+      newState.splice(toPartIndex, 0, movedPart);
+
+      // 3. 전체 파트 order 재정렬
+      newState.forEach((part, idx) => {
+        part.order = idx;
+        part._isModified = true;
+      });
+
+      console.log('✅ [useEditableState] Part moved:', {
+        from: fromPartIndex,
+        to: toPartIndex,
+        partName: movedPart.partName
+      });
+
+      return newState;
+    });
+  }, []);
+
+  /**
    * Reset to original effectiveBlueprint
    */
   const reset = useCallback(() => {
@@ -325,6 +494,9 @@ export const useEditableState = (effectiveBlueprint: EffectivePartBlueprint[]) =
     addPart,
     deletePart,
     updateExerciseOrder,
+    moveExercise,
+    moveSet,
+    movePart,
     reset
   };
 };
