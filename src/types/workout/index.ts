@@ -113,6 +113,9 @@ export type EffectiveSetBlueprint = {
 };
 
 export type EffectiveExerciseBlueprint = {
+  exerciseSeedId: string;              // 임시 ID (매칭 불가)
+  exerciseBlueprintId: string | null;  // Pin 전 매칭용
+  exerciseLocalId?: string;            // Pin 후 매칭용
   exerciseTemplateId: string;
   order: number;
   spec: ExerciseSpec;
@@ -121,6 +124,9 @@ export type EffectiveExerciseBlueprint = {
 // Editable Blueprint Types (Stage 4B: Modify Page State Management)
 // effectiveBlueprint를 로컬에서 편집 가능한 상태로 변환한 타입
 export type EditableExerciseBlueprint = {
+  exerciseSeedId: string;              // 임시 ID (매칭 불가)
+  exerciseBlueprintId: string | null;  // Pin 전 매칭용
+  exerciseLocalId?: string;            // Pin 후 매칭용
   exerciseTemplateId: string;
   order: number;
   spec: ExerciseSpec;
@@ -171,6 +177,7 @@ export type ExerciseSpec = {
 
 export type SessionDetail = {
   sessionId: string;
+  profileId: string;       // 프로필 ID 추가
   sessionName: string;
   status: SessionStatus;
   creationType: CreationType;
@@ -211,6 +218,9 @@ export type SetModification = {
 };
 
 export type ExerciseModification = {
+  exerciseSeedId?: string;       // 기존 운동 수정/삭제 시 (modify/delete에 필수)
+  exerciseBlueprintId?: string | null;  // Blueprint 운동 식별자
+  exerciseLocalId?: string;      // Pin 후 매칭용 (setPin:true 스냅샷에서 필수)
   exerciseTemplateId: string;
   action: 'add' | 'modify' | 'delete';
   order?: number;
@@ -231,22 +241,45 @@ export type ModifySessionResponse = {
   modifiedExerciseCount: number;
 };
 
-// Exercise Template 관련 타입
+// Exercise Template 관련 타입 (PRD 준수 - Lines 1352-1388)
 export type ExerciseTemplate = {
   _id: string;
+  profileId: string;
   exerciseName: string;
-  description?: string;
-  category: string;
-  targetMuscles: string[];
-  equipment?: string[];
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  defaultSpec?: ExerciseSpec;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  creationType: 'preset' | 'custom';
+  presetExerciseTemplateId: string | null;
+  isDeleted: boolean;
+  thumbnailUrl: string | null;
+  specBlueprint: {
+    goal: {
+      type: 'rep' | 'g' | 'mm' | 'second';
+      value: number;
+      rule: 'eq' | 'min' | 'max';
+    };
+    load: {
+      type: 'g' | 'mm' | 'second' | 'free';
+      value?: number;
+      text: string;
+    };
+    timeLimit: number | null;
+  };
+  exerciseInfo: {
+    note: string;
+    exercisePresetId: string | null;
+    categoryId: string | null;
+    '운동 유형 및 목적': string[];
+    '운동 부위': string[];
+    '운동 기구': string[];
+  };
+  timeStamp: {
+    createdAt: string;
+    updatedAt: string;
+    deletedAt: string | null;
+  };
 };
 
 export type ExerciseSearchParams = {
+  profileId: string;       // 프로필 ID (필수)
   q?: string;              // 검색어
   category?: string;       // 카테고리 필터
   difficulty?: string;     // 난이도 필터

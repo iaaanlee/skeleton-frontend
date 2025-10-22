@@ -8,6 +8,15 @@ import type {
 } from '../../../types/workout';
 
 /**
+ * Resequence orders to PRD standard (0, 10, 20, 30...)
+ */
+const resequenceOrders = <T extends { order: number }>(items: T[]): void => {
+  items.forEach((item, idx) => {
+    item.order = idx * 10;
+  });
+};
+
+/**
  * Editable State Manager Hook - Stage 4B.3
  * Manages local editable state converted from effectiveBlueprint
  *
@@ -141,10 +150,8 @@ export const useEditableState = (effectiveBlueprint: EffectivePartBlueprint[]) =
       // 🔧 order 위치에 삽입 (splice 사용)
       exercises.splice(exercise.order, 0, newExercise);
 
-      // 🔧 삽입 후 order 재정렬
-      exercises.forEach((ex, idx) => {
-        ex.order = idx;
-      });
+      // ✅ 삽입 후 order 재정렬 (0, 10, 20, 30...)
+      resequenceOrders(exercises);
 
       set.exercises = exercises;
       set._isModified = true;
@@ -180,6 +187,9 @@ export const useEditableState = (effectiveBlueprint: EffectivePartBlueprint[]) =
 
       // Remove exercise
       exercises.splice(exerciseIndex, 1);
+
+      // ✅ Resequence to maintain 0,10,20,30 pattern
+      resequenceOrders(exercises);
 
       set.exercises = exercises;
       set._isModified = true;
@@ -233,6 +243,9 @@ export const useEditableState = (effectiveBlueprint: EffectivePartBlueprint[]) =
       // Remove set
       sets.splice(setIndex, 1);
 
+      // ✅ Resequence to maintain 0,10,20,30 pattern
+      resequenceOrders(sets);
+
       part.sets = sets;
       part._isModified = true;
       newState[partIndex] = part;
@@ -270,6 +283,10 @@ export const useEditableState = (effectiveBlueprint: EffectivePartBlueprint[]) =
     setEditable(prev => {
       const newState = [...prev];
       newState.splice(partIndex, 1);
+
+      // ✅ Resequence to maintain 0,10,20,30 pattern
+      resequenceOrders(newState);
+
       return newState;
     });
   }, []);
@@ -333,8 +350,8 @@ export const useEditableState = (effectiveBlueprint: EffectivePartBlueprint[]) =
         // Case A: 같은 세트 내 이동
         fromExercises.splice(toExerciseIndex, 0, movedExercise);
 
-        // order 재정렬
-        fromExercises.forEach((ex, idx) => { ex.order = idx; });
+        // ✅ order 재정렬 (0, 10, 20, 30...)
+        resequenceOrders(fromExercises);
 
         fromSet.exercises = fromExercises;
         fromSet._isModified = true;
@@ -346,7 +363,7 @@ export const useEditableState = (effectiveBlueprint: EffectivePartBlueprint[]) =
         // Case B: 다른 세트로 이동
 
         // 2a. fromSet 업데이트 (제거)
-        fromExercises.forEach((ex, idx) => { ex.order = idx; });
+        resequenceOrders(fromExercises);  // ✅ 0, 10, 20, 30...
         fromSet.exercises = fromExercises;
         fromSet._isModified = true;
         fromSets[fromSetIndex] = fromSet;
@@ -360,7 +377,7 @@ export const useEditableState = (effectiveBlueprint: EffectivePartBlueprint[]) =
         const toExercises = [...toSet.exercises];
 
         toExercises.splice(toExerciseIndex, 0, movedExercise);
-        toExercises.forEach((ex, idx) => { ex.order = idx; });
+        resequenceOrders(toExercises);  // ✅ 0, 10, 20, 30...
 
         toSet.exercises = toExercises;
         toSet._isModified = true;
@@ -404,8 +421,8 @@ export const useEditableState = (effectiveBlueprint: EffectivePartBlueprint[]) =
         // Case A: 같은 파트 내 이동
         fromSets.splice(toSetIndex, 0, movedSet);
 
-        // order 재정렬
-        fromSets.forEach((set, idx) => { set.order = idx; });
+        // ✅ order 재정렬 (0, 10, 20, 30...)
+        resequenceOrders(fromSets);
 
         fromPart.sets = fromSets;
         fromPart._isModified = true;
@@ -415,7 +432,7 @@ export const useEditableState = (effectiveBlueprint: EffectivePartBlueprint[]) =
         // Case B: 다른 파트로 이동
 
         // 2a. fromPart 업데이트 (제거)
-        fromSets.forEach((set, idx) => { set.order = idx; });
+        resequenceOrders(fromSets);  // ✅ 0, 10, 20, 30...
         fromPart.sets = fromSets;
         fromPart._isModified = true;
         newState[fromPartIndex] = fromPart;
@@ -425,7 +442,7 @@ export const useEditableState = (effectiveBlueprint: EffectivePartBlueprint[]) =
         const toSets = [...toPart.sets];
 
         toSets.splice(toSetIndex, 0, movedSet);
-        toSets.forEach((set, idx) => { set.order = idx; });
+        resequenceOrders(toSets);  // ✅ 0, 10, 20, 30...
 
         toPart.sets = toSets;
         toPart._isModified = true;
@@ -458,9 +475,9 @@ export const useEditableState = (effectiveBlueprint: EffectivePartBlueprint[]) =
       // 2. 새 위치에 삽입
       newState.splice(toPartIndex, 0, movedPart);
 
-      // 3. 전체 파트 order 재정렬
-      newState.forEach((part, idx) => {
-        part.order = idx;
+      // 3. 전체 파트 order 재정렬 (0, 10, 20, 30...)
+      resequenceOrders(newState);
+      newState.forEach((part) => {
         part._isModified = true;
       });
 

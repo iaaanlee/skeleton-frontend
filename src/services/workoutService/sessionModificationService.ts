@@ -41,6 +41,9 @@ export const exerciseTemplateService = {
   searchExercises: async (params: ExerciseSearchParams): Promise<ExerciseSearchResponse> => {
     const queryParams = new URLSearchParams();
 
+    // profileId는 필수 파라미터
+    queryParams.set('profileId', params.profileId);
+
     if (params.q) queryParams.set('q', params.q);
     if (params.category) queryParams.set('category', params.category);
     if (params.difficulty) queryParams.set('difficulty', params.difficulty);
@@ -73,9 +76,9 @@ export const exerciseTemplateService = {
   },
 
   // GET /exercise-templates/meta/categories - 카테고리 목록
-  getCategories: async (): Promise<ExerciseCategory[]> => {
+  getCategories: async (profileId: string): Promise<ExerciseCategory[]> => {
     const response = await backendHttpClient.get<ApiResponse<ExerciseCategory[]>>(
-      `/exercise-templates/meta/categories`
+      `/exercise-templates/meta/categories?profileId=${profileId}`
     );
 
     if (!response.success || !response.data) {
@@ -128,6 +131,7 @@ export const useSearchExercises = (params: ExerciseSearchParams) => {
   return useQuery({
     queryKey: ['exerciseSearch', params],
     queryFn: () => exerciseTemplateService.searchExercises(params),
+    enabled: !!params.profileId, // profileId가 있을 때만 호출
     staleTime: 5 * 60 * 1000, // 5분
     gcTime: 10 * 60 * 1000,   // 10분
   });
@@ -145,10 +149,11 @@ export const useExerciseTemplate = (exerciseId: string) => {
 };
 
 // 카테고리 목록 query
-export const useExerciseCategories = () => {
+export const useExerciseCategories = (profileId: string) => {
   return useQuery({
-    queryKey: ['exerciseCategories'],
-    queryFn: () => exerciseTemplateService.getCategories(),
+    queryKey: ['exerciseCategories', profileId],
+    queryFn: () => exerciseTemplateService.getCategories(profileId),
+    enabled: !!profileId,
     staleTime: 30 * 60 * 1000, // 30분
     gcTime: 60 * 60 * 1000,    // 1시간
   });

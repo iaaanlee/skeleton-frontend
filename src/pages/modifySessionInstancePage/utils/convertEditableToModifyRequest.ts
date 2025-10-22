@@ -40,6 +40,31 @@ function findDeletedItems<T extends { [key: string]: any }>(
 }
 
 /**
+ * Exercise 매칭 헬퍼 함수
+ * Pin 후 → exerciseLocalId 매칭
+ * Pin 전 → exerciseBlueprintId 매칭
+ */
+function findMatchingExercise(
+  original: EffectiveExerciseBlueprint,
+  editableExercises: EditableExerciseBlueprint[]
+): EditableExerciseBlueprint | undefined {
+  // Pin 후 → localId 매칭
+  if (original.exerciseLocalId) {
+    return editableExercises.find(
+      (e) => e.exerciseLocalId && e.exerciseLocalId === original.exerciseLocalId
+    );
+  }
+  // Pin 전 → blueprintId 매칭
+  if (original.exerciseBlueprintId !== null) {
+    return editableExercises.find(
+      (e) => e.exerciseBlueprintId === original.exerciseBlueprintId
+    );
+  }
+  // blueprintId도 null인 경우 (신규 추가된 항목)
+  return undefined;
+}
+
+/**
  * Exercise 변환 함수
  */
 function convertExerciseModifications(
@@ -48,29 +73,42 @@ function convertExerciseModifications(
 ): ExerciseModification[] {
   const modifications: ExerciseModification[] = [];
 
-  // 1. 삭제된 Exercise 처리
-  const deletedExerciseIds = findDeletedItems(
-    originalExercises,
-    editableExercises,
-    'exerciseTemplateId'
-  );
-
-  deletedExerciseIds.forEach((exerciseTemplateId) => {
-    modifications.push({
-      exerciseTemplateId,
-      action: 'delete',
-    });
+  // 1. 삭제된 Exercise 처리 (blueprintId/localId 기반 매칭)
+  originalExercises.forEach((original) => {
+    const matched = findMatchingExercise(original, editableExercises);
+    if (!matched) {
+      // editable에 없으면 삭제된 것
+      modifications.push({
+        exerciseSeedId: original.exerciseSeedId,
+        exerciseBlueprintId: original.exerciseBlueprintId,
+        exerciseTemplateId: original.exerciseTemplateId,
+        action: 'delete',
+      });
+    }
   });
 
-  // 2. Add/Modify Exercise 처리
+  // 2. Add/Modify Exercise 처리 (blueprintId/localId 기반 매칭)
   editableExercises.forEach((exercise) => {
-    const original = originalExercises.find(
-      (e) => e.exerciseTemplateId === exercise.exerciseTemplateId
-    );
+    // original에서 매칭되는 항목 찾기
+    let original: EffectiveExerciseBlueprint | undefined;
+
+    if (exercise.exerciseLocalId) {
+      // Pin 후 → localId 매칭
+      original = originalExercises.find(
+        (e) => e.exerciseLocalId && e.exerciseLocalId === exercise.exerciseLocalId
+      );
+    } else if (exercise.exerciseBlueprintId !== null) {
+      // Pin 전 → blueprintId 매칭
+      original = originalExercises.find(
+        (e) => e.exerciseBlueprintId === exercise.exerciseBlueprintId
+      );
+    }
 
     if (!original) {
-      // 새로 추가된 Exercise
+      // 새로 추가된 Exercise (blueprintId === null)
       modifications.push({
+        exerciseSeedId: exercise.exerciseSeedId,
+        exerciseBlueprintId: exercise.exerciseBlueprintId,
         exerciseTemplateId: exercise.exerciseTemplateId,
         action: 'add',
         order: exercise.order,
@@ -83,6 +121,12 @@ function convertExerciseModifications(
 
       if (isSpecModified || isOrderChanged) {
         modifications.push({
+          exerciseSeedId: exercise.exerciseSeedId,
+          // 🔧 BUG #5 FIX: editable state에서 exerciseBlueprintId가 손실된 경우 original에서 복원
+          exerciseBlueprintId: exercise.exerciseBlueprintId ?? original.exerciseBlueprintId,
+          // 🔧 EXERCISE MATCHING FIX: exerciseLocalId 보존 (setPin:true 스냅샷 매칭용)
+          // PRD Line 264, 594: setPin:true 시 exerciseLocalId 필수
+          exerciseLocalId: exercise.exerciseLocalId ?? original.exerciseLocalId,
           exerciseTemplateId: exercise.exerciseTemplateId,
           action: 'modify',
           order: exercise.order,
@@ -103,6 +147,25 @@ function convertSetModifications(
   editableSets: EditableSetBlueprint[]
 ): SetModification[] {
   const modifications: SetModification[] = [];
+
+  // 🔍 DIAGNOSTIC: Log input data
+  console.log('🔍 [DIAGNOSTIC] convertSetModifications input:', {
+    originalSetsCount: originalSets.length,
+    editableSetsCount: editableSets.length,
+    originalSets: originalSets.map((s, idx) => ({
+      index: idx,
+      setSeedId: s.setSeedId,
+      setBlueprintId: s.setBlueprintId,
+      order: s.order
+    })),
+    editableSets: editableSets.map((s, idx) => ({
+      index: idx,
+      setSeedId: s.setSeedId,
+      setBlueprintId: s.setBlueprintId,
+      order: s.order,
+      _isModified: s._isModified
+    }))
+  });
 
   // 1. 삭제된 Set 처리
   const deletedSetIds = findDeletedItems(originalSets, editableSets, 'setSeedId');
@@ -147,9 +210,19 @@ function convertSetModifications(
       const hasExerciseChanges = exerciseModifications.length > 0;
 
       if (isSetModified || isOrderChanged || hasExerciseChanges) {
+        const finalBlueprintId = set.setBlueprintId ?? original.setBlueprintId;
+        console.log('🔍 [DIAGNOSTIC] Creating set modification:', {
+          setSeedId: set.setSeedId,
+          setBlueprintId_editable: set.setBlueprintId,
+          setBlueprintId_original: original.setBlueprintId,
+          setBlueprintId_final: finalBlueprintId,
+          action: 'modify'
+        });
         modifications.push({
           setSeedId: set.setSeedId,
-          setBlueprintId: set.setBlueprintId,
+          // 🔧 BUG #5 FIX: editable state에서 setBlueprintId가 손실된 경우 original에서 복원
+          // Series blueprint 세트를 수정할 때 blueprintId가 필요함 (PRD Line 389-396)
+          setBlueprintId: finalBlueprintId,
           action: 'modify',
           order: set.order,
           restTime: set.restTime,
@@ -159,6 +232,15 @@ function convertSetModifications(
         });
       }
     }
+  });
+
+  console.log('🔍 [DIAGNOSTIC] convertSetModifications output:', {
+    modificationsCount: modifications.length,
+    modifications: modifications.map(m => ({
+      action: m.action,
+      setSeedId: m.setSeedId,
+      setBlueprintId: m.setBlueprintId
+    }))
   });
 
   return modifications;
@@ -212,7 +294,9 @@ export function convertEditableToModifyRequest(
       if (isPartModified || isOrderChanged || hasSetChanges) {
         partModifications.push({
           partSeedId: part.partSeedId,
-          partBlueprintId: part.partBlueprintId,
+          // 🔧 BUG #5 FIX: editable state에서 partBlueprintId가 손실된 경우 original에서 복원
+          // Series blueprint 파트를 수정할 때 blueprintId가 필요함 (PRD Line 389-396)
+          partBlueprintId: part.partBlueprintId ?? originalPart.partBlueprintId,
           action: 'modify',
           partName: part.partName,
           order: part.order,

@@ -19,10 +19,14 @@ import { generatePartDragId, generateSetDragId } from '../../../../utils/dragIdG
 import { useDragHandleOffset } from '../../../../hooks/useDragHandleOffset';
 import { DEFAULT_SET_VALUES } from '../../../../constants/workoutDefaults';
 
+// 임시 ID 생성 함수 (프론트엔드용)
+const generateTempId = () => `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
 type Props = {
   // 🆕 Day 3: editable state를 받음 (editable 대신)
   editable: EditablePartBlueprint[];
   sessionId: string;
+  profileId: string;
   onActiveItemChange?: (activeItem: ActiveItem) => void;
   placeholderInfo?: PlaceholderInfo;
   // 🆕 Day 2-3: Editable State Update Functions
@@ -487,6 +491,7 @@ const PartCard: React.FC<PartCardProps> = ({
 export const WorkoutPlanEditor: React.FC<Props> = ({
   editable,
   sessionId,
+  profileId,
   onActiveItemChange,
   placeholderInfo,
   onUpdateExerciseSpec,
@@ -696,6 +701,8 @@ export const WorkoutPlanEditor: React.FC<Props> = ({
     const targetSet = targetPart.sets[targetSetIndex];
 
     onAddExercise?.(selectedPartIndex, targetSetIndex, {
+      exerciseSeedId: generateTempId(),
+      exerciseBlueprintId: null,
       exerciseTemplateId: exercise._id,
       order: targetSet.exercises.length,
       spec: {
@@ -907,6 +914,7 @@ export const WorkoutPlanEditor: React.FC<Props> = ({
       {/* Exercise Selection Bottom Sheet */}
       <ExerciseSelectionBottomSheet
         isOpen={showExerciseSelection}
+        profileId={profileId}
         onClose={handleCloseExerciseSelection}
         onSelectExercise={handleExerciseSelected}
       />

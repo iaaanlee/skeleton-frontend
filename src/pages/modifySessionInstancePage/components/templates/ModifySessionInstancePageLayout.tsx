@@ -16,6 +16,17 @@ import { convertEditableToModifyRequest } from '../../utils/convertEditableToMod
 import type { ActiveItem } from '../../../../types/workout';
 import type { DragEndEvent } from '@dnd-kit/core';
 import type { DragEventCallback, PlaceholderInfo } from '../../../../hooks/useDragAndDrop';
+import { ObjectId } from 'bson';
+
+// 임시 ID 생성 함수 (프론트엔드용)
+const generateTempId = () => `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+// 다음 order 값 계산 (0, 10, 20, 30... 규칙)
+const getNextOrder = <T extends { order: number }>(items: T[]): number => {
+  if (items.length === 0) return 0;
+  const maxOrder = Math.max(...items.map(item => item.order));
+  return maxOrder + 10;
+};
 
 type Props = {
   sessionId: string;
@@ -43,6 +54,21 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
   // sessionDetail이 로드되면 editable state 초기화
   useEffect(() => {
     if (sessionDetail?.effectiveBlueprint) {
+      // 🔍 DIAGNOSTIC: Log received effectiveBlueprint
+      console.log('🔍 [DIAGNOSTIC] Received effectiveBlueprint:', sessionDetail.effectiveBlueprint.map((part, idx) => ({
+        index: idx,
+        partSeedId: part.partSeedId,
+        partBlueprintId: part.partBlueprintId,
+        partName: part.partName,
+        sets: part.sets.map((set, setIdx) => ({
+          index: setIdx,
+          setSeedId: set.setSeedId,
+          setBlueprintId: set.setBlueprintId,
+          order: set.order,
+          exerciseCount: set.exercises.length
+        }))
+      })));
+
       resetEditable();
       console.log('✅ [Day 2] Editable state initialized:', editable);
     }
@@ -163,11 +189,13 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
         );
         if (targetPartIndex !== -1) {
           const targetPart = editable[targetPartIndex];
-          const newSetOrder = targetPart.sets.length; // 마지막 세트 다음
+          const newSetOrder = getNextOrder(targetPart.sets);  // ✅ 0, 10, 20, 30...
+          const newSetIndex = targetPart.sets.length;  // 배열 인덱스
 
           console.log('🆕 [Day 3] 파트 활성화: 새로운 세트 생성 중', {
             targetPartIndex,
             newSetOrder,
+            newSetIndex,
             partName: targetPart.partName
           });
 
@@ -183,7 +211,10 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
 
           // 새로운 세트에 운동 추가 (다음 렌더링에서 처리되도록 지연)
           setTimeout(() => {
-            editableStateHook.addExercise(targetPartIndex, newSetOrder, {
+            editableStateHook.addExercise(targetPartIndex, newSetIndex, {
+              exerciseSeedId: generateTempId(),
+              exerciseBlueprintId: null,
+              exerciseLocalId: new ObjectId().toString(),  // ✅ Generate localId for new exercise
               exerciseTemplateId: exercise.exerciseTemplateId || exercise._id,
               order: 0,
               spec: {
@@ -218,7 +249,8 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
           if (setIdx !== -1) {
             targetPartIndex = partIdx;
             targetSetIndex = setIdx;
-            insertPosition = editable[partIdx].sets[setIdx].exercises.length;
+            const currentExercises = editable[partIdx].sets[setIdx].exercises;
+            insertPosition = currentExercises.length;  // ✅ 배열 인덱스 (splice 위치)
             break;
           }
         }
@@ -269,6 +301,9 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
 
     // 🆕 Day 3: editable state update 함수 사용
     editableStateHook.addExercise(targetPartIndex, targetSetIndex, {
+      exerciseSeedId: generateTempId(),
+      exerciseBlueprintId: null,
+      exerciseLocalId: new ObjectId().toString(),  // ✅ Generate localId for new exercise
       exerciseTemplateId: exercise.exerciseTemplateId || exercise._id,
       order: insertPosition,
       spec: {
@@ -357,9 +392,13 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
         // Exercise 복제: 같은 세트 내에 복사본 추가
         const partIndex = targetIndices.partIndex ?? 0;
         const setIndex = targetIndices.setIndex ?? 0;
-        const newOrder = (item.indices.exerciseIndex ?? 0) + 1;
+        const currentExercises = editable[partIndex]?.sets[setIndex]?.exercises || [];
+        const newOrder = getNextOrder(currentExercises);  // ✅ 0, 10, 20, 30...
 
         editableStateHook.addExercise(partIndex, setIndex, {
+          exerciseSeedId: generateTempId(),
+          exerciseBlueprintId: null,
+          exerciseLocalId: new ObjectId().toString(),  // ✅ Generate localId for duplicated exercise
           exerciseTemplateId: item.data.exercise?.exerciseTemplateId || item.data.name || 'unknown',
           order: newOrder,
           spec: item.data.exercise?.spec || {
@@ -376,7 +415,8 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
         const originalSet = editable[partIndex]?.sets[originalSetIndex];
 
         if (originalSet) {
-          const newOrder = originalSetIndex + 1;
+          const currentSets = editable[partIndex]?.sets || [];
+          const newOrder = getNextOrder(currentSets);  // ✅ 0, 10, 20, 30...
 
           editableStateHook.addSet(partIndex, {
             setBlueprintId: null,
@@ -385,8 +425,11 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
             restTime: originalSet.restTime,
             timeLimit: originalSet.timeLimit,
             exercises: originalSet.exercises.map((ex, idx) => ({
+              exerciseSeedId: generateTempId(),
+              exerciseBlueprintId: null,
+              exerciseLocalId: new ObjectId().toString(),  // ✅ Generate localId for duplicated set exercises
               exerciseTemplateId: ex.exerciseTemplateId,
-              order: idx,
+              order: idx * 10,  // ✅ 0, 10, 20, 30...
               spec: {
                 goal: { ...ex.spec.goal },
                 load: { ...ex.spec.load },
@@ -432,7 +475,7 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
       // ✅ NEW: editable state 직접 업데이트
       if (containerType === 'part') {
         // 새 파트 생성
-        const newOrder = (targetIndices.partIndex ?? 0) + 1;
+        const newOrder = getNextOrder(editable);  // ✅ 0, 10, 20, 30...
 
         editableStateHook.addPart({
           partBlueprintId: null,
@@ -442,12 +485,14 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
           sets: [{
             setBlueprintId: null,
             setSeedId: `set-${Date.now()}`,
-            order: 0,
+            order: 0,  // ✅ 첫 세트는 항상 0
             restTime: DEFAULT_SET_VALUES.REST_TIME,
             timeLimit: DEFAULT_SET_VALUES.TIME_LIMIT,
             exercises: [{
+              exerciseSeedId: generateTempId(),
+              exerciseBlueprintId: null,
               exerciseTemplateId: dragItem.data.exercise?.exerciseTemplateId || dragItem.data.name || 'unknown',
-              order: 0,
+              order: 0,  // ✅ 첫 운동은 항상 0
               spec: dragItem.data.exercise?.spec || {
                 goal: { type: 'rep', value: 10, rule: 'exact' },
                 load: { type: 'free', value: null, text: '' },
@@ -460,7 +505,8 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
       } else if (containerType === 'set') {
         // 새 세트 생성
         const targetPartIndex = targetIndices.partIndex ?? 0;
-        const newOrder = (targetIndices.setIndex ?? 0) + 1;
+        const currentSets = editable[targetPartIndex]?.sets || [];
+        const newOrder = getNextOrder(currentSets);  // ✅ 0, 10, 20, 30...
 
         editableStateHook.addSet(targetPartIndex, {
           setBlueprintId: null,
@@ -469,8 +515,10 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
           restTime: DEFAULT_SET_VALUES.REST_TIME,
           timeLimit: DEFAULT_SET_VALUES.TIME_LIMIT,
           exercises: [{
+            exerciseSeedId: generateTempId(),
+            exerciseBlueprintId: null,
             exerciseTemplateId: dragItem.data.exercise?.exerciseTemplateId || dragItem.data.name || 'unknown',
-            order: 0,
+            order: 0,  // ✅ 첫 운동은 항상 0
             spec: dragItem.data.exercise?.spec || {
               goal: { type: 'rep', value: 10, rule: 'exact' },
               load: { type: 'free', value: null, text: '' },
@@ -602,6 +650,7 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
           <WorkoutPlanEditor
             editable={editable}
             sessionId={sessionId}
+            profileId={sessionDetail.profileId}
             onActiveItemChange={setActiveItem}
             placeholderInfo={placeholderInfo}
             onUpdateExerciseSpec={editableStateHook.updateExerciseSpec}
@@ -659,6 +708,7 @@ export const ModifySessionInstancePageLayout: React.FC<Props> = ({ sessionId }) 
         {/* Exercise Selection Bottom Sheet */}
         <ExerciseSelectionBottomSheet
           isOpen={showExerciseSelection}
+          profileId={sessionDetail.profileId}
           onClose={handleCloseExerciseSelection}
           onSelectExercise={handleExerciseSelected}
         />
