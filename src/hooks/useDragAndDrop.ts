@@ -147,7 +147,8 @@ const DND_CONFIG = {
 export type PlaceholderInfo = {
   containerId: string;  // 타겟 컨테이너 ID (set-X-Y-seed, part-X-seed, 또는 'session')
   containerType: 'set' | 'part' | 'session';
-  insertIndex: number;  // 삽입될 인덱스 위치
+  insertIndex: number;  // 삽입될 인덱스 위치 (Filtered array 기준, drop 시 사용)
+  insertIndexForUI: number;  // UI 렌더링용 인덱스 (Original array 기준, PlaceHolder 표시 시 사용)
   partIndex?: number;
   setIndex?: number;
 } | null;
@@ -597,21 +598,37 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
     // 원본 배열 기준으로 insertIndex 변환
     // filteredItems는 드래그 중인 아이템을 제외했으므로
     // 렌더링 시 원본 배열과 인덱스 불일치 발생
-    let insertIndexOriginal = insertIndex;
+    // ✅ BUG #14 FIX: insertIndex는 이미 filtered 배열에서 계산되었으므로 조정 불필요
+    // - insertIndex는 dragging item을 제외한 배열에서 계산됨
+    // - useEditableState의 move* 함수들도 item 제거 후 splice하므로 insertIndex 그대로 사용
+    // - 기존의 +1 adjustment는 forward drag 시 1칸 더 뒤로 이동시키는 버그 발생
+    const insertIndexOriginal = insertIndex;
 
-    // 드래그 중인 아이템의 원래 인덱스 찾기
+    // 드래그 중인 아이템의 원래 인덱스
     const activeItemOriginalIndex = items.findIndex(item => {
       const itemId = item.getAttribute('data-sortable-id');
       return itemId === activeItem.id;
     });
 
-    // insertIndex가 드래그 아이템의 원래 위치 이상이면 +1
-    if (activeItemOriginalIndex !== -1 && insertIndex >= activeItemOriginalIndex) {
-      insertIndexOriginal = insertIndex + 1;
+    // ✅ BUG #15 FIX: UI 렌더링용 insertIndex 계산 (Original array 기준)
+    // PlaceHolder는 "드래그 중인 아이템의 원래 위치를 제외한" 모든 가능한 삽입 위치에 표시되어야 함
+    // - insertIndex: Filtered array 기준 (드래그 중인 아이템 제외) → Drop 시 사용
+    // - insertIndexForUI: Original array 기준 (전체 배열) → PlaceHolder 렌더링 시 사용
+    let insertIndexForUI = insertIndexOriginal;
+
+    // 크로스 컨테이너 이동이 아닐 때만 변환 (같은 컨테이너 내 이동)
+    if (activeItemOriginalIndex !== -1) {
+      // activeItem이 원래 이 컨테이너에 있었음
+      if (insertIndexOriginal > activeItemOriginalIndex) {
+        // insertIndex가 원래 위치를 초과하면 +1 보정
+        // 이유: Filtered array에서 드래그 아이템이 제거되어 인덱스가 1칸씩 앞당겨짐
+        insertIndexForUI = insertIndexOriginal + 1;
+      }
     }
 
     console.log('✅ [최종]', {
       insertIndex: insertIndexOriginal,
+      insertIndexForUI: insertIndexForUI,
       filteredIndex: insertIndex,
       activeOriginalIndex: activeItemOriginalIndex,
       containerId: targetContainerId
@@ -620,7 +637,8 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
     const placeholderInfo: PlaceholderInfo = {
       containerId: targetContainerId,
       containerType,
-      insertIndex: insertIndexOriginal,
+      insertIndex: insertIndexOriginal,      // ✅ Drop 시 사용 (Filtered array 기준)
+      insertIndexForUI: insertIndexForUI,    // ✅ UI 렌더링용 (Original array 기준)
       partIndex,
       setIndex
     };
@@ -1027,11 +1045,17 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       // 타겟 정보 파싱
       const targetInfo = parseDropTargetId(over.id.toString());
       if (targetInfo && callbacks?.onItemMove) {
-        // ✅ placeholder의 정확한 insertIndex 사용
+        // ✅ placeholder의 정확한 insertIndex 사용 (모든 레벨에 일관되게 적용)
         const toIndices = {
-          partIndex: targetInfo.partIndex,
-          setIndex: targetInfo.setIndex,
-          exerciseIndex: lastPlaceholderInfo.current?.insertIndex ?? targetInfo.exerciseIndex
+          partIndex: (activeItem.type === 'part')
+            ? (lastPlaceholderInfo.current?.insertIndex ?? targetInfo.partIndex)
+            : targetInfo.partIndex,
+          setIndex: (activeItem.type === 'set')
+            ? (lastPlaceholderInfo.current?.insertIndex ?? targetInfo.setIndex)
+            : targetInfo.setIndex,
+          exerciseIndex: (activeItem.type === 'exercise')
+            ? (lastPlaceholderInfo.current?.insertIndex ?? targetInfo.exerciseIndex)
+            : targetInfo.exerciseIndex
         };
 
         // console.log('🎯 [드롭 실행]:', {
@@ -1062,11 +1086,17 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       // 드롭 대상의 인덱스 정보 추출
       const targetInfo = parseDropTargetId(over.id.toString());
       if (targetInfo && callbacks?.onItemMove) {
-        // ✅ placeholder의 정확한 insertIndex 사용
+        // ✅ placeholder의 정확한 insertIndex 사용 (모든 레벨에 일관되게 적용)
         const toIndices = {
-          partIndex: targetInfo.partIndex,
-          setIndex: targetInfo.setIndex,
-          exerciseIndex: lastPlaceholderInfo.current?.insertIndex ?? targetInfo.exerciseIndex
+          partIndex: (activeItem.type === 'part')
+            ? (lastPlaceholderInfo.current?.insertIndex ?? targetInfo.partIndex)
+            : targetInfo.partIndex,
+          setIndex: (activeItem.type === 'set')
+            ? (lastPlaceholderInfo.current?.insertIndex ?? targetInfo.setIndex)
+            : targetInfo.setIndex,
+          exerciseIndex: (activeItem.type === 'exercise')
+            ? (lastPlaceholderInfo.current?.insertIndex ?? targetInfo.exerciseIndex)
+            : targetInfo.exerciseIndex
         };
 
         callbacks.onItemMove({
@@ -1090,11 +1120,17 @@ export const useDragAndDrop = (callbacks?: DragEventCallback) => {
       // ID 기반으로 타겟 정보 파싱 시도
       const targetInfo = parseDropTargetId(over.id.toString());
       if (targetInfo && callbacks?.onItemMove) {
-        // ✅ placeholder의 정확한 insertIndex 사용
+        // ✅ placeholder의 정확한 insertIndex 사용 (모든 레벨에 일관되게 적용)
         const toIndices = {
-          partIndex: targetInfo.partIndex,
-          setIndex: targetInfo.setIndex,
-          exerciseIndex: lastPlaceholderInfo.current?.insertIndex ?? targetInfo.exerciseIndex
+          partIndex: (activeItem.type === 'part')
+            ? (lastPlaceholderInfo.current?.insertIndex ?? targetInfo.partIndex)
+            : targetInfo.partIndex,
+          setIndex: (activeItem.type === 'set')
+            ? (lastPlaceholderInfo.current?.insertIndex ?? targetInfo.setIndex)
+            : targetInfo.setIndex,
+          exerciseIndex: (activeItem.type === 'exercise')
+            ? (lastPlaceholderInfo.current?.insertIndex ?? targetInfo.exerciseIndex)
+            : targetInfo.exerciseIndex
         };
 
         callbacks.onItemMove({

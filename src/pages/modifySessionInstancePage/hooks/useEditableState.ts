@@ -217,7 +217,8 @@ export const useEditableState = (effectiveBlueprint: EffectivePartBlueprint[]) =
       sets.push({
         ...set,
         _isModified: true,
-        _originalOrder: set.order
+        _originalOrder: set.order,
+        _isNew: true  // 새로 추가된 세트 표시 (저장 후 사라짐)
       });
 
       part.sets = sets;
@@ -286,6 +287,12 @@ export const useEditableState = (effectiveBlueprint: EffectivePartBlueprint[]) =
 
       // ✅ Resequence to maintain 0,10,20,30 pattern
       resequenceOrders(newState);
+
+      // ✅ FIX: Mark remaining parts as modified to enable save button
+      // Consistent with deleteSet() and deleteExercise() patterns
+      newState.forEach((part) => {
+        part._isModified = true;
+      });
 
       return newState;
     });
@@ -531,6 +538,7 @@ function convertToEditable(effective: EffectivePartBlueprint[]): EditablePartBlu
       ...set,
       _isModified: false,
       _originalOrder: set.order,
+      _isNew: false,  // 저장 후 재로드 시 "새로 추가됨" 태그 제거
       exercises: set.exercises.map(exercise => ({
         ...exercise,
         _isModified: false,

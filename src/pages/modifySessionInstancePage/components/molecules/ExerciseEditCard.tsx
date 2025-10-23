@@ -80,11 +80,12 @@ const formatExerciseSpec = (spec: ExerciseSpec) => {
       loadText = load.text || '';
   }
 
-  // Parts 조합 (goal은 항상 포함)
-  const parts = [goalText];
+  // Parts 조합 (load → goal 순서)
+  const parts = [];
   if (loadText) {
     parts.push(loadText);
   }
+  parts.push(goalText);  // goal은 항상 포함
 
   // TimeLimit 정보
   if (timeLimit && timeLimit > 0) {
@@ -169,16 +170,6 @@ export const ExerciseEditCard: React.FC<Props> = ({
   // ActiveItem 체크 - WorkoutPlanTab 패턴 따라 구현
   const exerciseKey = setSeedId ? `${setSeedId}-${exercise.exerciseTemplateId}-${exercise.order}` : `exercise-${exerciseIndex}-${exercise.exerciseTemplateId}`;
   const isActive = activeItem?.level === 'move' && activeItem.id === exerciseKey;
-
-  // 🔍 디버깅: spec 정보 출력
-  useEffect(() => {
-    console.log(`📋 [ExerciseEditCard] Rendering exercise:`, {
-      exerciseTemplateId: exercise.exerciseTemplateId,
-      order: exercise.order,
-      spec: exercise.spec,
-      formatted: formatExerciseSpec(exercise.spec)
-    });
-  }, [exercise.spec, exercise.exerciseTemplateId, exercise.order]);
 
   // Phase 3: ExerciseEditBottomSheet 저장 핸들러
   const handleExerciseModalSave = (updatedSpec: ExerciseSpec, applyToAll: boolean) => {

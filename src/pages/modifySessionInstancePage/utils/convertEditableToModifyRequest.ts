@@ -26,6 +26,42 @@ import type {
 } from '../../../types/workout';
 
 /**
+ * Order 재정렬 헬퍼 함수 (0, 10, 20, 30...)
+ */
+function resequenceOrders<T extends { order: number }>(items: T[]): T[] {
+  return items.map((item, idx) => ({
+    ...item,
+    order: idx * 10
+  }));
+}
+
+/**
+ * 비어있는 세트/파트 제거 및 order 재정렬
+ * - exercises가 빈 세트 제거
+ * - sets가 빈 파트 제거
+ * - 남은 항목들의 order 재정렬 (0, 10, 20, 30...)
+ */
+function removeEmptyAndResequence(editable: EditablePartBlueprint[]): EditablePartBlueprint[] {
+  // 1. 각 파트의 세트 필터링 (비어있는 세트 제거 & order 재정렬)
+  const partsWithFilteredSets = editable.map(part => {
+    const nonEmptySets = part.sets.filter(set => set.exercises.length > 0);
+    const resequencedSets = resequenceOrders(nonEmptySets);
+    return {
+      ...part,
+      sets: resequencedSets
+    };
+  });
+
+  // 2. 비어있는 파트 제거 (세트가 없는 파트)
+  const nonEmptyParts = partsWithFilteredSets.filter(part => part.sets.length > 0);
+
+  // 3. 남은 파트들의 order 재정렬
+  const resequencedParts = resequenceOrders(nonEmptyParts);
+
+  return resequencedParts;
+}
+
+/**
  * 삭제된 아이템 찾기 헬퍼 함수
  */
 function findDeletedItems<T extends { [key: string]: any }>(
@@ -81,6 +117,9 @@ function convertExerciseModifications(
       modifications.push({
         exerciseSeedId: original.exerciseSeedId,
         exerciseBlueprintId: original.exerciseBlueprintId,
+        // 🔧 BUG #8 FIX: Delete 시 exerciseLocalId 필수 (setPin:true 스냅샷 정확한 매칭용)
+        // exerciseTemplateId는 unique하지 않음 (같은 운동 여러 번 사용 가능)
+        exerciseLocalId: original.exerciseLocalId,
         exerciseTemplateId: original.exerciseTemplateId,
         action: 'delete',
       });
@@ -253,10 +292,13 @@ export function convertEditableToModifyRequest(
   original: EffectivePartBlueprint[],
   editable: EditablePartBlueprint[]
 ): ModifySessionRequest {
+  // 0. 저장 전처리: 비어있는 세트/파트 제거 및 order 재정렬
+  const cleanedEditable = removeEmptyAndResequence(editable);
+
   const partModifications: PartModification[] = [];
 
   // 1. 삭제된 Part 처리
-  const deletedPartIds = findDeletedItems(original, editable, 'partSeedId');
+  const deletedPartIds = findDeletedItems(original, cleanedEditable, 'partSeedId');
 
   deletedPartIds.forEach((partSeedId) => {
     const originalPart = original.find((p) => p.partSeedId === partSeedId);
@@ -268,7 +310,7 @@ export function convertEditableToModifyRequest(
   });
 
   // 2. Add/Modify Part 처리
-  editable.forEach((part) => {
+  cleanedEditable.forEach((part) => {
     const originalPart = original.find((p) => p.partSeedId === part.partSeedId);
 
     if (!originalPart) {

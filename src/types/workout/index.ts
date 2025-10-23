@@ -145,6 +145,7 @@ export type EditableSetBlueprint = {
   // 편집 메타데이터
   _isModified?: boolean;      // restTime/timeLimit이 변경되었는지
   _originalOrder?: number;    // DnD 전 원래 순서
+  _isNew?: boolean;           // 새로 추가된 세트인지 (저장 후 false로 변경)
 };
 
 export type EditablePartBlueprint = {

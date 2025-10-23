@@ -353,11 +353,12 @@ const PartCard: React.FC<PartCardProps> = ({
           <SortableContext items={setIds} strategy={verticalListSortingStrategy}>
             {part.sets.map((set, setIndex) => {
               // Placeholder 렌더링 로직: 현재 세트 이전에 삽입되어야 하는지 체크
+              // ✅ BUG #15 FIX: insertIndexForUI 사용 (Original array 기준)
               const shouldShowPlaceholderBefore =
                 placeholderInfo &&
                 placeholderInfo.containerType === 'part' &&
                 placeholderInfo.containerId === partDragItem.id &&
-                placeholderInfo.insertIndex === setIndex;
+                placeholderInfo.insertIndexForUI === setIndex;
 
               return (
                 <React.Fragment key={set.setSeedId}>
@@ -422,10 +423,11 @@ const PartCard: React.FC<PartCardProps> = ({
           </SortableContext>
 
           {/* Placeholder: 마지막 세트 이후 위치 */}
+          {/* ✅ BUG #15 FIX: insertIndexForUI 사용 (Original array 기준) */}
           {placeholderInfo &&
             placeholderInfo.containerType === 'part' &&
             placeholderInfo.containerId === partDragItem.id &&
-            placeholderInfo.insertIndex === part.sets.length && (
+            placeholderInfo.insertIndexForUI === part.sets.length && (
             <div
               className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
               data-placeholder="true"
@@ -511,6 +513,7 @@ export const WorkoutPlanEditor: React.FC<Props> = ({
   const [activeItem, setActiveItem] = useState<ActiveItem>(null);
 
   // 첫 파트와 첫 세트 자동 펼치기 초기화
+  // ✅ FIX: 페이지 진입 시 1회만 실행 (editable 변경마다 실행되면 DnD/수정 중 간섭 발생)
   useEffect(() => {
     if (editable.length > 0) {
       const firstPartId = editable[0].partSeedId;
@@ -519,7 +522,8 @@ export const WorkoutPlanEditor: React.FC<Props> = ({
         : undefined;
       initializeToggleStates(firstPartId, firstSetId);
     }
-  }, [editable, initializeToggleStates]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 초기 마운트 시에만 실행
 
   // 자동 펼침 이벤트 리스너 연결
   useEffect(() => {
@@ -790,10 +794,11 @@ export const WorkoutPlanEditor: React.FC<Props> = ({
           const isExpanded = expandedParts.has(part.partSeedId);
 
           // Session-level placeholder 체크
+          // ✅ BUG #15 FIX: insertIndexForUI 사용 (Original array 기준)
           const shouldShowPlaceholderBefore =
             placeholderInfo &&
             placeholderInfo.containerType === 'session' &&
-            placeholderInfo.insertIndex === partIndex;
+            placeholderInfo.insertIndexForUI === partIndex;
 
           // Part DragItem 생성 (SortableItem용)
           const partDragItem: DragItem = {
@@ -863,9 +868,10 @@ export const WorkoutPlanEditor: React.FC<Props> = ({
         })}
 
         {/* Session-level Placeholder: 마지막 파트 이후 위치 */}
+        {/* ✅ BUG #15 FIX: insertIndexForUI 사용 (Original array 기준) */}
         {placeholderInfo &&
           placeholderInfo.containerType === 'session' &&
-          placeholderInfo.insertIndex === editable.length && (
+          placeholderInfo.insertIndexForUI === editable.length && (
           <div
             className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
             data-placeholder="true"
@@ -901,7 +907,7 @@ export const WorkoutPlanEditor: React.FC<Props> = ({
               });
             }
           }}
-          className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 mt-16 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ExerciseEditCard } from './ExerciseEditCard';
-import type { EffectiveSetBlueprint, EffectiveExerciseBlueprint, PinState, ActiveItem } from '../../../../types/workout';
+import type { EffectiveSetBlueprint, EffectiveExerciseBlueprint, EditableSetBlueprint, PinState, ActiveItem } from '../../../../types/workout';
 import { SortableItem } from '../atoms/SortableItem';
 import type { DragItem, DropZone, PlaceholderInfo } from '../../../../hooks/useDragAndDrop';
 import { PinSystemHelpers } from '../../../../types/workout';
@@ -19,10 +19,10 @@ type DragHandleProps = {
 };
 
 type Props = {
-  set: EffectiveSetBlueprint;
+  set: EditableSetBlueprint;
   setIndex: number;
   pinState?: PinState;
-  onUpdateSet: (updatedSet: EffectiveSetBlueprint) => void;
+  onUpdateSet: (updatedSet: EditableSetBlueprint) => void;
   onDeleteSet: () => void;
   onDeleteExercise?: (exerciseIndex: number) => void;
   onAddExercise: () => void;
@@ -271,7 +271,7 @@ export const SetEditCard: React.FC<Props> = ({
                   <span className="text-sm font-medium text-gray-700 mr-2">
                     세트 {setIndex + 1}
                   </span>
-                  {set.setBlueprintId === null && (
+                  {set._isNew && (
                     <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
                       새로 추가됨
                     </span>
@@ -406,11 +406,12 @@ export const SetEditCard: React.FC<Props> = ({
               <SortableContext items={exerciseIds} strategy={verticalListSortingStrategy}>
               {set.exercises.map((exercise, exerciseIndex) => {
                 // Placeholder 렌더링 로직: 현재 운동 이전에 삽입되어야 하는지 체크
+                // ✅ BUG #15 FIX: insertIndexForUI 사용 (Original array 기준)
                 const shouldShowPlaceholderBefore =
                   placeholderInfo &&
                   placeholderInfo.containerType === 'set' &&
                   placeholderInfo.containerId === dragId &&
-                  placeholderInfo.insertIndex === exerciseIndex;
+                  placeholderInfo.insertIndexForUI === exerciseIndex;
 
                 return (
                   <React.Fragment key={exerciseIds[exerciseIndex]}>
@@ -471,10 +472,11 @@ export const SetEditCard: React.FC<Props> = ({
               })}
 
               {/* Placeholder: 마지막 운동 이후 위치 */}
+              {/* ✅ BUG #15 FIX: insertIndexForUI 사용 (Original array 기준) */}
               {placeholderInfo &&
                 placeholderInfo.containerType === 'set' &&
                 placeholderInfo.containerId === dragId &&
-                placeholderInfo.insertIndex === set.exercises.length && (
+                placeholderInfo.insertIndexForUI === set.exercises.length && (
                 <div
                   className="h-1 bg-blue-400 rounded relative my-2 transition-all duration-200 ease-in-out"
                   data-placeholder="true"
